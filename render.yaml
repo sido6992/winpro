@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: winpro-oauth
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: CLIENT_ID
+        value: 34tb6qr80U6IIGqopktV4
+      - key: ALLOWED_ORIGINS
+        value: https://sido6992.github.io
+      - key: REDIRECT_URIS
+        value: https://sido6992.github.io/winpro/
