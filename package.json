@@ -1,0 +1,10 @@
+{
+  "name": "win-pro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WIN PRO — Deriv OAuth 2.0 (PKCE) trading app with Render backend",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "dependencies": { "express": "^4.21.2" }
+}
