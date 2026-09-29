@@ -1,9 +1,0 @@
-{
-  "name": "winpro-oauth",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Deriv OAuth2 PKCE token-exchange backend for WIN PRO",
-  "main": "server.js",
-  "scripts": { "start": "node server.js" },
-  "engines": { "node": ">=18" }
-}
