@@ -636,7 +636,6 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   <div class="side-link" style="border-color:var(--teal);color:var(--teal)" onclick="goToTab('cashier');toggleSidebar(false)"><span class="ti">&#127974;</span><span>Cashier</span></div>
   <div class="side-link" style="border-color:var(--pink);color:var(--pink)" onclick="goToTab('askai');toggleSidebar(false)"><span class="ti">&#128172;</span><span>Ask AI</span></div>
   <div class="side-link" style="border-color:var(--lime);color:var(--lime)" onclick="goToTab('xmlbots');toggleSidebar(false)"><span class="ti">&#128194;</span><span>Import Bot</span></div>
-  <div class="side-link" style="border-color:var(--amber);color:var(--amber)" onclick="goToTab('botstore');toggleSidebar(false)"><span class="ti">&#128722;</span><span>Buy XML Bots</span></div>
   </div>
   <h3>Currency</h3>
   <div class="field toggle"><input type="checkbox" id="kesOn" onchange="kesToggle(this.checked)"><label for="kesOn" style="margin:0">Show amounts in Kenyan shillings (KSh)</label></div>
@@ -694,13 +693,6 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   <p class="tiny">Imports the trade settings (market, trade type, stake, duration, prediction, martingale, TP/SL, runs) from a Deriv Bot / Binary Bot XML and trades them with the Bot Builder. Custom block logic and indicators are not executed.</p>
   </div>
 </div>
-
-<!-- BUY XML BOTS (sidebar tab) -->
-<div class="view" id="view-botstore"><div class="card a-amber" style="max-width:480px;margin:0 auto">
-  <h3 class="h-tools">&#128722; Buy XML Bots <span><button type="button" class="mini-btn ref" onclick="bsLoad()">&#8635; Refresh</button></span></h3>
-  <div id="bsMsg" class="tiny"></div><div id="bsList"></div><div id="bsAdmin"></div>
-  <p class="tiny" style="margin-top:12px;text-align:center"><a href="#" onclick="bsAdminLogin();return false" style="color:var(--muted)">Owner login</a></p>
-</div></div>
 
 <!-- THEME (sidebar tab) -->
 <div class="view" id="view-theme">
@@ -5941,64 +5933,30 @@ function adaptDir(sym){
   renderFreeBotsList(); }
 </script>
 <script>
-/* ===== Buy XML Bots: customers buy + download .xml bots; only the owner (secret key) can upload. Needs the small online service in winpro-bot-store-worker.js ===== */
-const BOTSTORE_API=""; const bsApi=()=>BOTSTORE_API||(function(){try{return localStorage.getItem('wp_bsapi')||'';}catch(e){return '';}})(); // <- paste your deployed worker URL here, e.g. 'https://winpro-bots.YOURNAME.workers.dev'
-let BS={bots:[],pay:'',cur:'USD',orders:loadJ('wp_bsorders',{}),st:{},admin:(function(){try{return sessionStorage.getItem('wp_bskey')||'';}catch(e){return '';}})(),adm:{orders:[]}};
-async function bsReq(path,o){ o=o||{}; const h={}; if(o.admin) h['X-Admin-Key']=BS.admin; if(o.body) h['Content-Type']='application/json';
-  const r=await fetch(bsApi()+path,{method:o.method||'GET',headers:h,body:o.body?JSON.stringify(o.body):undefined});
-  if(!r.ok){ let m=''; try{ m=(await r.json()).error; }catch(e){} throw new Error(m||('HTTP '+r.status)); }
-  return o.raw?r.text():r.json(); }
-async function bsLoad(){
-  const msg=$('bsMsg'); if(!bsApi()){ msg.textContent='The bot store is not open yet.'; $('bsList').innerHTML=''; return; }
-  msg.textContent='Loading…';
-  try{
-    const [b,s]=await Promise.all([bsReq('/bots'),bsReq('/settings')]); BS.bots=b; BS.pay=s.payInfo||''; BS.cur=s.currency||'USD';
-    await Promise.all(Object.keys(BS.orders).map(async id=>{ const o=BS.orders[id]; try{ BS.st[id]=(await bsReq('/orders/'+o.id+'?token='+encodeURIComponent(o.token))).status; }catch(e){} }));
-    msg.textContent=b.length?'':'No bots for sale yet.'; bsRender(); if(BS.admin) bsAdminLoad();
-  }catch(e){ msg.textContent='Could not reach the store: '+e.message; }
-}
-function bsRender(){
-  $('bsList').innerHTML=BS.bots.map(b=>{ const o=BS.orders[b.id], st=BS.st[b.id], free=!(+b.price>0);
-    let btn; if(free||st==='approved') btn='<button class="btn" style="width:100%;margin-top:8px" onclick="bsDownload(\''+b.id+'\')">&#11015; Download .xml</button>';
-    else if(o&&st==='pending') btn='<button class="btn ghost" style="width:100%;margin-top:8px" onclick="bsLoad()">&#9203; Awaiting approval — tap to refresh</button>';
-    else btn='<button class="btn" style="width:100%;margin-top:8px;background:var(--amber);color:#111" onclick="bsBuy(\''+b.id+'\')">Buy — '+escHtml(BS.cur)+' '+gf(b.price)+'</button>'+(st==='rejected'?'<div class="tiny" style="color:#fb7185">Last payment was not confirmed.</div>':'');
-    return '<div class="bot-item"><div class="bot-name">'+escHtml(b.name)+' <span class="tiny">'+(free?'FREE':escHtml(BS.cur)+' '+gf(b.price))+'</span></div><div class="bot-desc">'+escHtml(b.desc||'')+'</div>'+btn+'<div id="bsBuy-'+b.id+'"></div>'+(BS.admin?'<button class="mini-btn del" style="margin-top:6px" onclick="bsDel(\''+b.id+'\')">&#128465; Remove</button>':'')+'</div>'; }).join('');
-}
-function bsBuy(id){ const b=BS.bots.find(x=>x.id===id), el=$('bsBuy-'+id);
-  el.innerHTML='<div style="margin-top:8px;padding:10px;border:1px solid var(--border);border-radius:10px"><div class="tiny" style="white-space:pre-wrap;margin-bottom:8px"><b>How to pay '+escHtml(BS.cur)+' '+gf(b.price)+':</b>\n'+escHtml(BS.pay||'Ask the owner for payment details.')+'</div><input id="bsContact-'+id+'" placeholder="Your name / Deriv login ID / phone" style="width:100%;margin-bottom:6px"><input id="bsRef-'+id+'" placeholder="Payment reference / transaction code" style="width:100%;margin-bottom:6px"><button class="btn" style="width:100%" onclick="bsSubmit(\''+id+'\')">I have paid — submit</button></div>'; }
-async function bsSubmit(id){ const c=($('bsContact-'+id).value||'').trim(), r=($('bsRef-'+id).value||'').trim(); if(!c||!r){ toastM('Enter your contact and the payment reference.'); return; }
-  try{ const o=await bsReq('/orders',{method:'POST',body:{botId:id,contact:c,ref:r}}); BS.orders[id]=o; saveJ('wp_bsorders',BS.orders); toastM('Submitted — you can download once the owner confirms your payment.'); bsLoad(); }catch(e){ toastM('Could not submit: '+e.message); } }
-async function bsDownload(id){ const b=BS.bots.find(x=>x.id===id), o=BS.orders[id];
-  try{ const xml=await bsReq('/download/'+id+(o?'?order='+o.id+'&token='+encodeURIComponent(o.token):''),{raw:true});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([xml],{type:'text/xml'})); a.download=(b.name||'bot').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')+'.xml'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); toastM('Saved to your downloads.');
-  }catch(e){ toastM('Download failed: '+e.message); } }
-// ----- owner only -----
-async function bsAdminLogin(){
-  if(!bsApi()){ const u=(prompt('Paste your bot store web address (the Cloudflare Worker link):')||'').trim().replace(/\/+$/,''); if(!/^https:\/\//.test(u)){ if(u) toastM('The address must start with https://'); return; } try{ localStorage.setItem('wp_bsapi',u); }catch(e){} }
-  let st; try{ st=await bsReq('/admin/status'); }catch(e){ try{ if(!BOTSTORE_API) localStorage.removeItem('wp_bsapi'); }catch(_){} toastM('Could not reach the store — check the address.'); return; }
-  let pin;
-  if(!st.configured){ pin=prompt('First time: create your owner PIN (at least 6 characters). Keep it private:'); if(!pin) return; if(pin.length<6){ toastM('PIN must be at least 6 characters.'); return; } if(prompt('Type the PIN again to confirm:')!==pin){ toastM('The PINs did not match.'); return; }
-    try{ await bsReq('/admin/setup',{method:'POST',body:{pin:pin}}); }catch(e){ toastM('Could not create PIN: '+e.message); return; } }
-  else{ pin=prompt('Owner PIN:'); if(!pin) return; }
-  BS.admin=pin.trim();
-  try{ await bsReq('/admin/orders',{admin:1}); try{ sessionStorage.setItem('wp_bskey',BS.admin); }catch(e){} toastM(st.configured?'Owner mode on.':'Owner PIN created. Owner mode on.'); bsLoad(); }catch(e){ BS.admin=''; toastM('Wrong PIN.'); } }
-async function bsAdminLoad(){ try{ BS.adm.orders=await bsReq('/admin/orders',{admin:1}); }catch(e){ BS.admin=''; return; } bsAdminRender(); }
-function bsAdminRender(){ if(!BS.admin){ $('bsAdmin').innerHTML=''; return; }
-  const ord=BS.adm.orders.filter(o=>o.status==='pending');
-  $('bsAdmin').innerHTML='<div style="margin-top:14px;padding:12px;border:1px solid var(--amber);border-radius:12px"><b style="color:var(--amber)">Owner panel</b>'
-   +'<input id="bsName" placeholder="Bot name" style="width:100%;margin:8px 0 6px"><input id="bsPrice" type="number" min="0" step="0.01" placeholder="Price (0 = free)" style="width:100%;margin-bottom:6px"><input id="bsDesc" placeholder="Short description" style="width:100%;margin-bottom:6px">'
-   +'<input id="bsFile" type="file" accept=".xml,text/xml,application/xml" style="width:100%;margin-bottom:6px"><button class="btn" style="width:100%" onclick="bsUpload()">&#11014; Upload bot</button>'
-   +'<textarea id="bsPay" rows="3" placeholder="Payment instructions shown to buyers" style="width:100%;margin-top:10px">'+escHtml(BS.pay)+'</textarea><button class="btn ghost" style="width:100%;margin-top:6px" onclick="bsSavePay()">Save payment instructions</button>'
-   +'<div class="tiny" style="margin:12px 0 4px;font-weight:800">Payments waiting for approval ('+ord.length+')</div>'
-   +ord.map(o=>'<div class="cm-row" style="border-color:var(--amber);flex-wrap:wrap"><span>'+escHtml((BS.bots.find(b=>b.id===o.botId)||{}).name||o.botId)+' &middot; '+escHtml(o.contact)+' &middot; '+escHtml(o.ref)+'</span><span><button class="mini-btn ref" onclick="bsDecide(\''+o.id+'\',\'approved\')">&#10003; Approve</button> <button class="mini-btn del" onclick="bsDecide(\''+o.id+'\',\'rejected\')">&#10005;</button></span></div>').join('')
-   +'<button class="btn ghost" style="width:100%;margin-top:10px" onclick="BS.admin=\'\';try{sessionStorage.removeItem(\'wp_bskey\')}catch(e){};bsRender();bsAdminRender()">Leave owner mode</button></div>'; }
-async function bsUpload(){ const f=$('bsFile').files[0], name=($('bsName').value||'').trim(); if(!f||!name){ toastM('Choose an XML file and enter a name.'); return; }
-  const xml=await f.text(); if(!/<xml[\s>]/i.test(xml)){ toastM('That does not look like a Deriv Bot XML file.'); return; }
-  try{ await bsReq('/admin/bots',{method:'POST',admin:1,body:{name:name,price:parseFloat($('bsPrice').value)||0,desc:($('bsDesc').value||'').trim(),xml:xml}}); toastM('Bot uploaded.'); bsLoad(); }catch(e){ toastM('Upload failed: '+e.message); } }
-async function bsSavePay(){ try{ await bsReq('/admin/settings',{method:'POST',admin:1,body:{payInfo:$('bsPay').value}}); toastM('Saved.'); bsLoad(); }catch(e){ toastM(e.message); } }
-async function bsDecide(id,status){ try{ await bsReq('/admin/orders/'+id,{method:'POST',admin:1,body:{status:status}}); bsLoad(); }catch(e){ toastM(e.message); } }
-async function bsDel(id){ if(!confirm('Remove this bot from the store?')) return; try{ await bsReq('/admin/bots/'+id,{method:'DELETE',admin:1}); bsLoad(); }catch(e){ toastM(e.message); } }
-(function(){ const g=window.goToTab; window.goToTab=function(n){ g.apply(this,arguments); if(n==='botstore') bsLoad(); }; })();
+/* ===== Live balance fix: keep the balance in step with every trade result, and re-sync if the stream goes quiet ===== */
+(function(){
+  var lastBal=0, soldSeen={};
+  function setBal(v,cur){ v=parseFloat(v); if(!isFinite(v)) return; try{ handleMessage({msg_type:'balance',balance:{balance:v,currency:cur||(typeof _balCur!=='undefined'?_balCur:'USD')}}); }catch(e){} }
+  function pull(){ try{ if(typeof ws!=='undefined'&&ws&&ws.readyState===1&&authorized) send({balance:1}); }catch(e){} }
+  function pullSoon(){ setTimeout(pull,400); setTimeout(pull,2500); setTimeout(pull,6000); }
+  var prev=handleMessage;
+  handleMessage=function(m){
+    prev(m);
+    try{
+      if(!m) return;
+      if(m.msg_type==='balance'&&m.balance) lastBal=Date.now();
+      if(m.msg_type==='buy'&&m.buy){ if(m.buy.balance_after!=null) setBal(m.buy.balance_after); pullSoon(); }
+      if(m.msg_type==='sell'&&m.sell){ if(m.sell.balance_after!=null) setBal(m.sell.balance_after); pullSoon(); }
+      if(m.msg_type==='proposal_open_contract'&&m.proposal_open_contract){ var c=m.proposal_open_contract; if((c.is_sold||c.status==='sold'||c.status==='won'||c.status==='lost')&&c.contract_id&&!soldSeen[c.contract_id]){ soldSeen[c.contract_id]=1; pullSoon(); } }
+      if(m.msg_type==='transaction'&&m.transaction&&m.transaction.balance!=null) setBal(m.transaction.balance,m.transaction.currency);
+    }catch(e){}
+  };
+  setInterval(function(){
+    try{ if(typeof ws==='undefined'||!ws||ws.readyState!==1||!authorized) return;
+      if(Date.now()-lastBal>20000){ send({balance:1,subscribe:1}); } else { pull(); } }catch(e){}
+  },8000);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) pull(); });
+})();
 </script>
 </body>
 </html>
