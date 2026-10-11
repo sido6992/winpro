@@ -226,6 +226,9 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
   background:var(--teal);color:#08101f;border:none;font-size:20px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.45);
   z-index:45;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none}
 .fab.running{background:var(--rose)}
+.info-fab{left:10px;right:auto;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:52px;height:52px;background:rgba(255,154,60,.16);border:1.5px dashed rgba(255,154,60,.85);color:#ffb066;box-shadow:none;font-size:22px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.info-fab.on{background:rgba(255,154,60,.45);color:#fff;border-style:solid}
+@media(min-width:761px){.info-fab{bottom:96px}}
 @media(min-width:761px){.fab{bottom:24px}}
 
 /* Sniper */
@@ -800,6 +803,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 <button class="fab" id="botFab" onclick="fabToggleBot()" title="Bot Start/Stop">
   <span id="fabIcon">&#9654;</span>
 </button>
+<!-- FLOATING INFO BUTTON: tap = show the info card, tap again = hide it. Draggable, visible on every tab -->
+<button class="fab info-fab" id="infoFab" type="button" title="Info card (tap to show / hide)" aria-pressed="false"><span>&#8505;</span></button>
 
 <!-- FLOATING INFO CARD (enable/disable from the SniperScan tab) -->
 <div class="float-card fc-info hidden-field" id="fcHistory" style="top:88px;right:10px">
@@ -1262,10 +1267,6 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
     <div class="fc-actions"><button class="fc-go wait" id="fcwGo" onclick="fcWatcherTap()">Scanning...</button><button class="fc-bot" onclick="fcwToBot()">BOT &#9654;</button></div>
   </div>
 </div>
-<div class="float-toggle-bar hidden-field" id="floatToggleBar">
-  <div class="field toggle"><input type="checkbox" id="snFloatToggle" onchange="toggleFloatPanels()"><label for="snFloatToggle" style="margin:0">Info</label></div>
-</div>
-
 <!-- COPY TRADING -->
 <div class="view" id="view-copytrading">
   <div style="max-width:480px;margin:0 auto">
@@ -1526,8 +1527,6 @@ function goToTab(name){
   if(name==='goal') renderGoal();
   if(name==='livetrades') renderLiveTrades();
   if(name==='tradehistory') renderSidebarHistory();
-  const ftb = document.getElementById('floatToggleBar');
-  if(ftb) ftb.classList.toggle('hidden-field', name!=='sniperscan');
 }
 document.querySelectorAll('.tab, .bn-item').forEach(t=>t.addEventListener('click',()=>goToTab(t.dataset.tab)));
 
@@ -1934,10 +1933,14 @@ async function connect(){
 
 // Deriv's newer API names the market field `underlying_symbol`; older builds use `symbol`. The app tries one, auto-retries with the other on a validation error, and remembers what works.
 let SYM_KEY = 'underlying_symbol', lastBuy = null;
+let botTimer=null, STOPS=0;   // STOPS counts every Stop press; botTimer is the one pending 'next trade' timer
+function botClearTimers(){ clearTimeout(botTimer); botTimer=null; }
 try{ SYM_KEY = localStorage.getItem('wp_symkey') || SYM_KEY; }catch(e){}
 function setSymKey(p, key){ const v=p.symbol||p.underlying_symbol; delete p.symbol; delete p.underlying_symbol; p[key]=v; return v; }
 function send(obj){
   if(!ws || ws.readyState!==1) return null;
+  // Hard stop: never place a buy for an engine that has been stopped
+  if(obj.buy===1){ if(pendingTradeSource==='bot' && !botRunning) return null; if(obj.passthrough&&obj.passthrough.spd&&!speedOn) return null; }
   if(obj.buy===1 && obj.parameters){
     const p=obj.parameters, v=setSymKey(p,SYM_KEY);
     pendingTradeSymbol=v;
@@ -1951,7 +1954,7 @@ function send(obj){
       pendingTradeSource=null;
       return null;
     }
-    lastBuy={payload:JSON.parse(JSON.stringify(obj)),retried:false};
+    lastBuy={payload:JSON.parse(JSON.stringify(obj)),retried:false,stops:STOPS};
   }
   const id = reqId++;
   obj.req_id = id;
@@ -1980,7 +1983,7 @@ function handleMessage(msg){
   if(msg.msg_type==='buy' && msg.buy){ if(msg.echo_req&&msg.echo_req.passthrough&&msg.echo_req.passthrough.spd){ pendingTradeSource='speed'; spErr=0; } onBuyResult(msg.buy); }
   if(msg.msg_type==='proposal_open_contract' && msg.proposal_open_contract){ onContractUpdate(msg.proposal_open_contract); }
   if(msg.error && msg.msg_type==='buy'){
-    if(/validation failed/i.test(msg.error.message||'') && lastBuy && ws && ws.readyState===1){
+    if(/validation failed/i.test(msg.error.message||'') && lastBuy && lastBuy.stops===STOPS && ws && ws.readyState===1){
       if(!lastBuy.retried){
         lastBuy.retried=true; SYM_KEY = SYM_KEY==='symbol' ? 'underlying_symbol' : 'symbol';
         const o=JSON.parse(JSON.stringify(lastBuy.payload)); setSymKey(o.parameters,SYM_KEY); o.req_id=reqId++;
@@ -3146,6 +3149,7 @@ document.getElementById('botTradeType').addEventListener('change', ()=>{
 
 function startBot(){
   if(!authorized){ log('botLog','Not authorized — connect first.'); return; }
+  botClearTimers();
   botRunning = true;
   botCount=0; botWins=0; botLosses=0; botPnl=0;
   botStake = parseFloat(document.getElementById('botStake').value);
@@ -3166,7 +3170,7 @@ function startBot(){
   fireBotTrade();
 }
 function stopBot(){
-  botRunning=false;
+  botRunning=false; botBusy=false; STOPS++; botClearTimers();
   document.getElementById('botStatus').textContent='Stopped';
   log('botLog','Bot stopped by user.');
   updateFab();
@@ -3293,7 +3297,7 @@ function onContractUpdate(c){
     if(botRunning && botEntry){
       if(botCount>=botMax){ botRunning=false; document.getElementById('botStatus').textContent='Complete'; log('botLog','Runs reached ('+botMax+') — bot stopped.'); updateFab(); }
       else document.getElementById('botStatus').textContent='Armed — waiting for entry ('+botCount+'/'+botMax+')';
-    } else if(botRunning) setTimeout(fireBotTrade, botGapMs());
+    } else if(botRunning){ botClearTimers(); botTimer=setTimeout(fireBotTrade, botGapMs()); }
   }
   if(watcherAutoRun.active){
     log('sniperLog', `Auto-run contract closed: ${win?'WIN':'LOSS'} $${profit.toFixed(2)}`);
@@ -3595,7 +3599,7 @@ function updateSniperReadout(){
 }
 let snPnl=0, snCur=0, snPendAt=0, snW=0, snL=0;
 function sniperDisarm(msg,cls){
-  sniperArmed=false;
+  sniperArmed=false; STOPS++;
   const b=document.getElementById('snArmBtn'); if(b){ b.textContent='ARM SNIPER'; b.classList.remove('armed'); }
   const c=document.getElementById('snCrosshair'); if(c) c.classList.remove('armed');
   document.getElementById('snStatusLine').textContent=msg;
@@ -3613,7 +3617,7 @@ function sniperResult(profit,win){
   }
 }
 function toggleSniperArm(){
-  sniperArmed = !sniperArmed;
+  sniperArmed = !sniperArmed; if(!sniperArmed) STOPS++;
   if(sniperArmed){ snPnl=0; snW=snL=0; snPendAt=0; snCur=parseFloat(document.getElementById('botStake').value)||1; }
   const btn = document.getElementById('snArmBtn'), cross = document.getElementById('snCrosshair');
   if(sniperArmed){
@@ -3697,15 +3701,30 @@ function beep(freq, duration, type){
 function beepGreen(){} // sound removed
 
 // ---- Floating cards ----
+function syncInfoFab(){ const on=!document.getElementById('fcHistory').classList.contains('hidden-field'), f=document.getElementById('infoFab'); if(f){ f.classList.toggle('on',on); f.setAttribute('aria-pressed',on?'true':'false'); } }
 function toggleFloatPanels(){
-  const on = document.getElementById('snFloatToggle').checked;
-  document.getElementById('fcHistory').classList.toggle('hidden-field', !on);
-  if(on) renderFloatHistory();
+  const card=document.getElementById('fcHistory'), show=card.classList.contains('hidden-field');
+  card.classList.toggle('hidden-field', !show);
+  if(show) renderFloatHistory();
+  syncInfoFab();
 }
 function hideFloatCard(id){
   document.getElementById(id).classList.add('hidden-field');
-  if(id==='fcHistory'){ const t=document.getElementById('snFloatToggle'); if(t) t.checked=false; }
+  if(id==='fcHistory') syncInfoFab();
 }
+// the info button: draggable like the bot button; a tap (not a drag) shows / hides the card
+(function(){ const f=document.getElementById('infoFab'); if(!f) return;
+  try{ const p=JSON.parse(localStorage.getItem('wp_infofab')||'null'); if(p&&isFinite(p.x)&&isFinite(p.y)){ f.style.left=Math.max(2,Math.min(innerWidth-54,p.x))+'px'; f.style.top=Math.max(2,Math.min(innerHeight-54,p.y))+'px'; f.style.bottom='auto'; } }catch(e){}
+  let down=false, moved=false, sx=0, sy=0, ox=0, oy=0;
+  f.addEventListener('pointerdown',e=>{ down=true; moved=false; sx=e.clientX; sy=e.clientY; const r=f.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; try{ f.setPointerCapture(e.pointerId); }catch(_){} });
+  f.addEventListener('pointermove',e=>{ if(!down) return; if(!moved&&Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)<8) return; moved=true;
+    const x=Math.max(2,Math.min(innerWidth-f.offsetWidth-2,e.clientX-ox)), y=Math.max(2,Math.min(innerHeight-f.offsetHeight-2,e.clientY-oy));
+    f.style.left=x+'px'; f.style.top=y+'px'; f.style.right='auto'; f.style.bottom='auto'; });
+  f.addEventListener('pointerup',()=>{ if(!down) return; down=false;
+    if(moved){ try{ const r=f.getBoundingClientRect(); localStorage.setItem('wp_infofab',JSON.stringify({x:r.left,y:r.top})); }catch(_){} }
+    else toggleFloatPanels(); });
+  f.addEventListener('pointercancel',()=>{ down=false; });
+})();
 function renderFloatHistory(){
   const mode = document.getElementById('fcViewSelect').value;
   const body = document.getElementById('fcHistoryBody');
@@ -3766,7 +3785,7 @@ function pickDuration(info,want,unit){
 }
 function cfOk(sym,bot){ const cf=CF[sym]; if(cf==='err') return true; if(!cf) return null; return !!cf[BOT_CF[bot]]; }
 function botStopWith(reason){
-  botRunning=false; botBusy=false;
+  botRunning=false; botBusy=false; STOPS++; botClearTimers();
   document.getElementById('botStatus').textContent='Stopped — '+reason;
   document.getElementById('botEntryInfo').textContent='Stopped: '+reason;
   log('botLog','Bot stopped: '+reason); updateFab();
@@ -3778,7 +3797,7 @@ function onBuyError(err){
   const m=(err&&err.message)||'Unknown error';
   if(/validation|not offered|not available|not allowed|invalid|must be|out of range|barrier|duration|minimum|maximum|balance|authoriz|stake/i.test(m)||botErrStreak>=3){ botStopWith(m); return; }
   if(botEntry) document.getElementById('botStatus').textContent='Armed — waiting for entry (retrying)';
-  else setTimeout(fireBotTrade,3000);
+  else { botClearTimers(); botTimer=setTimeout(fireBotTrade,3000); }
 }
 // ---- MARKET SCANNER: every market x every tick-derived trade type, ranked by hit rate, confidence, frequency and edge ----
 // Hit = recent win rate (last 50 ticks; signal accuracy for Rise/Fall & Asian). Freq = how often the winning outcome occurred over the full buffer.
@@ -4301,7 +4320,7 @@ function spOpp(){ if($('spAlt').checked) $('spType2').value=SPOPP[$('spType').va
 spOpp();
 let spMsg='', spTpDone=false;
 function speedUI(m){ $('spBtn').textContent=speedOn?'STOP SPEED BOT':'START SPEED BOT'; $('spBtn').className='btn'+(speedOn?' rose':''); $('spStat').innerHTML=(speedOn?'RUNNING':(m||spMsg||'Idle'))+` · Trades ${spW+spL} · W ${spW} / L ${spL}${spOpen?' · Open '+spOpen:''} · Stake $${spCur.toFixed(2)}${spStep?' (step '+spStep+')':''} · P/L <b class="${spPnl>=0?'up':'down'}">${fmtSigned(spPnl)}</b>`; const bp=$('spBigPl'); if(bp){ bp.textContent=fmtSigned(spPnl); bp.className=spPnl>0?'up':(spPnl<0?'down':''); } }
-function speedStop(m,cls){ const was=speedOn; speedOn=false; spMsg=m||'Stopped'; speedUI(spMsg); if(was) speedLog(spMsg+' — trades placed '+spN+' · W '+spW+' / L '+spL+' · P/L '+fmtSigned(spPnl),cls||'sp-i'); }
+function speedStop(m,cls){ const was=speedOn; speedOn=false; STOPS++; spMsg=m||'Stopped'; speedUI(spMsg); if(was) speedLog(spMsg+' — trades placed '+spN+' · W '+spW+' / L '+spL+' · P/L '+fmtSigned(spPnl),cls||'sp-i'); }
 function speedToggle(){ if(speedOn) return speedStop('Stopped'); if(!authorized){ showLogin(); return; } if(!(parseFloat($('spStake').value)>0)) return speedUI('Enter a valid stake');
   ensureTickSub($('spSym').value); spN=spW=spL=spOpen=0; spPnl=0; spErr=0; spLastEp=0; spStep=0; spMsg=''; spTpDone=false; spCur=parseFloat($('spStake').value); speedOn=true; speedUI(); const runs=parseInt($('spRuns').value)||0; speedLog('Started on '+marketName($('spSym').value)+' · '+($('spAlt').checked?$('spType').value+' <> '+$('spType2').value:$('spType').value)+' · stake $'+spCur.toFixed(2)+(runs>0?' · '+runs+' runs':''),'sp-i'); }
 const SPD={rise:['CALLE'],fall:['PUTE'],even:['DIGITEVEN'],odd:['DIGITODD'],over:['DIGITOVER','d'],under:['DIGITUNDER','d'],match:['DIGITMATCH','d'],diff:['DIGITDIFF','d'],hl_higher:['CALL','h',1],hl_lower:['PUT','h',-1],touch_touch:['ONETOUCH','t'],touch_no:['NOTOUCH','t'],ends_in:['EXPIRYRANGE','r'],ends_out:['EXPIRYMISS','r'],stays_in:['RANGE','r'],stays_out:['UPORDOWN','r'],asian_up:['ASIANU'],asian_down:['ASIAND'],reset_call:['RESETCALL'],reset_put:['RESETPUT'],tick_high:['TICKHIGH','s'],tick_low:['TICKLOW','s'],onlyups:['RUNHIGH'],onlydowns:['RUNLOW']};
@@ -4360,11 +4379,6 @@ function spCelebrate(amount){
   })();
   setTimeout(()=>{ ov.classList.add('out'); setTimeout(()=>ov.remove(),500); },4200);
 }
-// info card: draggable by a grip handle
-(function(){ const bar=$('floatToggleBar'), g=document.createElement('div'); g.textContent='\u22EE\u22EE '; g.style.cssText='text-align:center;font-size:12px;line-height:1;color:#ffb066;font-weight:700;cursor:grab;touch-action:none;user-select:none;padding:2px 0';
-  bar.insertBefore(g,bar.firstChild);
-  g.addEventListener('pointerdown',()=>{ const r=bar.getBoundingClientRect(); bar.style.width=r.width+'px'; bar.style.top=r.top+'px'; bar.style.left=r.left+'px'; bar.style.bottom='auto'; bar.style.right='auto'; });
-  makeDraggable(bar,g); })();
 // =====================================================================
 // SPEED BOT TAB add-ons: logs, floating alternate-pair scanner, account info + profitability
 // (passive hooks only — connection / auth / reconnect code is untouched)
@@ -5834,7 +5848,7 @@ function scStartPending(){
 }
 function scSwitch(alt,reasons){
   const from=SG.o;
-  botRunning=false; SG.run=false; scanSel=alt.id; SG.pending=alt; SG.streak=0; SG.badSince=0;
+  botRunning=false; STOPS++; botClearTimers(); SG.run=false; scanSel=alt.id; SG.pending=alt; SG.streak=0; SG.badSince=0;
   const msg=marketName(from.sym)+' · '+from.famLabel+' '+from.side+' → '+marketName(alt.sym)+' · '+alt.famLabel+' '+alt.side;
   log('sniperLog','SWITCH — '+msg+' ('+reasons[0]+')'); log('botLog','Scanner switched setup: '+msg);
   toastM('Scanner switched: '+marketName(alt.sym)+' · '+alt.famLabel+' '+alt.side);
@@ -5845,7 +5859,7 @@ function scAct(reasons){
   const o0=SG.o, alt=scanFav.find(o=>!(o.sym===o0.sym&&o.bot===o0.bot&&o.side===o0.side));
   SG.failId=o0.id; SG.badSince=0;
   if(alt){ scSwitch(alt,reasons); return; }
-  botRunning=false; botBusy=false;
+  botRunning=false; botBusy=false; STOPS++; botClearTimers();
   try{ document.getElementById('botStatus').textContent='Stopped — scanner'; updateFab(); }catch(e){}
   SG.run=false; SG.blocked=true; SG.reasons=reasons; SG.reason=reasons[0]||'conditions changed';
   SG.until=Date.now()+(SG.streak>=2?60000:15000);
