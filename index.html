@@ -226,6 +226,21 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
   background:var(--teal);color:#08101f;border:none;font-size:20px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.45);
   z-index:45;cursor:pointer;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none}
 .fab.running{background:var(--rose)}
+.dt-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.dt-sigwrap{display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0}
+.dt-sig{border:0;border-radius:999px;padding:7px 12px;font:800 12px var(--font);color:#06210f;background:#22c55e;cursor:pointer;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.dt-sig.go{background:#22c55e;animation:dtBlinkG 1s ease-in-out infinite}
+.dt-sig.bad{background:#ef4444;color:#fff;animation:dtBlinkR .8s ease-in-out infinite}
+.dt-sig.wait{background:#475569;color:#e2e8f0;animation:none}
+.dt-sig.off{background:#334155;color:#94a3b8;animation:none}
+@keyframes dtBlinkG{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.75);opacity:1}50%{box-shadow:0 0 0 7px rgba(34,197,94,0);opacity:.55}}
+@keyframes dtBlinkR{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.8);opacity:1}50%{box-shadow:0 0 0 7px rgba(239,68,68,0);opacity:.5}}
+.dt-sigsw,.dv-btn{border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:8px;padding:5px 8px;font:700 11px var(--font);cursor:pointer}
+.dt-sigsw.on{color:#22c55e;border-color:#22c55e}.dv-btn.on{color:#06210f;background:#22c55e;border-color:#22c55e}
+.dv-wide{padding:8px 12px;font-size:12px}
+.dt-sigwarn{margin:-4px 0 10px;padding:8px 10px;border-radius:8px;background:rgba(239,68,68,.14);border:1px solid #ef4444;color:#fecaca;font:600 12px/1.4 var(--font)}
+#dvPill{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:70;background:rgba(6,33,15,.92);color:#86efac;border:1px solid #22c55e;border-radius:999px;padding:6px 14px;font:700 12px var(--font);max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;display:none}
+#dvPill.show{display:block}#dvPill.err{background:rgba(69,10,10,.92);color:#fecaca;border-color:#ef4444}#dvPill.hit{background:#22c55e;color:#06210f}
 .info-fab{left:10px;right:auto;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:52px;height:52px;background:rgba(255,154,60,.16);border:1.5px dashed rgba(255,154,60,.85);color:#ffb066;box-shadow:none;font-size:22px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
 .info-fab.on{background:rgba(255,154,60,.45);color:#fff;border-style:solid}
 @media(min-width:761px){.info-fab{bottom:96px}}
@@ -851,7 +866,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
           <option value="7200">2 Hours</option>
           <option value="14400">4 Hours</option>
           <option value="86400">1 Day</option>
-        </select><select id="drawSel" onchange="drawSelChange(this)"><option value="">&#9998; Draw</option><option value="trend">Trendline</option><option value="sr">Horizontal line (S/R)</option><option value="rect">Rectangle</option><option value="pos">TP / SL box (Buy/Sell)</option><option value="signal">&#128161; Signal (scan market)</option></select><select id="indSel" onchange="indSelChange(this)"><option value="">&#402; Indicators</option><option value="rsi">RSI</option><option value="ma">Moving Average</option><option value="bb">Bollinger Bands</option><option value="sar">Parabolic SAR</option><option value="bull">Bulls/Bears Power</option><option value="mom">Momentum</option><option value="vol">Volumes</option><option value="ad">Accumulation/Distribution</option><option value="macd">MACD</option><option value="stoch">Stochastic</option><option value="atr">ATR (volatility)</option></select><button class="ct-btn" onclick="toggleDrawPanel()" title="Edit objects">&#9881;</button></div>
+        </select><select id="drawSel" onchange="drawSelChange(this)"><option value="">&#9998; Draw</option><option value="trend">Trendline</option><option value="sr">Horizontal line (S/R)</option><option value="rect">Rectangle</option><option value="pos">TP / SL box (Buy/Sell)</option><option value="signal">&#128161; Signal (scan market)</option><option value="voice" id="dvChartOpt">&#127908; Voice: OFF</option></select><select id="indSel" onchange="indSelChange(this)"><option value="">&#402; Indicators</option><option value="rsi">RSI</option><option value="ma">Moving Average</option><option value="bb">Bollinger Bands</option><option value="sar">Parabolic SAR</option><option value="bull">Bulls/Bears Power</option><option value="mom">Momentum</option><option value="vol">Volumes</option><option value="ad">Accumulation/Distribution</option><option value="macd">MACD</option><option value="stoch">Stochastic</option><option value="atr">ATR (volatility)</option></select><button class="ct-btn" onclick="toggleDrawPanel()" title="Edit objects">&#9881;</button></div>
     <div class="chart-sub"><span id="candleCountdownField"><b id="candleCountdown">--:--</b></span><span id="drawHint"></span><span id="mktInfo"></span><div class="price" id="livePrice">--</div></div>
     <span id="cqBtns" style="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:45;max-width:98vw"><span style="display:flex;gap:12px;align-items:center"><button id="cqLock" title="Lock / unlock moving" style="border:0;border-radius:8px;padding:8px 9px;font-size:14px;background:rgba(255,255,255,.14);color:#fff">&#128274;</button><span id="cqGrip" title="Drag to move" style="display:none;touch-action:none;cursor:grab;font-size:20px;color:#fff;padding:0 4px;user-select:none">&#10021;</span><button id="cqBuy" style="border:0;border-radius:9px;padding:11px 16px;font-size:14px;font-weight:800;background:#16c784;color:#04210f;text-transform:uppercase" onclick="placeTrade('btn1')">BUY</button><button id="cqSell" style="border:0;border-radius:9px;padding:11px 16px;font-size:14px;font-weight:800;background:#ff4d6d;color:#fff;text-transform:uppercase" onclick="placeTrade('btn2')">SELL</button><button id="cqStart" style="border:0;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:800;background:#cfc58a;color:#2b2708" onclick="fabToggleBot()">START BOT</button></span></span>
     <div id="chPl" class="hidden-field"></div>
@@ -869,7 +884,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
       <p style="color:var(--muted);font-size:12px;margin-top:4px" id="dtSymbolLabel">--</p>
     </div>
     <div class="card a-pink">
-      <h3>Place Trade</h3>
+      <h3 class="dt-h"><span>Place Trade</span><span class="dt-sigwrap"><button type="button" class="dt-sig wait" id="dtSigBtn" onclick="dtSigTap()">SIGNAL…</button><button type="button" class="dt-sigsw" id="dtSigSw" onclick="dtSigToggle()" title="Turn signal on / off">ON</button><button type="button" class="dv-btn" data-dv="dtrader" onclick="dvToggle('dtrader')" title="Voice commands for this tab">&#127908;</button></span></h3>
+      <div class="dt-sigwarn hidden-field" id="dtSigWarn"></div>
       <div class="row">
         <div class="field">
           <label>Symbol</label>
@@ -1100,6 +1116,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
       <div class="trade-btns">
         <button class="btn" onclick="startBot()">Start Bot</button>
         <button class="btn ghost" onclick="stopBot()">Stop Bot</button>
+        <button type="button" class="btn ghost dv-btn dv-wide" data-dv="bot" onclick="dvToggle('bot')">&#127908; Voice: OFF</button>
       </div>
     </div>
     <div class="card a-orange">
@@ -1221,6 +1238,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
       <div class="field toggle"><input type="checkbox" id="snAutoRearm" checked><label for="snAutoRearm" style="margin:0">Re-arm after trigger</label></div>
     </div>
     <button class="btn rose" id="snArmBtn" onclick="toggleSniperArm()" style="width:100%;padding:16px;font-size:15px;margin-top:6px">ARM SNIPER</button>
+    <button type="button" class="btn ghost dv-btn dv-wide" data-dv="sniperscan" onclick="dvToggle('sniperscan')" style="width:100%;margin-top:6px">&#127908; Voice: OFF</button>
     <p class="tiny" id="snStatusLine" style="margin-top:8px;text-align:center">Disarmed</p>
     <h3 class="h-tools" style="margin-top:16px">Sniper Log <span><button type="button" class="mini-btn del" onclick="clearLog('sniperLog')">&#128465; Clear</button></span></h3>
     <div class="log" id="sniperLog"></div>
@@ -1238,6 +1256,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
       <div class="row"><div class="field toggle"><input type="checkbox" id="spAlt" onchange="spOpp()"><label for="spAlt" style="margin:0">Alternate trades</label></div><div class="field"><label>Alternate with</label><select id="spType2"></select></div></div>
       <div class="row"><div class="field"><label>Runs <span class="tiny">(blank = unlimited)</span></label><input id="spRuns" type="number" min="1" step="1" placeholder="Unlimited"></div></div>
       <div style="display:flex;align-items:center;gap:8px"><button class="btn" id="spBtn" onclick="speedToggle()">START SPEED BOT</button>
+        <button type="button" class="btn ghost dv-btn dv-wide" data-dv="speedbot" onclick="dvToggle('speedbot')">&#127908; Voice: OFF</button>
         <button type="button" class="btn" id="spScanBtn" onclick="$('spScanOn').checked=!$('spScanOn').checked;spsToggle()" style="margin-left:auto;background:#6b7280;color:#fff">Scanner: ON</button>
         <input type="checkbox" id="spScanOn" class="hidden-field" onchange="spsToggle()"></div>
       <div class="tiny" id="spStat" style="margin-top:8px">Idle</div>
@@ -2108,7 +2127,7 @@ function setHint(t){ const h=document.getElementById('drawHint'); if(h) h.textCo
 function toggleDrawPanel(){ document.getElementById('drawPanel').classList.toggle('hidden-field'); renderObjList(); sizeChartToScreen(); }
 function syncCv(){ ensureCanvas(); { const so=chartObjs.find(x=>x.id===sel); if(so&&so.kind==='pos'&&document.getElementById('drawPanel').classList.contains('hidden-field')){ document.getElementById('drawPanel').classList.remove('hidden-field'); renderObjList(); setTimeout(sizeChartToScreen,0); } } drawCv.style.pointerEvents=(drawMode||sel!=null)?'auto':'none';
   setHint(drawMode?(drawMode==='sr'?'Tap chart to place line':'Drag on chart to draw'):(sel!=null?'Drag handles to edit · tap empty area to finish':'')); }
-function drawSelChange(el){ const v=el.value; el.value=''; if(!v) return; if(v==='signal'){ try{ sigScan(); }catch(e){} return; } drawMode=v; sel=null; syncCv(); }
+function drawSelChange(el){ const v=el.value; el.value=''; if(!v) return; if(v==='voice'){ dvToggle('chart'); return; } if(v==='signal'){ try{ sigScan(); }catch(e){} return; } drawMode=v; sel=null; syncCv(); }
 function indSelChange(el){ const v=el.value; el.value=''; if(!v) return;
   chartObjs.push({id:objSeq++,kind:v,color:OBJ_COL[v],period:OBJ_PER[v]||14,ma:'sma'}); saveObjs(); applyObjs(); renderObjList(); }
 function placePosTrade(id){
@@ -5702,7 +5721,21 @@ cashRender();
 
 // ---- Cashier: Deriv inside the site (stays loaded, never re-rendered by statement refreshes) ----
 const DCASH_URL='https://app.deriv.com/cashier/deposit';
-function derivCashOpen(){ try{ const w=window.open(DCASH_URL,'_blank','noopener'); if(!w) location.href=DCASH_URL; }catch(e){ location.href=DCASH_URL; } }
+// Deriv cashier inside the app (same idea as Rubicash). The host sits OUTSIDE #cashRoot so statement refreshes never reload it.
+function derivCashHost(){
+  let h=document.getElementById('derivCashHost');
+  if(!h){ h=document.createElement('div'); h.id='derivCashHost'; h.className='rubi'; h.style.cssText='display:none;max-width:560px;margin:12px auto';
+    h.innerHTML='<b>&#127381; Deriv Cashier</b><div class="tiny" style="margin-top:4px">Deposit and withdraw on Deriv without leaving the app. Sign in if it asks.</div><iframe data-src="'+DCASH_URL+'" allow="clipboard-write; payment" referrerpolicy="no-referrer-when-downgrade"></iframe>'
+      +'<div class="rb"><button type="button" class="btn ghost" onclick="derivCashExt()">Page blank? Open in browser</button><button type="button" class="btn ghost" onclick="derivCashClose()">Close</button></div>';
+    const v=document.getElementById('view-cashier'); if(v) v.appendChild(h); }
+  return h;
+}
+function derivCashOpen(){
+  try{ if(typeof RUBI!=='undefined'&&RUBI.open){ RUBI.open=false; cashRender(); }
+    const h=derivCashHost(), f=h.querySelector('iframe'); if(f&&!f.getAttribute('src')) f.setAttribute('src',f.getAttribute('data-src'));
+    h.style.display='block'; h.scrollIntoView({behavior:'smooth',block:'start'}); }
+  catch(e){ derivCashExt(); }
+}
 function derivCashClose(){ const h=document.getElementById('derivCashHost'); if(h) h.style.display='none'; }
 function derivCashExt(){ try{ window.open(DCASH_URL,'_blank','noopener'); }catch(e){} }
 { const _g=rubiGo, _o=rubiOpen; rubiGo=function(k){ derivCashClose(); _g(k); }; rubiOpen=function(){ derivCashClose(); _o(); }; }
@@ -5971,6 +6004,235 @@ function adaptDir(sym){
   },8000);
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) pull(); });
 })();
+</script>
+<script>
+/* ===== DTrader signal button: scans the selected market and names the best trade type ===== */
+const DTS={on:true,best:null,applied:null,res:null};
+try{ DTS.on=localStorage.getItem('wp_dtsig')!=='0'; }catch(e){}
+const DT_MAP={updown_call:['updown','btn1'],updown_put:['updown','btn2'],evenodd_even:['evenodd','btn1'],evenodd_odd:['evenodd','btn2'],overunder_over:['overunder','btn1'],overunder_under:['overunder','btn2'],matchdiff_match:['matchdiff','btn1'],matchdiff_diff:['matchdiff','btn2'],hl_higher:['higherlower','btn1'],hl_lower:['higherlower','btn2'],touch_touch:['touch','btn1'],touch_no:['touch','btn2'],asian_up:['asianupdown','btn1'],asian_down:['asianupdown','btn2'],reset_call:['resetcallput','btn1'],reset_put:['resetcallput','btn2'],tick_high:['tickhighlow','btn1'],tick_low:['tickhighlow','btn2'],onlyups:['onlyupsdowns','btn1'],onlydowns:['onlyupsdowns','btn2'],ends_in:['endsinout','btn1'],ends_out:['endsinout','btn2'],stays_in:['staysbetween','btn1'],stays_out:['staysbetween','btn2']};
+function dtSigAnalyze(){
+  const sym=$('dtSymbol').value, cur=$('dtTradeType').value, buf=tickBuffers[sym]||[];
+  if(buf.length<60) return {ready:false,have:buf.length};
+  const g=(id,d)=>{ const v=parseFloat(($(id)||{}).value); return isNaN(v)||v<=0?d:v; };
+  const minConf=g('snMinConfidence',60), minHit=g('snMinHitRate',55), minFreq=g('snMinFreq',50);
+  const u=$('dtDurationUnit').value, h=u==='t'?Math.min(10,Math.max(1,parseInt($('dtDuration').value)||5)):5;
+  const sig=computeSignal(sym); let tr=null; try{ tr=scTrendInfo(sym); }catch(e){}
+  const multOnly=isBuySellMarket(sym);
+  let list=[];
+  if(!multOnly){ try{ list=scanSymbol(sym,h).filter(o=>DT_MAP[o.bot]&&cfOk(sym,o.bot)!==false); }catch(e){ list=[]; } }
+  list.forEach(o=>{
+    const miss=[], m=DT_MAP[o.bot]; o.key=m[0]; o.sd=m[1];
+    if(o.hit<minHit) miss.push('hit rate '+o.hit.toFixed(0)+'% < '+minHit+'%');
+    if(o.conf<minConf) miss.push('confidence '+o.conf+'% < '+minConf+'%');
+    if(o.freq<minFreq) miss.push('frequency '+o.freq.toFixed(0)+'% < '+minFreq+'%');
+    if(o.edge<SCAN_MIN_EDGE) miss.push('edge too thin');
+    if(/^(updown|asian)$/.test(o.fam)){
+      const up=/Rise|Up/.test(o.side);
+      if(tr&&tr.d&&tr.d!=='NEUTRAL'&&((tr.d==='CALL')!==up)) miss.push('trend is against it');
+      if(sig.ready&&sig.rsi14!=null){ if(up&&sig.rsi14>78) miss.push('overbought (RSI '+sig.rsi14.toFixed(0)+')'); if(!up&&sig.rsi14<22) miss.push('oversold (RSI '+sig.rsi14.toFixed(0)+')'); }
+    }
+    o.miss=miss; o.fav=!miss.length; o.dscore=o.score-(miss.length*4);
+  });
+  // Buy / Sell (multiplier) from the indicator engine: needs a clear, trend-aligned direction
+  if(multOnly||cur==='multiplier'){
+    if(sig.ready&&sig.direction!=='NEUTRAL'){
+      const up=sig.direction==='CALL', miss=[];
+      if(sig.confidence<Math.max(70,minConf)) miss.push('indicator agreement '+sig.confidence+'%');
+      if(tr&&tr.d&&tr.d!=='NEUTRAL'&&((tr.d==='CALL')!==up)) miss.push('trend is against it');
+      list.push({fam:'mult',key:'multiplier',sd:up?'btn1':'btn2',side:up?'Buy':'Sell',bot:'mult',hit:sig.confidence,freq:sig.confidence,conf:sig.confidence,edge:sig.confidence-50,dur:0,digit:null,miss:miss,fav:!miss.length,score:sig.confidence,dscore:sig.confidence-miss.length*4});
+    }
+  }
+  const favs=list.filter(o=>o.fav&&(multOnly?o.key==='multiplier':true)).sort((a,b)=>b.dscore-a.dscore);
+  let best=favs[0]||null;
+  const prev=DTS.best&&favs.find(o=>o.key===DTS.best.key&&o.side===DTS.best.side);   // hysteresis: don't flip for a tiny lead
+  if(prev&&best&&best!==prev&&best.dscore<prev.dscore+3) best=prev;
+  const selList=list.filter(o=>o.key===cur).sort((a,b)=>b.dscore-a.dscore), selBest=selList[0]||null;
+  return {ready:true,sym,cur,best,selBest,selOk:!!(selBest&&selBest.fav),analysed:selList.length>0,multOnly};
+}
+function dtSigLabel(o){ return String(o.side).toUpperCase(); }
+function dtSigRender(){
+  const b=$('dtSigBtn'), sw=$('dtSigSw'), w=$('dtSigWarn'); if(!b) return;
+  sw.textContent=DTS.on?'ON':'OFF'; sw.classList.toggle('on',DTS.on);
+  if(!DTS.on){ b.className='dt-sig off'; b.textContent='SIGNAL OFF'; w.classList.add('hidden-field'); return; }
+  const r=DTS.res;
+  if(!r||!r.ready){ b.className='dt-sig wait'; b.textContent=r&&r.have!=null?('ANALYSING '+Math.min(99,Math.round(r.have/60*100))+'%'):'SIGNAL…'; w.classList.add('hidden-field'); return; }
+  const curLbl=(TRADE_TYPES[r.cur]||{}).label||r.cur;
+  if(r.best){
+    DTS.best=r.best;
+    const same=r.selOk&&r.selBest&&r.selBest.key===r.best.key;
+    if(r.analysed&&!r.selOk){
+      b.className='dt-sig bad'; b.textContent='⚠ '+dtSigLabel(r.best)+' · TAP';
+      w.textContent='⚠ '+curLbl+' is not suitable on '+marketName(r.sym)+' now ('+(r.selBest&&r.selBest.miss.length?r.selBest.miss.slice(0,2).join(', '):'no clear edge')+'). Best right now: '+r.best.side+' ('+r.best.hit.toFixed(0)+'% hit, '+r.best.conf+'% confidence). Tap the button to switch.';
+      w.classList.remove('hidden-field');
+    } else if(!r.analysed&&r.cur!==r.best.key&&!r.multOnly){
+      b.className='dt-sig bad'; b.textContent='⚠ '+dtSigLabel(r.best)+' · TAP';
+      w.textContent='⚠ '+curLbl+' can’t be checked by the signal engine. Best checked trade now: '+r.best.side+' ('+r.best.hit.toFixed(0)+'% hit). Tap the button to switch.';
+      w.classList.remove('hidden-field');
+    } else {
+      b.className='dt-sig go'; b.textContent=(same?'✔ ':'● ')+dtSigLabel(r.best)+' · '+Math.round(r.best.hit)+'%';
+      w.classList.add('hidden-field');
+    }
+  } else {
+    DTS.best=null; b.className='dt-sig bad'; b.textContent='⚠ WAIT · NO EDGE';
+    w.textContent='⚠ No trade type has a clear edge on '+marketName(r.sym)+' right now ('+((r.selBest&&r.selBest.miss.length)?curLbl+': '+r.selBest.miss.slice(0,2).join(', '):'indicators disagree')+'). Better to wait or pick another market.';
+    w.classList.remove('hidden-field');
+  }
+}
+function dtSigTick(){ if(!DTS.on){ dtSigRender(); return; } try{ DTS.res=dtSigAnalyze(); }catch(e){ DTS.res=null; } dtSigRender(); }
+function dtSigHideOther(){
+  const a=DTS.applied, b1=$('dtBtn1'), b2=$('dtBtn2'), box=b1&&b1.parentNode; if(!a||!b1||!b2) return;
+  if(a.side==='btn2'){ b1.style.display='none'; b2.style.display=''; } else { b1.style.display=''; b2.style.display='none'; }
+  if(box) box.style.gridTemplateColumns='1fr';
+}
+function dtSigClearApplied(){
+  if(!DTS.applied) return; DTS.applied=null;
+  const box=$('dtBtn1')&&$('dtBtn1').parentNode; if(box) box.style.gridTemplateColumns='';
+  $('dtBtn1').style.display=''; try{ dtTradeTypeChange(); }catch(e){}   // restores both buttons as they were
+}
+function dtSigApply(o){
+  if(!o) return;
+  const sel=$('dtTradeType'); sel.value=o.key; syncTradeType(o.key,'dtTradeType');
+  if(o.digit!=null&&TRADE_TYPES[o.key]&&TRADE_TYPES[o.key].needsDigit) $('dtDigit').value=String(o.digit);
+  if(o.dur&&!(TRADE_TYPES[o.key]||{}).isMultiplier){ const un=$('dtDurationUnit'); if([...un.options].some(x=>x.value==='t')){ un.value='t'; $('dtDuration').value=String(Math.max(1,o.dur)); } }
+  DTS.applied={key:o.key,side:o.sd}; dtSigHideOther(); dtSigTick();
+  try{ toastM('Signal applied: '+o.side); }catch(e){}
+}
+function dtSigTap(){
+  if(!DTS.on){ dtSigToggle(); return; }
+  const r=DTS.res; if(!r||!r.ready){ try{ toastM('Still collecting ticks — one moment'); }catch(e){} return; }
+  if(!r.best){ try{ toastM('No trade has a clear edge right now — wait'); }catch(e){} return; }
+  dtSigApply(r.best);
+}
+function dtSigToggle(){
+  DTS.on=!DTS.on; try{ localStorage.setItem('wp_dtsig',DTS.on?'1':'0'); }catch(e){}
+  if(!DTS.on) dtSigClearApplied();
+  dtSigTick();
+}
+{ const _t=dtTradeTypeChange; dtTradeTypeChange=function(){ _t(); try{ if(DTS.applied){ if($('dtTradeType').value!==DTS.applied.key){ DTS.applied=null; const bx=$('dtBtn1')&&$('dtBtn1').parentNode; if(bx) bx.style.gridTemplateColumns=''; $('dtBtn1').style.display=''; } else dtSigHideOther(); } dtSigTick(); }catch(e){} }; }
+{ const _s=syncSymbol; syncSymbol=function(){ _s.apply(this,arguments); try{ dtSigClearApplied(); DTS.best=null; DTS.res=null; dtSigRender(); }catch(e){} }; }
+setInterval(function(){ try{ const v=$('view-dtrader'); if(DTS.on&&v&&v.classList.contains('active')) dtSigTick(); }catch(e){} },1500);
+dtSigRender();
+
+/* ===== Voice commands: enabled per tab, only listens while that tab is open ===== */
+const DV={on:{},rec:null,running:false,done:{},lastTrade:0,restarts:0,lastStart:0,
+  SR:window.SpeechRecognition||window.webkitSpeechRecognition};
+const DV_TABS={bot:'Bot',sniperscan:'Sniper Scan',speedbot:'Speed Bot',dtrader:'DTrader',chart:'Chart'};
+function dvTab(){ const v=document.querySelector('.view.active'); return v?v.id.replace('view-',''):''; }
+function dvPill(t,cls){ let p=$('dvPill'); if(!p){ p=document.createElement('div'); p.id='dvPill'; document.body.appendChild(p); } if(t==null){ p.className=''; return; } p.textContent=t; p.className='show'+(cls?' '+cls:''); }
+function dvButtons(){
+  document.querySelectorAll('[data-dv]').forEach(b=>{ const on=!!DV.on[b.dataset.dv]; b.classList.toggle('on',on); if(b.classList.contains('dv-wide')) b.innerHTML='&#127908; Voice: '+(on?'ON':'OFF'); });
+  const o=$('dvChartOpt'); if(o) o.textContent='\u{1F3A4} Voice: '+(DV.on.chart?'ON':'OFF');
+}
+function dvToggle(tab){
+  if(!DV.SR){ toastM('Voice commands need Chrome, Edge or Safari (https). This browser has no speech recognition.'); return; }
+  DV.on[tab]=!DV.on[tab]; dvButtons();
+  if(DV.on[tab]){ toastM('Voice ON for '+DV_TABS[tab]+' — '+dvHelp(tab)); } else toastM('Voice OFF for '+DV_TABS[tab]);
+  dvSync();
+}
+function dvHelp(tab){
+  if(tab==='dtrader'||tab==='chart') return 'say a trade: "rise", "fall", "even", "odd", "over 4", "under 3", "matches 5", "differs 5", "higher", "lower", "buy", "sell", "take signal"';
+  if(tab==='sniperscan') return 'say "start" (arm) or "stop" (disarm)';
+  return 'say "start" or "stop"';
+}
+function dvSync(){
+  const want=!!DV.on[dvTab()];
+  if(want&&!DV.running) dvStart();
+  else if(!want&&DV.running) dvStop();
+  else if(!want) dvPill(null);
+}
+function dvStop(){ DV.running=false; if(DV.rec){ const r=DV.rec; DV.rec=null; try{ r.onend=null; r.abort(); }catch(e){} } dvPill(null); }
+function dvStart(){
+  if(!DV.SR||DV.rec) return;
+  const r=new DV.SR(); DV.rec=r; r.lang='en-US'; r.continuous=true; r.interimResults=true; r.maxAlternatives=3;
+  r.onstart=function(){ DV.running=true; DV.done={}; DV.lastStart=Date.now(); dvPill('\u{1F3A4} Listening… '+DV_TABS[dvTab()]); };
+  r.onresult=function(e){
+    const tab=dvTab(); if(!DV.on[tab]) return;
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(DV.done[i]) continue; const res=e.results[i], heard=res[0].transcript.trim();
+      if(heard) dvPill('\u{1F3A4} “'+heard+'”');
+      for(let k=0;k<res.length;k++){
+        const cmd=dvParse(tab,res[k].transcript);
+        if(cmd){ DV.done[i]=true; dvExec(tab,cmd,heard); dvRestartSoon(); return; }
+      }
+    }
+  };
+  r.onerror=function(e){
+    const er=e&&e.error;
+    if(er==='not-allowed'||er==='service-not-allowed'){ DV.on={}; dvButtons(); dvStop(); toastM('Microphone blocked — allow the mic for this site, then switch Voice on again.'); }
+    else if(er==='network'){ dvPill('\u{1F3A4} No internet for speech recognition','err'); }
+    else if(er==='audio-capture'){ dvPill('\u{1F3A4} No microphone found','err'); }
+  };
+  r.onend=function(){ DV.running=false; DV.rec=null; if(DV.on[dvTab()]&&!document.hidden){ const quick=Date.now()-DV.lastStart<1500; DV.restarts=quick?DV.restarts+1:0; if(DV.restarts>6){ DV.on={}; dvButtons(); dvPill(null); toastM('Voice stopped — the browser keeps closing the microphone.'); return; } setTimeout(dvSync,quick?600:120); } };
+  try{ r.start(); }catch(e){ DV.rec=null; }
+}
+function dvRestartSoon(){ try{ if(DV.rec) DV.rec.abort(); }catch(e){} }   // fresh session after every command: no repeated or stale text
+const DV_NUM={zero:0,oh:0,one:1,won:1,two:2,to:2,too:2,three:3,four:4,for:4,five:5,six:6,seven:7,eight:8,ate:8,nine:9};
+function dvDigit(w){ if(w==null) return null; if(/^\d$/.test(w)) return +w; return (w in DV_NUM)?DV_NUM[w]:null; }
+function dvParse(tab,raw){
+  let t=String(raw||'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim(); if(!t) return null;
+  const words=t.replace(/\b(please|now|the|a|an|bot|trade|order|it|and|just|hey)\b/g,'').replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
+  if(!words.length||words.length>5) return null;   // long sentences are ordinary talk, not commands
+  t=words.join(' ');
+  if(tab==='bot'||tab==='speedbot'||tab==='sniperscan'){
+    if(/\b(stop|halt|cancel|pause|end|disarm|kill|abort)\b/.test(t)) return {a:'stop'};
+    if(/\b(start|begin|run|go|launch|arm|fire)\b/.test(t)) return {a:'start'};
+    return null;
+  }
+  if(tab==='dtrader'||tab==='chart'){
+    let m;
+    if(/\b(take )?(signal|best)\b/.test(t)) return {a:'signal'};
+    const dg=re=>{ const x=re.exec(t); return x?dvDigit(x[2]):undefined; };
+    if(/\bno touch\b/.test(t)) return {a:'trade',key:'touch',sd:'btn2'};
+    if(/\btouch\b/.test(t)) return {a:'trade',key:'touch',sd:'btn1'};
+    if(/\basian up\b/.test(t)) return {a:'trade',key:'asianupdown',sd:'btn1'};
+    if(/\basian down\b/.test(t)) return {a:'trade',key:'asianupdown',sd:'btn2'};
+    if(/\bends? (between|in)\b/.test(t)) return {a:'trade',key:'endsinout',sd:'btn1'};
+    if(/\bends? (outside|out)\b/.test(t)) return {a:'trade',key:'endsinout',sd:'btn2'};
+    if(/\bstays? (between|in)\b/.test(t)) return {a:'trade',key:'staysbetween',sd:'btn1'};
+    if(/\b(goes|stays) (outside|out)\b/.test(t)) return {a:'trade',key:'staysbetween',sd:'btn2'};
+    if(/\breset call\b/.test(t)) return {a:'trade',key:'resetcallput',sd:'btn1'};
+    if(/\breset put\b/.test(t)) return {a:'trade',key:'resetcallput',sd:'btn2'};
+    if(/\bhigh tick\b/.test(t)) return {a:'trade',key:'tickhighlow',sd:'btn1'};
+    if(/\blow tick\b/.test(t)) return {a:'trade',key:'tickhighlow',sd:'btn2'};
+    if(/\bonly ups?\b/.test(t)) return {a:'trade',key:'onlyupsdowns',sd:'btn1'};
+    if(/\bonly downs?\b/.test(t)) return {a:'trade',key:'onlyupsdowns',sd:'btn2'};
+    if(/\bhigher\b/.test(t)) return {a:'trade',key:'higherlower',sd:'btn1'};
+    if(/\blower\b/.test(t)) return {a:'trade',key:'higherlower',sd:'btn2'};
+    if((m=/\b(over|above)(?: (\w+))?$/.exec(t))) { const d=dvDigit(m[2]); return {a:'trade',key:'overunder',sd:'btn1',digit:d}; }
+    if((m=/\b(under|below)(?: (\w+))?$/.exec(t))) { const d=dvDigit(m[2]); return {a:'trade',key:'overunder',sd:'btn2',digit:d}; }
+    if((m=/\b(match|matches)(?: (\w+))?$/.exec(t))) { return {a:'trade',key:'matchdiff',sd:'btn1',digit:dvDigit(m[2])}; }
+    if((m=/\b(differ|differs|different)(?: (\w+))?$/.exec(t))) { return {a:'trade',key:'matchdiff',sd:'btn2',digit:dvDigit(m[2])}; }
+    if(/\beven\b/.test(t)) return {a:'trade',key:'evenodd',sd:'btn1'};
+    if(/\bodd\b/.test(t)) return {a:'trade',key:'evenodd',sd:'btn2'};
+    if(/\b(rise|raise|rice|up|call)\b/.test(t)) return {a:'trade',key:'updown',sd:'btn1'};
+    if(/\b(fall|fell|down|put)\b/.test(t)) return {a:'trade',key:'updown',sd:'btn2'};
+    if(/\bbuy\b/.test(t)) return {a:'trade',key:'multiplier',sd:'btn1'};
+    if(/\bsell\b/.test(t)) return {a:'trade',key:'multiplier',sd:'btn2'};
+  }
+  return null;
+}
+function dvExec(tab,c,heard){
+  let ok=true, label='';
+  try{
+    if(tab==='bot'){ if(c.a==='stop'){ if(botRunning) stopBot(); label='Bot stopped'; } else { if(!botRunning) fabToggleBot(); label='Bot started'; } }
+    else if(tab==='sniperscan'){ if(c.a==='stop'){ if(sniperArmed) toggleSniperArm(); label='Sniper disarmed'; } else { if(!sniperArmed) toggleSniperArm(); label='Sniper armed'; } }
+    else if(tab==='speedbot'){ if(c.a==='stop'){ if(speedOn) speedToggle(); label='Speed bot stopped'; } else { if(!speedOn) speedToggle(); label='Speed bot started'; } }
+    else {
+      if(!authorized){ dvPill('\u{1F3A4} Not connected','err'); return; }
+      if(Date.now()-DV.lastTrade<1200){ return; } DV.lastTrade=Date.now();
+      if(c.a==='signal'){ const r=DTS.res; if(!r||!r.best){ dvPill('\u{1F3A4} No signal right now','err'); return; } dtSigApply(r.best); placeTrade(r.best.sd); label='Signal trade: '+r.best.side; }
+      else {
+        $('dtTradeType').value=c.key; syncTradeType(c.key,'dtTradeType');
+        if(c.digit!=null&&TRADE_TYPES[c.key].needsDigit) $('dtDigit').value=String(c.digit);
+        placeTrade(c.sd); label='Placed: '+TRADE_TYPES[c.key][c.sd].label+(c.digit!=null&&TRADE_TYPES[c.key].needsDigit?' '+c.digit:'');
+      }
+    }
+  }catch(e){ ok=false; }
+  dvPill(ok?('✔ '+label):'Command failed',ok?'hit':'err'); setTimeout(()=>{ if(DV.rec&&DV.on[dvTab()]) dvPill('\u{1F3A4} Listening… '+DV_TABS[dvTab()]); },1400);
+}
+{ const _g=goToTab; goToTab=function(n){ _g.apply(this,arguments); try{ dvSync(); }catch(e){} }; }
+document.addEventListener('visibilitychange',function(){ try{ if(document.hidden) dvStop(); else dvSync(); }catch(e){} });
+dvButtons();
 </script>
 </body>
 </html>
