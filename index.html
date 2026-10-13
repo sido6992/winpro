@@ -4878,27 +4878,53 @@ const CM_COL={total:'#fbbf24',paid:'#2dd4bf',pending:'#ff8a4c',other:'#4da3ff'};
 const commMoney=k=>/(usd|amount|markup|commission|earning|revenue|payout|paid|pending|balance|total|withdraw)/i.test(k)&&!/(count|number|clients|sign|trades|transactions|users)/i.test(k);
 const commName=k=>k.split(' › ').map(s=>s.replace(/_/g,' ')).join(' › ');
 let commW={bal:0}, CX={busy:false,err:'',out:null,n:0,bal:null,raw:null};
-function commAppName(name,id,hint){
-  // show the app NAME only — never the numeric app id
-  const idLike=x=>x==null||/^\s*(app\s*)?[0-9]{2,}\s*$/i.test(String(x))||/^[A-Za-z0-9]{18,}$/.test(String(x).trim());
-  if(name&&!idLike(name)) return String(name);
-  const raw=String(id!=null?id:(hint||'')).replace(/^App\s+/i,'').trim();
-  if(raw&&(raw===CLIENT_ID||raw===(COMM.app||''))) return 'WIN PRO';
-  return 'Other app';
+let APPN=loadJ('wp_appnames',{}), COMM_MK=null;
+const appIdLike=x=>x==null||/^\s*(app\s*)?[0-9]{2,}\s*$/i.test(String(x))||/^[A-Za-z0-9]{18,}$/.test(String(x).trim());
+function appNameOf(id,named){
+  if(id!=null&&APPN[String(id)]) return APPN[String(id)];          // name you set or Deriv returned
+  if(named&&!appIdLike(named)) return String(named);
+  if(id!=null&&(String(id)===CLIENT_ID||String(id)===(COMM.app||''))) return 'WIN PRO';
+  return '';
 }
+function appLearn(id,name){ if(id==null||!name||appIdLike(name)) return false; id=String(id); if(APPN[id]===name) return false; APPN[id]=String(name); saveJ('wp_appnames',APPN); return true; }
+function commRename(id){
+  const cur=APPN[id]||''; const n=prompt('Name for this app:',cur); if(n===null) return;
+  if(n.trim()){ APPN[id]=n.trim(); } else delete APPN[id]; saveJ('wp_appnames',APPN); commAppsRefresh();
+}
+function commAppsRefresh(){
+  const box=document.getElementById('commAppsBox'); const html=commApps(COMM_MK);
+  if(box) box.innerHTML=html;
+  commOut=commOut.replace(/(<div id="commAppsBox">)[\s\S]*?(<\/div><!--cab-->)/,(m,x,y)=>x+html+y);
+}
+function commAppIds(j){ const ids=[]; (function w(o,h){ if(!o||typeof o!=='object') return; if(Array.isArray(o)){ o.forEach(x=>w(x,h)); return; }
+  const id=o.app_id!=null?o.app_id:(o.application_id!=null?o.application_id:h); if(id!=null&&!ids.includes(String(id))) ids.push(String(id));
+  Object.keys(o).forEach(k=>{ const c=o[k]; if(c&&typeof c==='object') w(c,(!Array.isArray(c)&&/^\d{3,}$/.test(k))?k:null); }); })(j,null); return ids; }
 function commApps(j){
   const M={}, num=v=>typeof v==='number'?v:(typeof v==='string'&&/^-?\d+(\.\d+)?$/.test(v)?parseFloat(v):NaN);
   const val=o=>{ let b=NaN; for(const k in o){ if(/(markup|commission|earning|revenue)/i.test(k)&&!/(count|percent|rate|id|clients|transactions|trades)/i.test(k)){ const n=num(o[k]); if(isFinite(n)&&(!isFinite(b)||/usd|total|amount/i.test(k))) b=n; } } return b; };
   const walk=(o,hint)=>{ if(!o||typeof o!=='object') return; if(Array.isArray(o)){ o.forEach(x=>walk(x,hint)); return; }
-    const named=o.app_name||o.application_name||o.name, hasId=o.app_id!=null||o.application_id!=null;
-    const nm=commAppName(named,(o.app_id!=null?o.app_id:o.application_id),hint), v=val(o);
-    if(nm&&isFinite(v)&&(named||hasId||hint)){ M[nm]=(M[nm]||0)+v; return; }
-    Object.keys(o).forEach(k=>{ const c=o[k]; if(c&&typeof c==='object') walk(c,(!Array.isArray(c)&&/^\d{3,}$/.test(k))?'App '+k:null); }); };
+    const named=o.app_name||o.application_name||o.name, id=o.app_id!=null?o.app_id:(o.application_id!=null?o.application_id:hint), v=val(o);
+    if(isFinite(v)&&(named||id!=null)){ const key=id!=null?String(id):String(named); const r=M[key]||(M[key]={id:id!=null?String(id):null,named:null,v:0}); r.v+=v; if(named&&!appIdLike(named)) r.named=String(named); return; }
+    Object.keys(o).forEach(k=>{ const c=o[k]; if(c&&typeof c==='object') walk(c,(!Array.isArray(c)&&/^\d{3,}$/.test(k))?k:null); }); };
   walk(j,null);
-  const rows=Object.entries(M).sort((a,b)=>b[1]-a[1]);
+  const rows=Object.values(M).sort((a,b)=>b.v-a.v); let un=0;
   return '<div class="tiny" style="margin:4px 0 6px;font-weight:800;color:#fbbf24;text-transform:uppercase">Earning apps</div>'
-    +(rows.length?rows.map(r=>'<div class="cm-row" style="border-color:#fbbf24;color:#fbbf24"><span>'+escHtml(r[0])+'</span><b>$'+gf(r[1])+'</b></div>').join(''):'<p class="tiny">No per-app markup returned for this period.</p>');
+    +(rows.length?rows.map(r=>{ const nm=appNameOf(r.id,r.named)||(r.id!=null?r.id:('App '+(++un))); const key=r.id!=null?r.id:nm;
+      return '<div class="cm-row" style="border-color:#fbbf24;color:#fbbf24"><span>'+escHtml(nm)+' <a data-k="'+escHtml(key)+'" onclick="commRename(this.dataset.k)" title="Rename" style="cursor:pointer;opacity:.7">&#9998;</a></span><b>$'+gf(r.v)+'</b></div>'; }).join(''):'<p class="tiny">No per-app markup returned for this period.</p>');
 }
+// look up real app names from Deriv (works for apps your account owns); anything it can't name shows its app id until you tap ✎
+function commAppLookup(j){
+  try{ const need=commAppIds(j).filter(id=>!appNameOf(id,null)); if(!need.length) return;
+    send({app_list:1}); need.slice(0,25).forEach(id=>{ const n=parseInt(id); if(n) send({app_get:n}); }); }catch(e){}
+}
+const _hmAN=handleMessage;
+handleMessage=function(m){ _hmAN(m);
+  try{ let ch=false;
+    if(m.msg_type==='app_list'&&Array.isArray(m.app_list)) m.app_list.forEach(a=>{ if(appLearn(a.app_id,a.name)) ch=true; });
+    if(m.msg_type==='app_get'&&m.app_get&&appLearn(m.app_get.app_id,m.app_get.name)) ch=true;
+    if(ch&&COMM_MK) commAppsRefresh();
+  }catch(e){}
+};
 const cxNum=v=>typeof v==='number'?v:(typeof v==='string'&&/^-?\d+(\.\d+)?$/.test(v.trim())?parseFloat(v):NaN);
 function cxRows(j){ if(Array.isArray(j)) return j; if(!j||typeof j!=='object') return [];
   for(const k of ['data','transactions','items','results','records']){ const v=j[k]; if(Array.isArray(v)) return v; if(v&&typeof v==='object'){ const r=cxRows(v); if(r.length) return r; } }
@@ -4939,6 +4965,7 @@ async function commLoad(){
     else errs.push(n+': '+(r.reason&&r.reason.message||'failed'));
   });
   const keys=Object.keys(A);
+  COMM_MK=mk.status==='fulfilled'?mk.value:null;
   const sub=k=>k.replace(/^(Markup|Overview) › /,'');
   const best=(test,pref)=>{ const ks=keys.filter(k=>test(sub(k))); if(!ks.length) return null; ks.sort((x,y)=>(pref(sub(y))-pref(sub(x)))||(x.startsWith('Markup')?-1:0)-(y.startsWith('Markup')?-1:0)); return ks[0]; };
   const kMarkup=best(k=>/markup/i.test(k)&&!/(count|transaction|trades|clients|percent|rate)/i.test(k),k=>(/total/i.test(k)?2:0)+(/usd/i.test(k)?1:0));
@@ -4949,10 +4976,10 @@ async function commLoad(){
   const T=(l,c,k,money)=>k?'<div class="cm-tile" style="border-color:'+c+';background:'+c+'22"><small style="color:'+c+'">'+l+'</small><b>'+(money?'$'+gf(A[k]):Math.round(A[k]).toLocaleString())+'</b></div>':'';
   const tiles=(kMarkup||kCli)?T('Total app markup','#fbbf24',kMarkup,true)+T('Total clients','#2dd4bf',kCli,false):'';
   let h='<div class="tiny">'+a+' → '+b+' (UTC)</div>';
-  if(tiles) h+='<div class="cm-tiles">'+tiles+'</div><div id="commWallet"></div>'+commApps(mk.status==='fulfilled'?mk.value:null);
+  if(tiles) h+='<div class="cm-tiles">'+tiles+'</div><div id="commWallet"></div>'+'<div id="commAppsBox">'+commApps(COMM_MK)+'</div><!--cab-->';
   else if(!errs.length) h+='<p class="tiny" style="margin-top:8px">Deriv returned no commission figures for this period.</p>'+raws.join('');
   if(errs.length&&!tiles) h+='<div class="cm-err">'+errs.map(escHtml).join('<br>')+'</div>';
-  commOut=h; commBusy=false; commRender(true); commXferLoad();
+  commOut=h; commBusy=false; commRender(true); commXferLoad(); if(COMM_MK) commAppLookup(COMM_MK);
 }
 function commRender(keep){
   const r=$('commRoot'); if(!r) return;
