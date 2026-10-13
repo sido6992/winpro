@@ -1347,6 +1347,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
         <h3>My copy tokens</h3>
         <div id="myTokens"><div class="tiny">Loading…</div></div>
         <h3 style="margin-top:14px">People copying me</h3>
+        <label class="tiny" style="display:flex;align-items:center;gap:8px;margin:0 0 8px;cursor:pointer"><input type="checkbox" id="showCliTog" checked onchange="setShowCli(this.checked)" style="width:auto;margin:0"> Show clients' account IDs</label>
         <div id="myCopiers"><div class="tiny">No copiers yet.</div></div>
         <h3 style="margin-top:14px">My copy stats</h3>
         <div id="myCopyStats" class="tiny">--</div>
@@ -3437,7 +3438,14 @@ function onCopyList(msg){
   const tl = document.getElementById('copyingList');
   tl.innerHTML = traders.length ? traders.map((t,i)=>`<div class="ct-item"><span><b>${escHtml(t.loginid||'Trader')}</b><br><small>${t.assets&&t.assets.length?escHtml(t.assets.join(', ')):'all markets'}${t.max_trade_stake?' · max $'+escHtml(t.max_trade_stake):''}</small></span><button class="btn ghost" data-i="${i}">Stop</button></div>`).join('') : '<div class="tiny">Nothing yet.</div>';
   tl.querySelectorAll('button[data-i]').forEach(b=>b.addEventListener('click',()=>stopCopying(traders[+b.dataset.i].token)));
-  document.getElementById('myCopiers').innerHTML = copiers.length ? copiers.map(c=>`<div class="ct-item"><span><b>${escHtml(c.loginid||'Copier')}</b></span></div>`).join('') : '<div class="tiny">No copiers yet.</div>';
+  LAST_COPIERS=copiers; renderCopiers();
+}
+let LAST_COPIERS=[], SHOW_CLI=true; try{ SHOW_CLI=localStorage.getItem('wp_showcli')!=='0'; }catch(e){}
+function setShowCli(on){ SHOW_CLI=!!on; try{ localStorage.setItem('wp_showcli',on?'1':'0'); }catch(e){} renderCopiers(); }
+function renderCopiers(){
+  const el=document.getElementById('myCopiers'); if(!el) return;
+  const t=document.getElementById('showCliTog'); if(t) t.checked=SHOW_CLI;
+  el.innerHTML = LAST_COPIERS.length ? LAST_COPIERS.map((c,i)=>`<div class="ct-item"><span><b>${SHOW_CLI?escHtml(c.loginid||'Copier'):'Client '+(i+1)}</b></span></div>`).join('') : '<div class="tiny">No copiers yet.</div>';
 }
 function onCopyStats(msg){
   const el = document.getElementById('myCopyStats');
@@ -4870,12 +4878,20 @@ const CM_COL={total:'#fbbf24',paid:'#2dd4bf',pending:'#ff8a4c',other:'#4da3ff'};
 const commMoney=k=>/(usd|amount|markup|commission|earning|revenue|payout|paid|pending|balance|total|withdraw)/i.test(k)&&!/(count|number|clients|sign|trades|transactions|users)/i.test(k);
 const commName=k=>k.split(' › ').map(s=>s.replace(/_/g,' ')).join(' › ');
 let commW={bal:0}, CX={busy:false,err:'',out:null,n:0,bal:null,raw:null};
+function commAppName(name,id,hint){
+  // show the app NAME only — never the numeric app id
+  const idLike=x=>x==null||/^\s*(app\s*)?[0-9]{2,}\s*$/i.test(String(x))||/^[A-Za-z0-9]{18,}$/.test(String(x).trim());
+  if(name&&!idLike(name)) return String(name);
+  const raw=String(id!=null?id:(hint||'')).replace(/^App\s+/i,'').trim();
+  if(raw&&(raw===CLIENT_ID||raw===(COMM.app||''))) return 'WIN PRO';
+  return 'Other app';
+}
 function commApps(j){
   const M={}, num=v=>typeof v==='number'?v:(typeof v==='string'&&/^-?\d+(\.\d+)?$/.test(v)?parseFloat(v):NaN);
   const val=o=>{ let b=NaN; for(const k in o){ if(/(markup|commission|earning|revenue)/i.test(k)&&!/(count|percent|rate|id|clients|transactions|trades)/i.test(k)){ const n=num(o[k]); if(isFinite(n)&&(!isFinite(b)||/usd|total|amount/i.test(k))) b=n; } } return b; };
   const walk=(o,hint)=>{ if(!o||typeof o!=='object') return; if(Array.isArray(o)){ o.forEach(x=>walk(x,hint)); return; }
     const named=o.app_name||o.application_name||o.name, hasId=o.app_id!=null||o.application_id!=null;
-    const nm=named||(hasId?'App '+(o.app_id!=null?o.app_id:o.application_id):hint), v=val(o);
+    const nm=commAppName(named,(o.app_id!=null?o.app_id:o.application_id),hint), v=val(o);
     if(nm&&isFinite(v)&&(named||hasId||hint)){ M[nm]=(M[nm]||0)+v; return; }
     Object.keys(o).forEach(k=>{ const c=o[k]; if(c&&typeof c==='object') walk(c,(!Array.isArray(c)&&/^\d{3,}$/.test(k))?'App '+k:null); }); };
   walk(j,null);
@@ -4971,7 +4987,7 @@ function cashRender(){
     +'<div class="stat"><span style="color:var(--blue)">Account</span><span>'+(ACCOUNT_ID?(demo?'DEMO · ':'REAL · ')+ACCOUNT_ID:'--')+'</span></div>'
     +'<div class="stat"><span style="color:var(--amber)">Balance</span><b>'+$('balance').textContent+'</b></div>'
     +'<div class="cs-grid">'+L('&#129309; Payment agents','#fbbf24','https://app.deriv.com/cashier/payment-agent')+'<a role="button" style="background:#ff444f;color:#fff;cursor:pointer" onclick="derivCashOpen()">&#127381; Deriv</a>'+'</div>'
-    +'<p class="tiny">Use Payment agents or Deriv to deposit and withdraw — both open right here in the app.'+(demo?' Your account is a DEMO — use Account Info to reset its balance.':'')+'</p>'
+    +'<p class="tiny">Payment agents opens here in the app; Deriv opens the Deriv cashier in your browser.'+(demo?' Your account is a DEMO — use Account Info to reset its balance.':'')+'</p>'
     +'<h3 class="h-tools" style="margin-top:14px">History <span><select onchange="CASH_F=this.value;cashRender()" style="padding:4px"><option value="all"'+(CASH_F==='all'?' selected':'')+'>All</option><option value="dep"'+(CASH_F==='dep'?' selected':'')+'>Deposits</option><option value="wd"'+(CASH_F==='wd'?' selected':'')+'>Withdrawals</option></select> <button type="button" class="mini-btn ref" onclick="try{acctRefresh(true)}catch(e){};cashRender()">&#8635;</button></span></h3>'+rows+'</div>';
 }
 const _hm3=handleMessage;
@@ -5730,12 +5746,7 @@ function derivCashHost(){
     const v=document.getElementById('view-cashier'); if(v) v.appendChild(h); }
   return h;
 }
-function derivCashOpen(){
-  try{ if(typeof RUBI!=='undefined'&&RUBI.open){ RUBI.open=false; cashRender(); }
-    const h=derivCashHost(), f=h.querySelector('iframe'); if(f&&!f.getAttribute('src')) f.setAttribute('src',f.getAttribute('data-src'));
-    h.style.display='block'; h.scrollIntoView({behavior:'smooth',block:'start'}); }
-  catch(e){ derivCashExt(); }
-}
+function derivCashOpen(){ derivCashExt(); }   // Deriv cashier opens in the browser, outside this app/site
 function derivCashClose(){ const h=document.getElementById('derivCashHost'); if(h) h.style.display='none'; }
 function derivCashExt(){ try{ window.open(DCASH_URL,'_blank','noopener'); }catch(e){} }
 { const _g=rubiGo, _o=rubiOpen; rubiGo=function(k){ derivCashClose(); _g(k); }; rubiOpen=function(){ derivCashClose(); _o(); }; }
