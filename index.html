@@ -434,6 +434,11 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .wp-name{display:inline-block;transform:skewX(-9deg);letter-spacing:1.2px;white-space:nowrap}
 .brand h1.wp-name{font-size:21px}
 .login-card h2.wp-name{font-size:32px;margin-bottom:10px!important}
+.login-card{width:min(400px,92vw)!important;padding:34px 28px!important}
+.login-card .logo-img.big{width:110px!important;height:auto!important}
+.login-card .btn{padding:14px 16px!important;font-size:15px!important}
+.login-card input{padding:14px!important;font-size:15px!important}
+.login-card p{font-size:14px!important}
 @media(max-width:520px){.brand h1.wp-name{font-size:17px}}
 .ai-msg{font-family:inherit;font-size:13px;line-height:1.55;margin:4px 0 12px;padding:8px 10px;border-left:3px solid var(--violet);background:rgba(255,255,255,.03);border-radius:0 8px 8px 0}
 .ai-h{color:var(--teal);font-weight:800;font-size:14px;margin:10px 0 4px;border-bottom:1px solid var(--border);padding-bottom:3px}
@@ -1791,6 +1796,30 @@ async function startLogin(signup){
     setLoginMsg('Could not start login: ' + (e.message || e) + ' (PKCE needs HTTPS or localhost).');
   }
 }
+async function exchangeCode(code, verifier){
+  const body = JSON.stringify({ code:code, code_verifier:verifier, redirect_uri:REDIRECT_URI });
+  let lastErr = null;
+  for(let i=0;i<2;i++){
+    try{
+      const ctl = new AbortController(), tm = setTimeout(()=>ctl.abort(), 45000);
+      const r = await fetch(API_BASE + '/api/token', { method:'POST', headers:{'Content-Type':'application/json'}, body:body, signal:ctl.signal });
+      clearTimeout(tm);
+      const j = await r.json().catch(()=>({}));
+      if(r.ok && j.access_token) return j;
+      const er = new Error(j.error_description || j.error || ('Token exchange failed (' + r.status + ')')); er.server = true; throw er;
+    }catch(e){ if(e.server) throw e; lastErr = e; wakeBackend(); await new Promise(res=>setTimeout(res,3000)); }
+  }
+  try{   // backend unreachable: exchange the code directly with Deriv (PKCE needs no secret)
+    const r = await fetch('https://auth.deriv.com/oauth2/token', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({ grant_type:'authorization_code', client_id:CLIENT_ID, code:code, code_verifier:verifier, redirect_uri:REDIRECT_URI }) });
+    const j = await r.json().catch(()=>({}));
+    if(r.ok && j.access_token) return j;
+    const er = new Error(j.error_description || j.error || ('Token exchange failed (' + r.status + ')')); er.server = true; throw er;
+  }catch(e){
+    if(e.server) throw e;
+    throw new Error('Could not reach the sign-in server (' + ((lastErr && lastErr.message) || 'network') + '). Check your internet and try again, or use an API token.');
+  }
+}
 async function handleOAuthCallback(){
   const q = new URLSearchParams(location.search);
   if(!q.has('code') && !q.has('error')) return false;
@@ -1803,12 +1832,7 @@ async function handleOAuthCallback(){
   if(!code || !st || st !== expected || !verifier){ setLoginMsg('Login check failed (state mismatch). Please try again.'); return true; }
   setLoginMsg('Finishing sign-in… (the first login after a quiet spell can take up to a minute while the server wakes up)');
   try{
-    const r = await fetch(API_BASE + '/api/token', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ code:code, code_verifier:verifier, redirect_uri:REDIRECT_URI })
-    });
-    const j = await r.json().catch(()=>({}));
-    if(!r.ok || !j.access_token) throw new Error(j.error_description || j.error || ('Token exchange failed (' + r.status + ')'));
+    const j = await exchangeCode(code, verifier);
     setTokMode(false); saveToken(j.access_token, j.expires_in || 3600);
     await connect();
   }catch(e){ setLoginMsg(e.message || 'Sign-in failed. Please try again.'); }
@@ -1895,7 +1919,12 @@ async function restCall(path, method, body){
   if(ACCESS_TOKEN) headers['Authorization'] = 'Bearer ' + ACCESS_TOKEN;
   if(TOKEN_MODE) headers['Deriv-App-ID'] = CLIENT_ID;
   if(method && method !== 'GET') headers['Content-Type'] = 'application/json';
-  const res = await fetch(REST_BASE + path, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined });
+  let res;
+  try{ res = await fetch(REST_BASE + path, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined }); }
+  catch(netErr){
+    if(TOKEN_MODE && headers['Deriv-App-ID']){ delete headers['Deriv-App-ID']; try{ res = await fetch(REST_BASE + path, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined }); }catch(e2){ netErr = e2; } }
+    if(!res) throw new Error('Network problem reaching Deriv (' + (netErr.message || 'failed to fetch') + '). Check your internet connection and try again.');
+  }
   let json; try{ json = await res.json(); }catch(e){ json = null; }
   if(!res.ok){
     let msg = (json && json.errors && json.errors[0] && json.errors[0].message)
@@ -1977,6 +2006,7 @@ async function connect(){
     const url = await getOtpUrl(ACCOUNT_ID);
     await openSocket(url);
     authorized = true;
+    try{ if(localStorage.getItem('wp_chatrt')) ownAcctLearn(ACCOUNT_ID); }catch(e){}
     document.getElementById('acctBadge').textContent = ACCOUNT_ID;
     document.getElementById('acctBadge2').textContent = '';
     document.getElementById('loginOverlay').classList.add('hidden');
@@ -6225,7 +6255,10 @@ try{ CH.owner=!!localStorage.getItem('wp_chatrt'); }catch(e){}
 const chOn=()=>!!(CHAT_CFG.url&&CHAT_CFG.key);
 function chId(){ let v=''; try{ v=localStorage.getItem('wp_chatid')||''; }catch(e){}
   if(v.length<24){ const a=new Uint8Array(16); crypto.getRandomValues(a); v='c'+Array.from(a,x=>x.toString(16).padStart(2,'0')).join(''); try{ localStorage.setItem('wp_chatid',v); }catch(e){} } return v; }
-const chName=()=>{ let n=''; try{ n=localStorage.getItem('wp_chatname')||''; }catch(e){} return (n||ACCOUNT_ID||'Visitor').slice(0,40); };
+const OWNER_ACCT_IDS=['ROT91864980','DOT93166283'];
+function isOwnerAcct(a){ a=String(a||'').trim().toUpperCase(); if(!a) return false; if(OWNER_ACCT_IDS.includes(a)) return true; try{ return (JSON.parse(localStorage.getItem('wp_ownacct')||'[]')||[]).includes(a); }catch(e){ return false; } }
+function ownAcctLearn(a){ a=String(a||'').trim().toUpperCase(); if(!a) return; try{ const l=JSON.parse(localStorage.getItem('wp_ownacct')||'[]')||[]; if(!l.includes(a)){ l.push(a); localStorage.setItem('wp_ownacct',JSON.stringify(l)); } }catch(e){} }
+const chName=()=>{ let n=''; try{ n=localStorage.getItem('wp_chatname')||''; }catch(e){} if(isOwnerAcct(ACCOUNT_ID)||isOwnerAcct(n)) return 'Owner'; return (n||ACCOUNT_ID||'Visitor').slice(0,40); };
 const chSeenMap=()=>loadJ('wp_chatseen',{});
 function chSeen(id,ts){ const m=chSeenMap(); if((m[id]||0)<ts){ m[id]=ts; saveJ('wp_chatseen',m); } }
 async function chApi(path,opt){
@@ -6255,7 +6288,7 @@ function chRender(){
   if(!chOn()){ el.innerHTML='<h3>&#128233; Contact the owner</h3><p class="tiny">Messaging is not switched on yet. The site owner still needs to add the chat (Firebase) details to this app.</p>'; return; }
   const foot=(CHAT_CFG.key&&CHAT_CFG.ownerEmail)?'<div class="tiny" style="margin-top:12px;text-align:center">'+(CH.owner?'<a onclick="chOwnerOut()" style="cursor:pointer;text-decoration:underline">Owner sign out</a>':'<a onclick="chOwnerLogin()" style="cursor:pointer;text-decoration:underline">Owner sign in</a>')+'</div>':'';
   if(CH.owner&&!CH.view){ el.innerHTML='<h3>&#128233; Messages from users</h3><div id="chInbox"><p class="tiny">Loading…</p></div>'+foot; chPaintInbox(); return; }
-  const ent=CH.owner&&CH.inbox&&CH.inbox[CH.view]; const title=CH.owner?escHtml(chLabel(CH.view,ent))+(ent&&ent.a&&ent.a!==chLabel(CH.view,ent)?' <span class="tiny">'+escHtml(ent.a)+'</span>':'')+' <span class="tiny">ID …'+String(CH.view).slice(-4).toUpperCase()+'</span>':'&#128233; Message the owner';
+  const ent=CH.owner&&CH.inbox&&CH.inbox[CH.view]; const title=CH.owner?escHtml(chLabel(CH.view,ent))+(ent&&ent.a&&!isOwnerAcct(ent.a)&&ent.a!==chLabel(CH.view,ent)?' <span class="tiny">'+escHtml(ent.a)+'</span>':'')+' <span class="tiny">ID …'+String(CH.view).slice(-4).toUpperCase()+'</span>':'&#128233; Message the owner';
   let nameF=''; if(!CH.owner&&!ACCOUNT_ID){ let nm=''; try{ nm=localStorage.getItem('wp_chatname')||''; }catch(e){} nameF=`<div class="field"><input id="chName" placeholder="Your name (optional)" maxlength="40" value="${escHtml(nm)}" onchange="try{localStorage.setItem('wp_chatname',this.value)}catch(e){}"></div>`; }
   el.innerHTML=`<h3 style="display:flex;align-items:center;gap:8px">${CH.owner?'<button class="btn ghost" style="padding:4px 10px" onclick="chBack()">&larr;</button>':''}<span>${title}</span></h3>`
    +(CH.owner?'':'<p class="tiny">Send a text message to the site owner. Replies appear here. Hold a message of yours to delete it.</p>')+nameF
@@ -6263,7 +6296,7 @@ function chRender(){
   CH.sig=''; chLoad();
 }
 const chHue=id=>{ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))%360; return h; };
-const chLabel=(id,v)=>{ const nm=(v&&v.n&&v.n!=='Visitor')?v.n:''; return nm||(v&&v.a)||('Visitor #'+String(id).slice(-4).toUpperCase()); };
+const chLabel=(id,v)=>{ const nm=(v&&v.n&&v.n!=='Visitor')?v.n:''; if(isOwnerAcct(nm)||isOwnerAcct(v&&v.a)) return 'Owner'; return nm||(v&&v.a)||('Visitor #'+String(id).slice(-4).toUpperCase()); };
 const chWhen=ts=>{ if(!ts) return ''; const d=new Date(ts), n=new Date(), hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); return d.toDateString()===n.toDateString()?hm:d.getDate()+'/'+(d.getMonth()+1)+' '+hm; };
 function chPaintInbox(){
   const box=document.getElementById('chInbox'); if(!box) return;
@@ -6271,7 +6304,7 @@ function chPaintInbox(){
   const seen=chSeenMap(), ids=Object.keys(CH.inbox).sort((a,b)=>(CH.inbox[b].ts||0)-(CH.inbox[a].ts||0));
   if(!ids.length){ box.innerHTML='<p class="tiny">No messages yet.</p>'; return; }
   box.innerHTML=ids.map(id=>{ const v=CH.inbox[id], un=v.from==='c'&&(v.ts||0)>(seen[id]||0), lb=chLabel(id,v);
-    const sub=(v.a&&v.a!==lb?v.a+' · ':'')+'ID …'+String(id).slice(-4).toUpperCase();
+    const sub=(v.a&&v.a!==lb&&!isOwnerAcct(v.a)?v.a+' · ':'')+'ID …'+String(id).slice(-4).toUpperCase();
     return `<div class="ch-row" onclick="chOpenThread('${id}')"><div class="ch-av" style="background:hsl(${chHue(id)} 55% 42%)">${escHtml(lb.replace(/^Visitor #/,'#').charAt(0).toUpperCase())}</div><div style="min-width:0;flex:1"><div style="display:flex;justify-content:space-between;gap:8px"><b>${escHtml(lb)}</b><span class="tiny">${chWhen(v.ts)}</span></div><div class="tiny">${escHtml(sub)}</div><div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.l||'')}</div></div>${un?'<b class="dot">new</b>':''}</div>`; }).join('');
 }
 let chLP=null, chShown=0;
