@@ -5020,7 +5020,7 @@ async function commLoad(){
 }
 function commRender(keep){
   const r=$('commRoot'); if(!r) return;
-  if(!isOwner()){ r.innerHTML='<div class="card a-amber" style="max-width:560px;margin:0 auto;text-align:center"><h3 class="h-tools">&#128176; Commission</h3><div style="font-size:38px;margin:8px 0">&#128274;</div><p class="tiny">Commission figures are private and only visible to the site owner.</p><button type="button" class="btn" style="background:var(--amber);margin-top:8px" onclick="chOwnerLogin()">&#128275; I am the owner &mdash; unlock</button></div>'; return; }
+  if(!isOwner()){ r.innerHTML='<div class="card a-amber" style="max-width:560px;margin:0 auto;text-align:center"><h3 class="h-tools">&#128176; Commission</h3><div style="font-size:38px;margin:8px 0">&#128274;</div><p class="tiny">Commission figures are private and only visible to the site owner.</p><button type="button" class="btn" style="background:var(--amber);margin-top:8px" onclick="commUnlock()">&#128275; I am the owner &mdash; unlock</button></div>'; return; }
   const have=!!(COMM.tok), live=!have&&hasValidToken();
   r.innerHTML='<div class="card a-amber" style="max-width:560px;margin:0 auto">'
     +'<h3 class="h-tools">&#128176; Commission <span><button type="button" class="mini-btn ref" onclick="commLoad()">&#8635; Refresh</button></span></h3>'
@@ -5062,7 +5062,9 @@ handleMessage=function(m){ _hm3(m);
     if(m.msg_type==='buy'&&p&&p.spd){ if(!m.error&&m.buy){ spOpen++; } speedUI(); } }catch(e){}
 };
 const _gt3=goToTab;
-function isOwner(){ try{ return !!localStorage.getItem('wp_chatrt'); }catch(e){ return false; } }
+const COMM_PIN_HASH='2e700d3c0d26206e9416a1a471f286f8f51a6922e2b3177f8097214b44d63dd5';
+function isOwner(){ try{ return !!localStorage.getItem('wp_chatrt')||localStorage.getItem('wp_cok')===COMM_PIN_HASH; }catch(e){ return false; } }
+async function commUnlock(){ if(isOwner()){ commGate(); return; } const pin=prompt('Owner PIN:'); if(!pin) return; try{ const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('wp-comm:'+pin.trim())); const h=Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join(''); if(h===COMM_PIN_HASH){ try{ localStorage.setItem('wp_cok',h); }catch(e){} toastM('Commission unlocked'); commGate(); } else toastM('Wrong PIN'); }catch(e){ toastM('Could not check the PIN on this browser'); } }
 function commGate(){ const t=document.getElementById('sideComm'); if(t) t.style.removeProperty('display'); try{ const v=document.getElementById('view-commission'); if(v&&v.classList.contains('active')) commRender(); }catch(e){} }
 goToTab=function(n){ _gt3(n); if(n==='commission') commRender(); if(n==='cashier') cashRender(); };
 commRender(true); cashRender(); commGate();
@@ -6242,7 +6244,7 @@ async function chAuth(){
   try{ await chAuthCall('refresh_token',{refresh_token:rt}); return true; }catch(e){ return false; }
 }
 async function chOwnerLogin(){
-  const pw=prompt('Owner password:'); if(!pw) return;
+  let pw=prompt('Owner password:'); if(!pw) return; if(/^\d{4}$/.test(pw.trim())) pw=pw.trim()+'#wp';
   try{ await chAuthCall('password',{email:CHAT_CFG.ownerEmail,password:pw}); CH.owner=true; CH.view=null; commGate(); toastM('Signed in as owner'); chRender(); chInbox(); }
   catch(e){ toastM('Owner sign-in failed: '+e.message); }
 }
