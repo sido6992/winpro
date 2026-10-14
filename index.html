@@ -231,10 +231,16 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .dt-sig{border:0;border-radius:999px;padding:7px 12px;font:800 12px var(--font);color:#06210f;background:#22c55e;cursor:pointer;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
 @keyframes dtEntryB{0%,49%{background:#facc15;color:#111;box-shadow:0 0 0 3px #fde047,0 0 20px 4px #facc15}50%,100%{background:#1b1d27;color:#facc15;box-shadow:0 0 0 3px #facc15}}
 .btn.entry-blink{animation:dtEntryB .2s linear infinite!important;border-color:#facc15!important}
-.ch-box{height:62vh;min-height:260px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:8px}
-.ch-m{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;max-width:78%;padding:8px 11px;border-radius:14px;margin:5px 0;font-size:14px;line-height:1.35;word-break:break-word;background:var(--bg2);border:1px solid var(--border)}
+.ch-wrap{position:relative}
+#view-contact{padding-left:4px;padding-right:4px}
+#view-contact>.card{max-width:none!important;width:100%;padding:8px 6px;border-radius:10px}
+#view-contact h3{margin-bottom:6px}
+.ch-down{position:absolute;right:10px;bottom:10px;width:40px;height:40px;border:0;border-radius:50%;background:#2563eb;color:#fff;font-size:20px;line-height:1;box-shadow:0 3px 12px rgba(0,0,0,.5);cursor:pointer;display:none;z-index:3}
+.ch-down.show{display:block}.ch-down.new{background:#ef4444;animation:dtBlinkR 1s ease-in-out infinite}
+.ch-box{height:calc(100vh - 230px);height:calc(100dvh - 230px);min-height:300px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:6px 4px}
+.ch-m{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;max-width:90%;padding:5px 9px;border-radius:12px;margin:3px 0;font-size:13px;line-height:1.3;word-break:break-word;background:var(--bg2);border:1px solid var(--border)}
 .ch-m.me{margin-left:auto;background:#2563eb;border-color:#2563eb;color:#fff}
-.ch-m small{display:block;opacity:.65;font-size:10px;margin-top:3px}
+.ch-m small{display:block;opacity:.65;font-size:9.5px;margin-top:1px;text-align:right}
 .ch-del{position:absolute;top:-10px;right:-6px;border:0;border-radius:999px;background:#ef4444;color:#fff;width:28px;height:28px;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .ch-m.me .ch-del{right:auto;left:-6px}
 .ch-av{flex:0 0 38px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
@@ -6240,7 +6246,7 @@ function chRender(){
   let nameF=''; if(!CH.owner&&!ACCOUNT_ID){ let nm=''; try{ nm=localStorage.getItem('wp_chatname')||''; }catch(e){} nameF=`<div class="field"><input id="chName" placeholder="Your name (optional)" maxlength="40" value="${escHtml(nm)}" onchange="try{localStorage.setItem('wp_chatname',this.value)}catch(e){}"></div>`; }
   el.innerHTML=`<h3 style="display:flex;align-items:center;gap:8px">${CH.owner?'<button class="btn ghost" style="padding:4px 10px" onclick="chBack()">&larr;</button>':''}<span>${title}</span></h3>`
    +(CH.owner?'':'<p class="tiny">Send a text message to the site owner. Replies appear here. Hold a message of yours to delete it.</p>')+nameF
-   +`<div class="ch-box" id="chMsgs"></div><div class="row" style="margin-top:8px;gap:8px"><div class="field" style="flex:1;margin:0"><input id="chIn" maxlength="1000" placeholder="Type a message…" onkeydown="if(event.key==='Enter')chSend()"></div><div class="field" style="flex:0 0 auto;margin:0"><button class="btn" onclick="chSend()">Send</button></div></div>`+foot;
+   +`<div class="ch-wrap"><div class="ch-box" id="chMsgs"></div><button type="button" class="ch-down" id="chDown" onclick="chToBottom()" title="Latest message">&#8595;</button></div><div class="row" style="margin-top:8px;gap:8px"><div class="field" style="flex:1;margin:0"><input id="chIn" maxlength="1000" placeholder="Type a message…" onkeydown="if(event.key==='Enter')chSend()"></div><div class="field" style="flex:0 0 auto;margin:0"><button class="btn" onclick="chSend()">Send</button></div></div>`+foot;
   CH.sig=''; chLoad();
 }
 const chHue=id=>{ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))%360; return h; };
@@ -6256,8 +6262,10 @@ function chPaintInbox(){
     return `<div class="ch-row" onclick="chOpenThread('${id}')"><div class="ch-av" style="background:hsl(${chHue(id)} 55% 42%)">${escHtml(lb.replace(/^Visitor #/,'#').charAt(0).toUpperCase())}</div><div style="min-width:0;flex:1"><div style="display:flex;justify-content:space-between;gap:8px"><b>${escHtml(lb)}</b><span class="tiny">${chWhen(v.ts)}</span></div><div class="tiny">${escHtml(sub)}</div><div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.l||'')}</div></div>${un?'<b class="dot">new</b>':''}</div>`; }).join('');
 }
 let chLP=null, chShown=0;
+function chDownSync(){ const box=document.getElementById('chMsgs'), d=document.getElementById('chDown'); if(!box||!d) return; const far=box.scrollHeight-box.scrollTop-box.clientHeight>120; d.classList.toggle('show',far); if(!far) d.classList.remove('new'); }
+function chToBottom(){ const box=document.getElementById('chMsgs'); if(!box) return; try{ box.scrollTo({top:box.scrollHeight,behavior:'smooth'}); }catch(e){ box.scrollTop=box.scrollHeight; } setTimeout(chDownSync,400); }
 function chBindBox(){
-  const box=document.getElementById('chMsgs'); if(!box||box.dataset.b) return; box.dataset.b='1';
+  const box=document.getElementById('chMsgs'); if(!box||box.dataset.b) return; box.dataset.b='1'; box.addEventListener('scroll',chDownSync,{passive:true});
   box.addEventListener('pointerdown',e=>{ const m=e.target.closest('.ch-m'); if(!m) return; clearTimeout(chLP); chLP=setTimeout(()=>chShowDel(box,m),500); });
   ['pointerup','pointerleave','pointercancel','scroll'].forEach(ev=>box.addEventListener(ev,()=>clearTimeout(chLP),true));
   box.addEventListener('contextmenu',e=>{ if(e.target.closest('.ch-m')) e.preventDefault(); });
@@ -6285,8 +6293,10 @@ function chBack(){ CH.view=null; chRender(); chInbox(); }
 function chPaint(arr){
   const box=document.getElementById('chMsgs'); if(!box) return; const near=box.scrollHeight-box.scrollTop-box.clientHeight<80, mine=CH.owner?'o':'c';
   box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}">${escHtml(m.t||'')}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
+  const had=+box.dataset.n||0; box.dataset.n=arr.length;
   if(near||!box.dataset.init){ box.scrollTop=box.scrollHeight; box.dataset.init='1'; }
-  chBindBox();
+  else if(arr.length>had){ const d=document.getElementById('chDown'); if(d) d.classList.add('new'); }
+  chBindBox(); chDownSync();
 }
 async function chLoad(){
   const id=CH.owner?CH.view:chId(); if(!id) return;
@@ -6310,11 +6320,35 @@ async function chSend(){
 function chTick(){ if(!chOn()||document.hidden) return; if(CH.owner&&!CH.view) chInbox(); else chLoad(); }
 function chOpen(){ CH.open=true; if(CH.owner) CH.view=null; chRender(); if(CH.owner) chInbox(); clearInterval(CH.timer); CH.timer=setInterval(chTick,3000); }
 function chClose(){ CH.open=false; clearInterval(CH.timer); CH.timer=null; }
+// ---- new-message alert for users: banner + a spoken male voice (African English where the phone has one) ----
+const CH_SAY='You have a new message on chat owner';
+let chVoicePend=false;
+function chPickVoice(){
+  const vs=(window.speechSynthesis&&speechSynthesis.getVoices())||[]; if(!vs.length) return null;
+  const fem=/female|zira|samantha|susan|hazel|aria|jenny|libby|sonia|emily|fiona|karen|moira|tessa|zoe|victoria|allison|ava|joanna|kendra|kimberly|salli|amy|emma|nicole|natasha|clara|heera|veena|neerja/i;
+  const male=/\bmale\b|daniel|george|ryan|james|david|mark|guy|alex|fred|oliver|arthur|thomas|rishi|prabhat|abeo|eddy|ronald|liam/i;
+  const en=vs.filter(v=>/^en/i.test(v.lang)), ok=v=>!fem.test(v.name)||(/\bmale\b/i.test(v.name)&&!/female/i.test(v.name));
+  for(const L of ['en-KE','en-TZ','en-NG','en-GH','en-UG','en-ZA']){ const c=en.filter(v=>v.lang.replace('_','-').toLowerCase()===L.toLowerCase()); const m=c.find(v=>male.test(v.name)&&ok(v))||c.find(ok); if(m) return m; }
+  return en.find(v=>/en[-_](GB|ZA|IN)/i.test(v.lang)&&male.test(v.name)&&ok(v))||en.find(v=>male.test(v.name)&&ok(v))||en.find(ok)||en[0]||null;
+}
+function chSpeak(){
+  try{ if(!window.speechSynthesis) return false; const u=new SpeechSynthesisUtterance(CH_SAY), v=chPickVoice(); if(v){ u.voice=v; u.lang=v.lang; } else u.lang='en-KE'; u.rate=.92; u.pitch=.65; u.volume=1;
+    speechSynthesis.cancel(); speechSynthesis.speak(u); return true; }catch(e){ return false; }
+}
+function chNotify(){
+  try{ toastM('\u2709\uFE0F '+CH_SAY); }catch(e){}
+  try{ const b=document.getElementById('chBanner'); if(b) b.remove(); const d=document.createElement('div'); d.id='chBanner'; d.style.cssText='position:fixed;left:10px;right:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:80;background:#2563eb;color:#fff;border-radius:12px;padding:12px 14px;font:700 14px var(--font);box-shadow:0 6px 22px rgba(0,0,0,.5);cursor:pointer;text-align:center';
+    d.textContent='\u2709\uFE0F '+CH_SAY+' \u2014 tap to read'; d.onclick=function(){ d.remove(); goToTab('contact'); }; document.body.appendChild(d); setTimeout(()=>{ try{ d.remove(); }catch(e){} },9000); }catch(e){}
+  chVoicePend=true; chTrySpeak();
+}
+function chTrySpeak(){ if(!chVoicePend) return; if(navigator.userActivation&&!navigator.userActivation.hasBeenActive) return; if(chSpeak()) chVoicePend=false; }   // browsers only allow speech after a first tap on the page
+['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,function(){ if(chVoicePend) setTimeout(chTrySpeak,60); },{passive:true}));
+try{ if(window.speechSynthesis) speechSynthesis.getVoices(); }catch(e){}
 async function chBg(){
   if(!chOn()) return;
   try{ const seen=chSeenMap();
     if(CH.owner){ const j=await chInboxRows(); CH.inbox=j; let n=0; Object.keys(j).forEach(id=>{ if(j[id].from==='c'&&(j[id].ts||0)>(seen[id]||0)) n++; }); chBadge(n); if(n>CH.toasted&&!CH.open) toastM('✉️ New message'); CH.toasted=n; }
-    else { const ots=+(await chApi('/rpc/chat_owner_ts',{method:'POST',body:{p_chat:chId()}}))||0, un=ots>(seen[chId()]||0); chBadge(un?1:0); if(un&&!CH.open&&ots>CH.toasted){ CH.toasted=ots; toastM('✉️ New message from the owner'); } }
+    else { const ots=+(await chApi('/rpc/chat_owner_ts',{method:'POST',body:{p_chat:chId()}}))||0, un=ots>(seen[chId()]||0); chBadge(un?1:0); if(un&&!CH.open&&ots>CH.toasted){ CH.toasted=ots; chNotify(); } }
   }catch(e){}
 }
 { const _gc=goToTab; goToTab=function(n){ _gc.apply(this,arguments); try{ if(n==='contact') chOpen(); else chClose(); }catch(e){} }; }
