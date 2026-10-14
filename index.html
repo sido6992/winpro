@@ -231,10 +231,13 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .dt-sig{border:0;border-radius:999px;padding:7px 12px;font:800 12px var(--font);color:#06210f;background:#22c55e;cursor:pointer;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
 @keyframes dtEntryB{0%,49%{background:#facc15;color:#111;box-shadow:0 0 0 3px #fde047,0 0 20px 4px #facc15}50%,100%{background:#1b1d27;color:#facc15;box-shadow:0 0 0 3px #facc15}}
 .btn.entry-blink{animation:dtEntryB .2s linear infinite!important;border-color:#facc15!important}
-.ch-box{height:48vh;min-height:220px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:8px}
-.ch-m{max-width:82%;padding:8px 11px;border-radius:14px;margin:5px 0;font-size:14px;line-height:1.35;word-break:break-word;background:var(--bg2);border:1px solid var(--border)}
+.ch-box{height:62vh;min-height:260px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:8px}
+.ch-m{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;max-width:78%;padding:8px 11px;border-radius:14px;margin:5px 0;font-size:14px;line-height:1.35;word-break:break-word;background:var(--bg2);border:1px solid var(--border)}
 .ch-m.me{margin-left:auto;background:#2563eb;border-color:#2563eb;color:#fff}
 .ch-m small{display:block;opacity:.65;font-size:10px;margin-top:3px}
+.ch-del{position:absolute;top:-10px;right:-6px;border:0;border-radius:999px;background:#ef4444;color:#fff;width:28px;height:28px;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.ch-m.me .ch-del{right:auto;left:-6px}
+.ch-av{flex:0 0 38px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
 .ch-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer}
 .ch-row b.dot{background:#ef4444;color:#fff;border-radius:999px;font-size:10px;padding:1px 7px}
 .dt-sig.go{background:#22c55e;animation:dtBlinkG 1s ease-in-out infinite}
@@ -246,7 +249,18 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .dt-sigsw,.dv-btn{border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:8px;padding:5px 8px;font:700 11px var(--font);cursor:pointer}
 .dt-sigsw.on{color:#22c55e;border-color:#22c55e}.dv-btn.on{color:#06210f;background:#22c55e;border-color:#22c55e}
 .dv-wide{padding:8px 12px;font-size:12px}
-.dt-sigwarn{margin:-4px 0 10px;padding:8px 10px;border-radius:8px;background:rgba(239,68,68,.14);border:1px solid #ef4444;color:#fecaca;font:600 12px/1.4 var(--font)}
+.dt-sigwarn{margin:-2px 0 6px;padding:3px 8px;border-radius:8px;background:rgba(239,68,68,.14);border:1px solid #ef4444;color:#fecaca;font:600 10.5px/1.3 var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-dtrader{padding-top:8px}
+#view-dtrader .grid{grid-template-columns:1fr;max-width:560px;margin:0 auto}
+#view-dtrader .card{padding:10px 12px;margin-bottom:8px}
+#view-dtrader .card h3{margin-bottom:6px}
+#view-dtrader .row{gap:6px;margin-bottom:6px}
+#view-dtrader .field{min-width:90px}
+#view-dtrader label{margin-bottom:2px;font-size:10px}
+#view-dtrader .field input,#view-dtrader .field select{padding:6px 8px;font-size:13px}
+#view-dtrader .dt-risk-row{gap:6px;margin-bottom:6px}
+#view-dtrader .trade-btns{margin-top:6px}
+#view-dtrader .trade-btns .btn{padding:12px}
 #dvPill{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:70;background:rgba(6,33,15,.92);color:#86efac;border:1px solid #22c55e;border-radius:999px;padding:6px 14px;font:700 12px var(--font);max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;display:none}
 #dvPill.show{display:block}#dvPill.err{background:rgba(69,10,10,.92);color:#fecaca;border-color:#ef4444}#dvPill.hit{background:#22c55e;color:#06210f}
 .info-fab{left:10px;right:auto;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:52px;height:52px;background:rgba(255,154,60,.16);border:1.5px dashed rgba(255,154,60,.85);color:#ffb066;box-shadow:none;font-size:22px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
@@ -698,7 +712,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 <!-- COMMISSION / CASHIER (sidebar tabs) -->
 <div class="view" id="view-commission"><div id="commRoot"></div></div>
 <div class="view" id="view-cashier"><div id="cashRoot"></div></div>
-<div class="view" id="view-contact"><div class="card" style="max-width:560px;margin:0 auto" id="chatRoot"></div></div>
+<div class="view" id="view-contact"><div class="card" style="max-width:980px;width:100%;margin:0 auto" id="chatRoot"></div></div>
 
 <!-- GOAL (sidebar tab) -->
 <div class="view" id="view-goal"><div id="goalRoot"></div></div>
@@ -888,7 +902,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 <!-- DTRADER -->
 <div class="view" id="view-dtrader">
   <div class="grid">
-    <div class="card a-teal">
+    <div class="card a-teal" style="display:none">
       <h3>Market</h3>
       <div class="price" id="dtPrice">--</div>
       <p style="color:var(--muted);font-size:12px;margin-top:4px" id="dtSymbolLabel">--</p>
@@ -4676,8 +4690,7 @@ function acctRender(mode){
     +acR('Status','Connected','var(--teal)','up')
     +acR('Balance',$('balance').textContent,'var(--amber)')
     +(D.err?'<p class="tiny">Statement unavailable: '+escHtml(D.err)+'</p>'
-      :acR('Deposited',f(D.dep),'var(--lime)')
-      +acR('Trading P/L (all time)',sg(D.trade),D.trade>=0?'var(--up)':'var(--down)',D.trade>=0?'up':'down'))
+      :acR('Trading P/L (all time)',sg(D.trade),D.trade>=0?'var(--up)':'var(--down)',D.trade>=0?'up':'down'))
     +(mine.length?acR('This app ('+mine.length+' trades)',sg(sess),'var(--pink)',sess>=0?'up':'down'):'')
     +(D.err?'':acctPeriodHtml(D,f,sg));
 }
@@ -6110,11 +6123,11 @@ function dtSigRender(){
     const same=r.selOk&&r.selBest&&r.selBest.key===r.best.key;
     if(r.analysed&&!r.selOk){
       b.className='dt-sig bad'; b.textContent='⚠ '+dtSigLabel(r.best)+' · TAP';
-      w.textContent='⚠ '+curLbl+' is not suitable on '+marketName(r.sym)+' now ('+(r.selBest&&r.selBest.miss.length?r.selBest.miss.slice(0,2).join(', '):'no clear edge')+'). Best right now: '+r.best.side+' ('+r.best.hit.toFixed(0)+'% hit, '+r.best.conf+'% confidence). Tap the button to switch.';
+      w.textContent='⚠ '+curLbl+' not suitable now · best: '+r.best.side+' ('+r.best.hit.toFixed(0)+'%) — tap signal';
       w.classList.remove('hidden-field');
     } else if(!r.analysed&&r.cur!==r.best.key&&!r.multOnly){
       b.className='dt-sig bad'; b.textContent='⚠ '+dtSigLabel(r.best)+' · TAP';
-      w.textContent='⚠ '+curLbl+' can’t be checked by the signal engine. Best checked trade now: '+r.best.side+' ('+r.best.hit.toFixed(0)+'% hit). Tap the button to switch.';
+      w.textContent='⚠ '+curLbl+' can’t be checked · best: '+r.best.side+' — tap signal';
       w.classList.remove('hidden-field');
     } else {
       b.className='dt-sig go'; b.textContent=(same?'✔ ':'● ')+dtSigLabel(r.best)+' · '+Math.round(r.best.hit)+'%';
@@ -6122,7 +6135,7 @@ function dtSigRender(){
     }
   } else {
     DTS.best=null; b.className='dt-sig bad'; b.textContent='⚠ WAIT · NO EDGE';
-    w.textContent='⚠ No trade type has a clear edge on '+marketName(r.sym)+' right now ('+((r.selBest&&r.selBest.miss.length)?curLbl+': '+r.selBest.miss.slice(0,2).join(', '):'indicators disagree')+'). Better to wait or pick another market.';
+    w.textContent='⚠ No clear edge now — wait or switch market';
     w.classList.remove('hidden-field');
   }
 }
@@ -6223,20 +6236,44 @@ function chRender(){
   if(!chOn()){ el.innerHTML='<h3>&#128233; Contact the owner</h3><p class="tiny">Messaging is not switched on yet. The site owner still needs to add the chat (Firebase) details to this app.</p>'; return; }
   const foot=(CHAT_CFG.key&&CHAT_CFG.ownerEmail)?'<div class="tiny" style="margin-top:12px;text-align:center">'+(CH.owner?'<a onclick="chOwnerOut()" style="cursor:pointer;text-decoration:underline">Owner sign out</a>':'<a onclick="chOwnerLogin()" style="cursor:pointer;text-decoration:underline">Owner sign in</a>')+'</div>':'';
   if(CH.owner&&!CH.view){ el.innerHTML='<h3>&#128233; Messages from users</h3><div id="chInbox"><p class="tiny">Loading…</p></div>'+foot; chPaintInbox(); return; }
-  const ent=CH.owner&&CH.inbox&&CH.inbox[CH.view]; const title=CH.owner?escHtml((ent&&(ent.n||ent.a))||'Chat'):'&#128233; Message the owner';
+  const ent=CH.owner&&CH.inbox&&CH.inbox[CH.view]; const title=CH.owner?escHtml(chLabel(CH.view,ent))+(ent&&ent.a&&ent.a!==chLabel(CH.view,ent)?' <span class="tiny">'+escHtml(ent.a)+'</span>':'')+' <span class="tiny">ID …'+String(CH.view).slice(-4).toUpperCase()+'</span>':'&#128233; Message the owner';
   let nameF=''; if(!CH.owner&&!ACCOUNT_ID){ let nm=''; try{ nm=localStorage.getItem('wp_chatname')||''; }catch(e){} nameF=`<div class="field"><input id="chName" placeholder="Your name (optional)" maxlength="40" value="${escHtml(nm)}" onchange="try{localStorage.setItem('wp_chatname',this.value)}catch(e){}"></div>`; }
   el.innerHTML=`<h3 style="display:flex;align-items:center;gap:8px">${CH.owner?'<button class="btn ghost" style="padding:4px 10px" onclick="chBack()">&larr;</button>':''}<span>${title}</span></h3>`
-   +(CH.owner?'':'<p class="tiny">Send a text message to the site owner. Replies appear here.</p>')+nameF
+   +(CH.owner?'':'<p class="tiny">Send a text message to the site owner. Replies appear here. Hold a message of yours to delete it.</p>')+nameF
    +`<div class="ch-box" id="chMsgs"></div><div class="row" style="margin-top:8px;gap:8px"><div class="field" style="flex:1;margin:0"><input id="chIn" maxlength="1000" placeholder="Type a message…" onkeydown="if(event.key==='Enter')chSend()"></div><div class="field" style="flex:0 0 auto;margin:0"><button class="btn" onclick="chSend()">Send</button></div></div>`+foot;
   CH.sig=''; chLoad();
 }
+const chHue=id=>{ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))%360; return h; };
+const chLabel=(id,v)=>{ const nm=(v&&v.n&&v.n!=='Visitor')?v.n:''; return nm||(v&&v.a)||('Visitor #'+String(id).slice(-4).toUpperCase()); };
+const chWhen=ts=>{ if(!ts) return ''; const d=new Date(ts), n=new Date(), hm=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); return d.toDateString()===n.toDateString()?hm:d.getDate()+'/'+(d.getMonth()+1)+' '+hm; };
 function chPaintInbox(){
   const box=document.getElementById('chInbox'); if(!box) return;
   if(CH.inbox===null){ box.innerHTML='<p class="tiny">Could not load messages — check your connection and that you are signed in.</p>'; return; }
   const seen=chSeenMap(), ids=Object.keys(CH.inbox).sort((a,b)=>(CH.inbox[b].ts||0)-(CH.inbox[a].ts||0));
   if(!ids.length){ box.innerHTML='<p class="tiny">No messages yet.</p>'; return; }
-  box.innerHTML=ids.map(id=>{ const v=CH.inbox[id], un=v.from==='c'&&(v.ts||0)>(seen[id]||0);
-    return `<div class="ch-row" onclick="chOpenThread('${id}')"><div style="min-width:0"><b>${escHtml(v.n||'Visitor')}</b>${v.a&&v.a!==v.n?' <span class="tiny">'+escHtml(v.a)+'</span>':''}<div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.l||'')}</div></div>${un?'<b class="dot">new</b>':''}</div>`; }).join('');
+  box.innerHTML=ids.map(id=>{ const v=CH.inbox[id], un=v.from==='c'&&(v.ts||0)>(seen[id]||0), lb=chLabel(id,v);
+    const sub=(v.a&&v.a!==lb?v.a+' · ':'')+'ID …'+String(id).slice(-4).toUpperCase();
+    return `<div class="ch-row" onclick="chOpenThread('${id}')"><div class="ch-av" style="background:hsl(${chHue(id)} 55% 42%)">${escHtml(lb.replace(/^Visitor #/,'#').charAt(0).toUpperCase())}</div><div style="min-width:0;flex:1"><div style="display:flex;justify-content:space-between;gap:8px"><b>${escHtml(lb)}</b><span class="tiny">${chWhen(v.ts)}</span></div><div class="tiny">${escHtml(sub)}</div><div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.l||'')}</div></div>${un?'<b class="dot">new</b>':''}</div>`; }).join('');
+}
+let chLP=null, chShown=0;
+function chBindBox(){
+  const box=document.getElementById('chMsgs'); if(!box||box.dataset.b) return; box.dataset.b='1';
+  box.addEventListener('pointerdown',e=>{ const m=e.target.closest('.ch-m'); if(!m) return; clearTimeout(chLP); chLP=setTimeout(()=>chShowDel(box,m),500); });
+  ['pointerup','pointerleave','pointercancel','scroll'].forEach(ev=>box.addEventListener(ev,()=>clearTimeout(chLP),true));
+  box.addEventListener('contextmenu',e=>{ if(e.target.closest('.ch-m')) e.preventDefault(); });
+  box.addEventListener('click',e=>{ const d=e.target.closest('.ch-del'); if(d){ chDel(d.dataset.k); return; } if(Date.now()-chShown<700) return; box.querySelectorAll('.ch-del').forEach(x=>x.remove()); });
+}
+function chShowDel(box,m){
+  if(!CH.owner&&m.dataset.f!=='c') return;   // users can delete only their own messages
+  box.querySelectorAll('.ch-del').forEach(x=>x.remove());
+  const b=document.createElement('button'); b.className='ch-del'; b.dataset.k=m.dataset.k; b.textContent='🗑'; b.title='Delete message'; m.appendChild(b); chShown=Date.now();
+  try{ navigator.vibrate&&navigator.vibrate(30); }catch(e){}
+}
+async function chDel(k){
+  const id=CH.owner?CH.view:chId();
+  try{ if(CH.owner){ await chAuth(); await chApi('/messages?id=eq.'+encodeURIComponent(k)+'&chat_id=eq.'+encodeURIComponent(id),{method:'DELETE'}); }
+    else await chApi('/rpc/chat_delete',{method:'POST',body:{p_chat:id,p_id:+k}});
+    CH.sig=''; chLoad(); }catch(e){ toastM('Could not delete the message'); }
 }
 async function chInboxRows(){
   await chAuth(); const rows=(await chApi('/chats?select=id,name,acct,last,last_ts,last_from&order=last_ts.desc'))||[], o={};
@@ -6247,8 +6284,9 @@ function chOpenThread(id){ CH.view=id; chRender(); }
 function chBack(){ CH.view=null; chRender(); chInbox(); }
 function chPaint(arr){
   const box=document.getElementById('chMsgs'); if(!box) return; const near=box.scrollHeight-box.scrollTop-box.clientHeight<80, mine=CH.owner?'o':'c';
-  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m${m.f===mine?' me':''}">${escHtml(m.t||'')}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
+  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}">${escHtml(m.t||'')}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
   if(near||!box.dataset.init){ box.scrollTop=box.scrollHeight; box.dataset.init='1'; }
+  chBindBox();
 }
 async function chLoad(){
   const id=CH.owner?CH.view:chId(); if(!id) return;
