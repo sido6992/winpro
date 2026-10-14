@@ -229,6 +229,14 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .dt-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .dt-sigwrap{display:inline-flex;align-items:center;gap:6px;text-transform:none;letter-spacing:0}
 .dt-sig{border:0;border-radius:999px;padding:7px 12px;font:800 12px var(--font);color:#06210f;background:#22c55e;cursor:pointer;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+@keyframes dtEntryB{0%,49%{background:#facc15;color:#111;box-shadow:0 0 0 3px #fde047,0 0 20px 4px #facc15}50%,100%{background:#1b1d27;color:#facc15;box-shadow:0 0 0 3px #facc15}}
+.btn.entry-blink{animation:dtEntryB .2s linear infinite!important;border-color:#facc15!important}
+.ch-box{height:48vh;min-height:220px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:8px}
+.ch-m{max-width:82%;padding:8px 11px;border-radius:14px;margin:5px 0;font-size:14px;line-height:1.35;word-break:break-word;background:var(--bg2);border:1px solid var(--border)}
+.ch-m.me{margin-left:auto;background:#2563eb;border-color:#2563eb;color:#fff}
+.ch-m small{display:block;opacity:.65;font-size:10px;margin-top:3px}
+.ch-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer}
+.ch-row b.dot{background:#ef4444;color:#fff;border-radius:999px;font-size:10px;padding:1px 7px}
 .dt-sig.go{background:#22c55e;animation:dtBlinkG 1s ease-in-out infinite}
 .dt-sig.bad{background:#ef4444;color:#fff;animation:dtBlinkR .8s ease-in-out infinite}
 .dt-sig.wait{background:#475569;color:#e2e8f0;animation:none}
@@ -654,6 +662,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   <div class="side-link" style="border-color:var(--teal);color:var(--teal)" onclick="goToTab('cashier');toggleSidebar(false)"><span class="ti">&#127974;</span><span>Cashier</span></div>
   <div class="side-link" style="border-color:var(--pink);color:var(--pink)" onclick="goToTab('askai');toggleSidebar(false)"><span class="ti">&#128172;</span><span>Ask AI</span></div>
   <div class="side-link" style="border-color:var(--lime);color:var(--lime)" onclick="goToTab('xmlbots');toggleSidebar(false)"><span class="ti">&#128194;</span><span>Import Bot</span></div>
+  <div class="side-link" style="border-color:var(--violet);color:var(--violet);position:relative" onclick="goToTab('contact');toggleSidebar(false)"><span class="ti">&#128233;</span><span>Contact Owner</span><b id="chBadge" style="display:none;position:absolute;top:4px;right:6px;background:#ef4444;color:#fff;border-radius:999px;min-width:18px;padding:0 5px;font-size:11px;line-height:18px">0</b></div>
   </div>
   <h3>Currency</h3>
   <div class="field toggle"><input type="checkbox" id="kesOn" onchange="kesToggle(this.checked)"><label for="kesOn" style="margin:0">Show amounts in Kenyan shillings (KSh)</label></div>
@@ -689,6 +698,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 <!-- COMMISSION / CASHIER (sidebar tabs) -->
 <div class="view" id="view-commission"><div id="commRoot"></div></div>
 <div class="view" id="view-cashier"><div id="cashRoot"></div></div>
+<div class="view" id="view-contact"><div class="card" style="max-width:560px;margin:0 auto" id="chatRoot"></div></div>
 
 <!-- GOAL (sidebar tab) -->
 <div class="view" id="view-goal"><div id="goalRoot"></div></div>
@@ -6132,7 +6142,7 @@ function dtSigApply(o){
   const sel=$('dtTradeType'); sel.value=o.key; syncTradeType(o.key,'dtTradeType');
   if(o.digit!=null&&TRADE_TYPES[o.key]&&TRADE_TYPES[o.key].needsDigit) $('dtDigit').value=String(o.digit);
   if(o.dur&&!(TRADE_TYPES[o.key]||{}).isMultiplier){ const un=$('dtDurationUnit'); if([...un.options].some(x=>x.value==='t')){ un.value='t'; $('dtDuration').value=String(Math.max(1,o.dur)); } }
-  DTS.applied={key:o.key,side:o.sd}; dtSigHideOther(); dtSigTick();
+  DTS.applied={key:o.key,side:o.sd,bot:o.bot}; dtSigHideOther(); dtSigTick();
   try{ toastM('Signal applied: '+o.side); }catch(e){}
 }
 function dtSigTap(){
@@ -6149,6 +6159,129 @@ function dtSigToggle(){
 { const _t=dtTradeTypeChange; dtTradeTypeChange=function(){ _t(); try{ if(DTS.applied){ if($('dtTradeType').value!==DTS.applied.key){ DTS.applied=null; const bx=$('dtBtn1')&&$('dtBtn1').parentNode; if(bx) bx.style.gridTemplateColumns=''; $('dtBtn1').style.display=''; } else dtSigHideOther(); } dtSigTick(); }catch(e){} }; }
 { const _s=syncSymbol; syncSymbol=function(){ _s.apply(this,arguments); try{ dtSigClearApplied(); DTS.best=null; DTS.res=null; dtSigRender(); }catch(e){} }; }
 setInterval(function(){ try{ const v=$('view-dtrader'); if(DTS.on&&v&&v.classList.contains('active')) dtSigTick(); }catch(e){} },1500);
+/* ===== DTrader ENTRY POINT: after you tap the signal, the Place Trade button blinks yellow the moment the entry triggers ===== */
+const DTE={hold:0};
+function dtEntryTest(){
+  const a=DTS.applied; if(!a||!a.bot) return null; const sym=$('dtSymbol').value;
+  if(a.bot==='mult'){ const r=snCheck(sniperCtx(sym),a.side==='btn2'?'down':'up'); return r&&r.ok?{ok:true}:null; }
+  let s0=null; for(const t of TT){ const f=t.sides.find(x=>x.bot===a.bot); if(f){ s0=f; break; } } if(!s0) return null;
+  const dg=parseInt(($('dtDigit')||{}).value);
+  if(s0.kind==='md'){ const d=digitsOf(sym); return d.length&&d[d.length-1]===dg?{ok:true}:null; }   // digit you picked just printed
+  let s=s0;
+  if(s0.kind==='ou'&&!isNaN(dg)){ const over=/over/.test(a.bot); s=Object.assign({},s0,{dig:()=>dg,rule:()=>over?{tgt:x=>x>dg,opp:d=>d<=dg,opName:'≤'+dg}:{tgt:x=>x<dg,opp:d=>d>=dg,opName:'≥'+dg}}); }
+  const e=buildEntry(s,sym); return e&&e.test?e.test(sym):null;
+}
+function dtEntryPaint(){
+  const a=DTS.applied, on=!!a&&Date.now()<DTE.hold, act=a?$(a.side==='btn2'?'dtBtn2':'dtBtn1'):null;
+  ['dtBtn1','dtBtn2'].forEach(id=>{ const b=$(id); if(b) b.classList.toggle('entry-blink',!!(on&&act&&b===act)); });
+  if(on){ const sb=$('dtSigBtn'); if(sb) sb.textContent='⚡ ENTER NOW'; }
+}
+function dtEntryCheck(){
+  if(!DTS.applied){ DTE.hold=0; dtEntryPaint(); return; }
+  let ok=false; try{ ok=!!dtEntryTest(); }catch(e){}
+  if(ok){ const fresh=Date.now()>=DTE.hold; DTE.hold=Date.now()+3000; if(fresh){ try{ navigator.vibrate&&navigator.vibrate(150); }catch(e){} } }
+  dtEntryPaint();
+}
+{ const _h=handleMessage; handleMessage=function(m){ _h.apply(this,arguments); try{ if(m&&m.msg_type==='tick'&&m.tick&&DTS.applied&&m.tick.symbol===$('dtSymbol').value) dtEntryCheck(); }catch(e){} }; }
+{ const _pt=placeTrade; placeTrade=function(){ DTE.hold=0; try{ dtEntryPaint(); }catch(e){} return _pt.apply(this,arguments); }; }
+setInterval(function(){ try{ dtEntryPaint(); }catch(e){} },400);
+
+/* ===== CONTACT OWNER: live text chat between site users and the owner (Firebase Realtime Database, REST only) ===== */
+const CHAT_CFG={url:'https://dqssynmyblualkgczvyq.supabase.co',key:'sb_publishable_THf1GdR7imeTxQReRw3Vow_LQtyRYw5',ownerEmail:'saidipili966@gmail.com'};   // Supabase project for the owner chat
+const CH={tok:'',tokExp:0,owner:false,view:null,open:false,sig:'',inbox:null,toasted:0,timer:null};
+try{ CH.owner=!!localStorage.getItem('wp_chatrt'); }catch(e){}
+const chOn=()=>!!(CHAT_CFG.url&&CHAT_CFG.key);
+function chId(){ let v=''; try{ v=localStorage.getItem('wp_chatid')||''; }catch(e){}
+  if(v.length<24){ const a=new Uint8Array(16); crypto.getRandomValues(a); v='c'+Array.from(a,x=>x.toString(16).padStart(2,'0')).join(''); try{ localStorage.setItem('wp_chatid',v); }catch(e){} } return v; }
+const chName=()=>{ let n=''; try{ n=localStorage.getItem('wp_chatname')||''; }catch(e){} return (n||ACCOUNT_ID||'Visitor').slice(0,40); };
+const chSeenMap=()=>loadJ('wp_chatseen',{});
+function chSeen(id,ts){ const m=chSeenMap(); if((m[id]||0)<ts){ m[id]=ts; saveJ('wp_chatseen',m); } }
+async function chApi(path,opt){
+  opt=opt||{}; const h={apikey:CHAT_CFG.key,'Content-Type':'application/json'}; if(CH.owner&&CH.tok) h.Authorization='Bearer '+CH.tok;
+  const r=await fetch(CHAT_CFG.url+'/rest/v1'+path,{method:opt.method||'GET',headers:h,body:opt.body!==undefined?JSON.stringify(opt.body):undefined});
+  if(!r.ok) throw new Error('HTTP '+r.status); const tx=await r.text(); return tx?JSON.parse(tx):null;
+}
+async function chAuthCall(grant,body){
+  const r=await fetch(CHAT_CFG.url+'/auth/v1/token?grant_type='+grant,{method:'POST',headers:{apikey:CHAT_CFG.key,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json(); if(!j.access_token) throw new Error(j.error_description||j.msg||'failed');
+  CH.tok=j.access_token; CH.tokExp=Date.now()+(+j.expires_in||3600)*1000; if(j.refresh_token){ try{ localStorage.setItem('wp_chatrt',j.refresh_token); }catch(e){} }
+}
+async function chAuth(){
+  if(CH.tok&&Date.now()<CH.tokExp-60000) return true;
+  let rt=''; try{ rt=localStorage.getItem('wp_chatrt')||''; }catch(e){} if(!rt) return false;
+  try{ await chAuthCall('refresh_token',{refresh_token:rt}); return true; }catch(e){ return false; }
+}
+async function chOwnerLogin(){
+  const pw=prompt('Owner password:'); if(!pw) return;
+  try{ await chAuthCall('password',{email:CHAT_CFG.ownerEmail,password:pw}); CH.owner=true; CH.view=null; toastM('Signed in as owner'); chRender(); chInbox(); }
+  catch(e){ toastM('Owner sign-in failed: '+e.message); }
+}
+function chOwnerOut(){ CH.owner=false; CH.tok=''; CH.view=null; try{ localStorage.removeItem('wp_chatrt'); }catch(e){} chRender(); }
+function chBadge(n){ const b=document.getElementById('chBadge'); if(b){ b.style.display=n?'':'none'; b.textContent=n>9?'9+':n; } }
+function chRender(){
+  const el=document.getElementById('chatRoot'); if(!el) return;
+  if(!chOn()){ el.innerHTML='<h3>&#128233; Contact the owner</h3><p class="tiny">Messaging is not switched on yet. The site owner still needs to add the chat (Firebase) details to this app.</p>'; return; }
+  const foot=(CHAT_CFG.key&&CHAT_CFG.ownerEmail)?'<div class="tiny" style="margin-top:12px;text-align:center">'+(CH.owner?'<a onclick="chOwnerOut()" style="cursor:pointer;text-decoration:underline">Owner sign out</a>':'<a onclick="chOwnerLogin()" style="cursor:pointer;text-decoration:underline">Owner sign in</a>')+'</div>':'';
+  if(CH.owner&&!CH.view){ el.innerHTML='<h3>&#128233; Messages from users</h3><div id="chInbox"><p class="tiny">Loading…</p></div>'+foot; chPaintInbox(); return; }
+  const ent=CH.owner&&CH.inbox&&CH.inbox[CH.view]; const title=CH.owner?escHtml((ent&&(ent.n||ent.a))||'Chat'):'&#128233; Message the owner';
+  let nameF=''; if(!CH.owner&&!ACCOUNT_ID){ let nm=''; try{ nm=localStorage.getItem('wp_chatname')||''; }catch(e){} nameF=`<div class="field"><input id="chName" placeholder="Your name (optional)" maxlength="40" value="${escHtml(nm)}" onchange="try{localStorage.setItem('wp_chatname',this.value)}catch(e){}"></div>`; }
+  el.innerHTML=`<h3 style="display:flex;align-items:center;gap:8px">${CH.owner?'<button class="btn ghost" style="padding:4px 10px" onclick="chBack()">&larr;</button>':''}<span>${title}</span></h3>`
+   +(CH.owner?'':'<p class="tiny">Send a text message to the site owner. Replies appear here.</p>')+nameF
+   +`<div class="ch-box" id="chMsgs"></div><div class="row" style="margin-top:8px;gap:8px"><div class="field" style="flex:1;margin:0"><input id="chIn" maxlength="1000" placeholder="Type a message…" onkeydown="if(event.key==='Enter')chSend()"></div><div class="field" style="flex:0 0 auto;margin:0"><button class="btn" onclick="chSend()">Send</button></div></div>`+foot;
+  CH.sig=''; chLoad();
+}
+function chPaintInbox(){
+  const box=document.getElementById('chInbox'); if(!box) return;
+  if(CH.inbox===null){ box.innerHTML='<p class="tiny">Could not load messages — check your connection and that you are signed in.</p>'; return; }
+  const seen=chSeenMap(), ids=Object.keys(CH.inbox).sort((a,b)=>(CH.inbox[b].ts||0)-(CH.inbox[a].ts||0));
+  if(!ids.length){ box.innerHTML='<p class="tiny">No messages yet.</p>'; return; }
+  box.innerHTML=ids.map(id=>{ const v=CH.inbox[id], un=v.from==='c'&&(v.ts||0)>(seen[id]||0);
+    return `<div class="ch-row" onclick="chOpenThread('${id}')"><div style="min-width:0"><b>${escHtml(v.n||'Visitor')}</b>${v.a&&v.a!==v.n?' <span class="tiny">'+escHtml(v.a)+'</span>':''}<div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.l||'')}</div></div>${un?'<b class="dot">new</b>':''}</div>`; }).join('');
+}
+async function chInboxRows(){
+  await chAuth(); const rows=(await chApi('/chats?select=id,name,acct,last,last_ts,last_from&order=last_ts.desc'))||[], o={};
+  rows.forEach(r=>{ o[r.id]={n:r.name,a:r.acct,l:r.last,ts:r.last_ts,from:r.last_from}; }); return o;
+}
+async function chInbox(){ try{ CH.inbox=await chInboxRows(); }catch(e){ CH.inbox=null; } chPaintInbox(); }
+function chOpenThread(id){ CH.view=id; chRender(); }
+function chBack(){ CH.view=null; chRender(); chInbox(); }
+function chPaint(arr){
+  const box=document.getElementById('chMsgs'); if(!box) return; const near=box.scrollHeight-box.scrollTop-box.clientHeight<80, mine=CH.owner?'o':'c';
+  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m${m.f===mine?' me':''}">${escHtml(m.t||'')}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
+  if(near||!box.dataset.init){ box.scrollTop=box.scrollHeight; box.dataset.init='1'; }
+}
+async function chLoad(){
+  const id=CH.owner?CH.view:chId(); if(!id) return;
+  try{ let rows;
+    if(CH.owner){ await chAuth(); rows=((await chApi('/messages?chat_id=eq.'+encodeURIComponent(id)+'&select=id,sender,body,ts&order=id.desc&limit=100'))||[]).reverse(); }
+    else rows=(await chApi('/rpc/chat_fetch',{method:'POST',body:{p_chat:id}}))||[];
+    const arr=rows.map(m=>({k:m.id,f:m.sender,t:m.body,ts:m.ts}));
+    const sg=arr.length+':'+(arr.length?arr[arr.length-1].k:''); if(sg!==CH.sig){ CH.sig=sg; chPaint(arr); }
+    const other=CH.owner?'c':'o', lo=arr.filter(m=>m.f===other).pop(); if(lo){ chSeen(id,lo.ts); chBg(); }
+  }catch(e){}
+}
+async function chSend(){
+  const inp=document.getElementById('chIn'); if(!inp) return; const t=(inp.value||'').trim(); if(!t) return; inp.value='';
+  const id=CH.owner?CH.view:chId(), ts=Date.now();
+  try{
+    if(CH.owner){ await chAuth(); await chApi('/messages',{method:'POST',body:{chat_id:id,sender:'o',body:t,ts}}); await chApi('/chats?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:{last:'You: '+t.slice(0,80),last_ts:ts,last_from:'o',owner_ts:ts}}); }
+    else await chApi('/rpc/chat_send',{method:'POST',body:{p_chat:id,p_name:chName(),p_acct:ACCOUNT_ID||'',p_text:t}});
+    CH.sig=''; chLoad();
+  }catch(e){ inp.value=t; toastM('Message not sent — check your connection'); }
+}
+function chTick(){ if(!chOn()||document.hidden) return; if(CH.owner&&!CH.view) chInbox(); else chLoad(); }
+function chOpen(){ CH.open=true; if(CH.owner) CH.view=null; chRender(); if(CH.owner) chInbox(); clearInterval(CH.timer); CH.timer=setInterval(chTick,3000); }
+function chClose(){ CH.open=false; clearInterval(CH.timer); CH.timer=null; }
+async function chBg(){
+  if(!chOn()) return;
+  try{ const seen=chSeenMap();
+    if(CH.owner){ const j=await chInboxRows(); CH.inbox=j; let n=0; Object.keys(j).forEach(id=>{ if(j[id].from==='c'&&(j[id].ts||0)>(seen[id]||0)) n++; }); chBadge(n); if(n>CH.toasted&&!CH.open) toastM('✉️ New message'); CH.toasted=n; }
+    else { const ots=+(await chApi('/rpc/chat_owner_ts',{method:'POST',body:{p_chat:chId()}}))||0, un=ots>(seen[chId()]||0); chBadge(un?1:0); if(un&&!CH.open&&ots>CH.toasted){ CH.toasted=ots; toastM('✉️ New message from the owner'); } }
+  }catch(e){}
+}
+{ const _gc=goToTab; goToTab=function(n){ _gc.apply(this,arguments); try{ if(n==='contact') chOpen(); else chClose(); }catch(e){} }; }
+setInterval(function(){ if(!document.hidden&&!CH.open) chBg(); },20000); setTimeout(chBg,4000);
+
 dtSigRender();
 
 /* ===== Voice commands: enabled per tab, only listens while that tab is open ===== */
