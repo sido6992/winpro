@@ -239,7 +239,11 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .ch-down.show{display:block}.ch-down.new{background:#ef4444;animation:dtBlinkR 1s ease-in-out infinite}
 .ch-box{height:calc(100vh - 230px);height:calc(100dvh - 230px);min-height:300px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:6px 4px}
 .ch-m{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;max-width:90%;padding:5px 9px;border-radius:12px;margin:3px 0;font-size:13px;line-height:1.3;word-break:break-word;background:var(--bg2);border:1px solid var(--border)}
-.ch-m.me{margin-left:auto;background:#2563eb;border-color:#2563eb;color:#fff}
+.ch-m{width:fit-content;min-width:58px;margin-right:auto}
+.ch-m.me{margin-left:auto;margin-right:0}
+.ch-m.o{background:#7c3aed;border-color:#7c3aed;color:#fff}
+.ch-m.c{background:#0f766e;border-color:#0f766e;color:#fff}
+.ch-m b.tag{display:block;font-size:9px;letter-spacing:.5px;text-transform:uppercase;opacity:.85;margin-bottom:1px;white-space:nowrap}
 .ch-m small{display:block;opacity:.65;font-size:9.5px;margin-top:1px;text-align:right}
 .ch-del{position:absolute;top:-10px;right:-6px;border:0;border-radius:999px;background:#ef4444;color:#fff;width:28px;height:28px;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .ch-m.me .ch-del{right:auto;left:-6px}
@@ -678,7 +682,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   <div class="side-link" style="border-color:var(--blue);color:var(--blue)" onclick="goToTab('tradehistory');toggleSidebar(false)"><span class="ti">&#128337;</span><span>Trade History</span></div>
   <div class="side-link" style="border-color:var(--violet);color:var(--violet)" onclick="goToTab('freebots');toggleSidebar(false)"><span class="ti">&#129302;</span><span>Bots</span></div>
   <div class="side-link" style="border-color:var(--amber);color:var(--amber);font-weight:900" onclick="goToTab('goal');toggleSidebar(false)"><span class="ti">&#127919;</span><span>GOAL</span></div>
-  <div class="side-link" style="border-color:var(--orange);color:var(--orange)" onclick="goToTab('commission');toggleSidebar(false)"><span class="ti">&#128176;</span><span>Commission</span></div>
+  <div class="side-link" id="sideComm" style="display:none!important;border-color:var(--orange);color:var(--orange)" onclick="goToTab('commission');toggleSidebar(false)"><span class="ti">&#128176;</span><span>Commission</span></div>
   <div class="side-link" style="border-color:var(--teal);color:var(--teal)" onclick="goToTab('cashier');toggleSidebar(false)"><span class="ti">&#127974;</span><span>Cashier</span></div>
   <div class="side-link" style="border-color:var(--pink);color:var(--pink)" onclick="goToTab('askai');toggleSidebar(false)"><span class="ti">&#128172;</span><span>Ask AI</span></div>
   <div class="side-link" style="border-color:var(--lime);color:var(--lime)" onclick="goToTab('xmlbots');toggleSidebar(false)"><span class="ti">&#128194;</span><span>Import Bot</span></div>
@@ -5053,8 +5057,10 @@ handleMessage=function(m){ _hm3(m);
     if(m.msg_type==='buy'&&p&&p.spd){ if(!m.error&&m.buy){ spOpen++; } speedUI(); } }catch(e){}
 };
 const _gt3=goToTab;
-goToTab=function(n){ _gt3(n); if(n==='commission') commRender(); if(n==='cashier') cashRender(); };
-commRender(true); cashRender();
+function isOwner(){ try{ return !!localStorage.getItem('wp_chatrt'); }catch(e){ return false; } }
+function commGate(){ const t=document.getElementById('sideComm'); if(!t) return; if(isOwner()) t.style.removeProperty('display'); else t.style.setProperty('display','none','important'); }
+goToTab=function(n){ if(n==='commission'&&!isOwner()){ toastM('Commission is for the owner only'); n='dtrader'; } _gt3(n); if(n==='commission') commRender(); if(n==='cashier') cashRender(); };
+commRender(true); cashRender(); commGate();
 
 // ===== v3: dynamic Deriv symbols, chart buttons, barrier lines, P/L badge, shared settings =====
 let AS_DONE=false, AS_RETRY=false;
@@ -6232,10 +6238,10 @@ async function chAuth(){
 }
 async function chOwnerLogin(){
   const pw=prompt('Owner password:'); if(!pw) return;
-  try{ await chAuthCall('password',{email:CHAT_CFG.ownerEmail,password:pw}); CH.owner=true; CH.view=null; toastM('Signed in as owner'); chRender(); chInbox(); }
+  try{ await chAuthCall('password',{email:CHAT_CFG.ownerEmail,password:pw}); CH.owner=true; CH.view=null; commGate(); toastM('Signed in as owner'); chRender(); chInbox(); }
   catch(e){ toastM('Owner sign-in failed: '+e.message); }
 }
-function chOwnerOut(){ CH.owner=false; CH.tok=''; CH.view=null; try{ localStorage.removeItem('wp_chatrt'); }catch(e){} chRender(); }
+function chOwnerOut(){ CH.owner=false; CH.tok=''; CH.view=null; try{ localStorage.removeItem('wp_chatrt'); }catch(e){} commGate(); chRender(); }
 function chBadge(n){ const b=document.getElementById('chBadge'); if(b){ b.style.display=n?'':'none'; b.textContent=n>9?'9+':n; } }
 function chRender(){
   const el=document.getElementById('chatRoot'); if(!el) return;
@@ -6292,7 +6298,8 @@ function chOpenThread(id){ CH.view=id; chRender(); }
 function chBack(){ CH.view=null; chRender(); chInbox(); }
 function chPaint(arr){
   const box=document.getElementById('chMsgs'); if(!box) return; const near=box.scrollHeight-box.scrollTop-box.clientHeight<80, mine=CH.owner?'o':'c';
-  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}">${escHtml(m.t||'')}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
+  const ulab=CH.owner?chLabel(CH.view,CH.inbox&&CH.inbox[CH.view]).slice(0,18):'You';
+  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m ${m.f}${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}"><b class="tag">${m.f==='o'?'Owner':escHtml(ulab)}</b>${escHtml(m.t||'')}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
   const had=+box.dataset.n||0; box.dataset.n=arr.length;
   if(near||!box.dataset.init){ box.scrollTop=box.scrollHeight; box.dataset.init='1'; }
   else if(arr.length>had){ const d=document.getElementById('chDown'); if(d) d.classList.add('new'); }
