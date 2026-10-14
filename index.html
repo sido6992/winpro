@@ -254,6 +254,13 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .ch-av{flex:0 0 38px;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
 .ch-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer}
 .ch-row b.dot{background:#ef4444;color:#fff;border-radius:999px;font-size:10px;padding:1px 7px}
+.ch-row{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.ch-rdel{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;border-radius:999px;background:#ef4444;color:#fff;width:38px;height:38px;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.45);z-index:2}
+.ch-m img.ch-img{display:block;max-width:min(220px,100%);max-height:240px;border-radius:8px;margin:2px 0}
+.ch-m a.ch-file{display:block;color:inherit;text-decoration:underline;font-size:12px;margin:2px 0;word-break:break-word}
+.ch-card{border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:10px}
+.ch-card summary{cursor:pointer}
+.ch-card textarea,.ch-card input{background:var(--bg);color:inherit;border:1px solid var(--border);border-radius:8px;padding:8px;font:inherit;width:100%;box-sizing:border-box}
 .dt-sig.go{background:#22c55e;animation:dtBlinkG 1s ease-in-out infinite}
 .dt-sig.bad{background:#ef4444;color:#fff;animation:dtBlinkR .8s ease-in-out infinite}
 .dt-sig.wait{background:#475569;color:#e2e8f0;animation:none}
@@ -6290,18 +6297,51 @@ async function chOwnerLogin(){
   try{ await chAuthCall('password',{email:CHAT_CFG.ownerEmail,password:pw}); CH.owner=true; CH.view=null; commGate(); toastM('Signed in as owner'); chRender(); chInbox(); }
   catch(e){ toastM('Owner sign-in failed: '+e.message); }
 }
+function chInviteUrl(){ return location.origin+location.pathname.replace(/index\.html$/,''); }
+const chInviteMsg=()=>'Join me on WIN PRO, a Deriv trading site with bots, analysis and live charts: '+chInviteUrl();
+function chOwnerTools(){
+  return '<details class="ch-card"><summary><b>&#128226; Message everyone</b></summary><p class="tiny">Everyone who opens this site gets this message in their chat and can reply to you.</p><textarea id="bcIn" maxlength="500" rows="3" placeholder="Write your message…"></textarea><button class="btn" style="margin-top:6px" onclick="bcSend()">Send to everyone</button><div id="bcList" style="margin-top:8px"></div></details>'
+  +'<details class="ch-card"><summary><b>&#128279; Invite people to the site</b></summary>'
+  +'<div class="row" style="gap:6px;flex-wrap:wrap;margin:8px 0"><button class="btn" onclick="invGo(\'wa\')">WhatsApp</button><button class="btn" onclick="invGo(\'fb\')">Facebook</button><button class="btn" onclick="invGo(\'tg\')">Telegram</button><button class="btn" onclick="invGo(\'sms\')">SMS</button><button class="btn" onclick="invGo(\'mail\')">Email</button><button class="btn" onclick="invGo(\'share\')">Share…</button><button class="btn ghost" onclick="invGo(\'copy\')">Copy link</button></div>'
+  +'<input id="invPhone" placeholder="Phone number with country code, e.g. 2547…" inputmode="tel"><div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0"><button class="btn" onclick="invGo(\'waNum\')">WhatsApp this number</button><button class="btn ghost" onclick="invGo(\'smsNum\')">SMS this number</button></div>'
+  +'<input id="invFb" placeholder="Facebook username"><button class="btn" style="margin:6px 0" onclick="invGo(\'fbUser\')">Message on Facebook</button>'
+  +'<input id="invTg" placeholder="Telegram username"><button class="btn" style="margin:6px 0" onclick="invGo(\'tgUser\')">Message on Telegram</button>'
+  +'<p class="tiny">Facebook and Telegram cannot pre-fill the text, so the invite message is copied for you to paste into the chat.</p></details>';
+}
+function invGo(k){
+  const u=chInviteUrl(), m=chInviteMsg(), e=encodeURIComponent, v=id=>((document.getElementById(id)||{}).value||'').trim(), go=x=>window.open(x,'_blank','noopener');
+  const cp=()=>{ try{ navigator.clipboard.writeText(m); toastM('Invite message copied — paste it in the chat'); }catch(x){} };
+  if(k==='wa') go('https://wa.me/?text='+e(m));
+  else if(k==='fb') go('https://www.facebook.com/sharer/sharer.php?u='+e(u));
+  else if(k==='tg') go('https://t.me/share/url?url='+e(u)+'&text='+e('Join me on WIN PRO'));
+  else if(k==='sms') location.href='sms:?&body='+e(m);
+  else if(k==='mail') location.href='mailto:?subject='+e('Join me on WIN PRO')+'&body='+e(m);
+  else if(k==='share'){ if(navigator.share) navigator.share({title:'WIN PRO',text:'Join me on WIN PRO',url:u}).catch(()=>{}); else cp(); }
+  else if(k==='copy'){ try{ navigator.clipboard.writeText(u); toastM('Link copied'); }catch(x){ prompt('Copy this link:',u); } }
+  else if(k==='waNum'){ const n=v('invPhone').replace(/\D/g,''); if(n.length<8){ toastM('Enter the phone number with country code'); return; } go('https://wa.me/'+n+'?text='+e(m)); }
+  else if(k==='smsNum'){ const n=v('invPhone').replace(/[^\d+]/g,''); if(n.length<6){ toastM('Enter the phone number'); return; } location.href='sms:'+n+'?&body='+e(m); }
+  else if(k==='fbUser'){ const n=v('invFb').replace(/^@|.*facebook\.com\//i,'').replace(/[^\w.\-]/g,''); if(!n){ toastM('Enter the Facebook username'); return; } cp(); go('https://m.me/'+n); }
+  else if(k==='tgUser'){ const n=v('invTg').replace(/^@|.*t\.me\//i,'').replace(/[^\w]/g,''); if(!n){ toastM('Enter the Telegram username'); return; } cp(); go('https://t.me/'+n); }
+}
+async function bcLoad(){ const el=document.getElementById('bcList'); if(!el) return;
+  try{ await chAuth(); const rows=(await chApi('/broadcasts?select=id,body,ts&order=ts.desc&limit=5'))||[];
+    el.innerHTML=rows.map(r=>'<div class="tiny" style="display:flex;gap:8px;align-items:flex-start;border-top:1px solid var(--border);padding:6px 0"><span style="flex:1">'+escHtml(r.body)+' <i>· '+chWhen(r.ts)+'</i></span><button class="btn ghost" style="padding:2px 8px" onclick="bcDel('+r.id+')">&#10005;</button></div>').join(''); }catch(e){} }
+async function bcSend(){ const t=document.getElementById('bcIn'), v=((t&&t.value)||'').trim(); if(!v){ toastM('Write a message first'); return; }
+  if(!confirm('Send this message to everyone who uses the site?')) return;
+  try{ await chAuth(); await chApi('/broadcasts',{method:'POST',body:{body:v,ts:Date.now()}}); t.value=''; toastM('Sent to everyone'); bcLoad(); }catch(e){ toastM('Could not send the message'); } }
+async function bcDel(id){ try{ await chAuth(); await chApi('/broadcasts?id=eq.'+id,{method:'DELETE'}); bcLoad(); }catch(e){ toastM('Could not delete'); } }
 function chOwnerOut(){ CH.owner=false; CH.tok=''; CH.view=null; try{ localStorage.removeItem('wp_chatrt'); }catch(e){} commGate(); chRender(); }
 function chBadge(n){ const b=document.getElementById('chBadge'); if(b){ b.style.display=n?'':'none'; b.textContent=n>9?'9+':n; } }
 function chRender(){
   const el=document.getElementById('chatRoot'); if(!el) return;
   if(!chOn()){ el.innerHTML='<h3>&#128233; Contact the owner</h3><p class="tiny">Messaging is not switched on yet. The site owner still needs to add the chat (Firebase) details to this app.</p>'; return; }
   const foot=(CHAT_CFG.key&&CHAT_CFG.ownerEmail)?'<div class="tiny" style="margin-top:12px;text-align:center">'+(CH.owner?'<a onclick="chOwnerOut()" style="cursor:pointer;text-decoration:underline">Owner sign out</a>':'<a onclick="chOwnerLogin()" style="cursor:pointer;text-decoration:underline">Owner sign in</a>')+'</div>':'';
-  if(CH.owner&&!CH.view){ el.innerHTML='<h3>&#128233; Messages from users</h3><div id="chInbox"><p class="tiny">Loading…</p></div>'+foot; chPaintInbox(); return; }
+  if(CH.owner&&!CH.view){ el.innerHTML='<h3>&#128233; Messages from users</h3>'+chOwnerTools()+'<p class="tiny" style="margin:0 0 6px">Hold a conversation to delete it.</p><div id="chInbox"><p class="tiny">Loading…</p></div>'+foot; chPaintInbox(); bcLoad(); return; }
   const ent=CH.owner&&CH.inbox&&CH.inbox[CH.view]; const title=CH.owner?escHtml(chLabel(CH.view,ent))+(ent&&ent.a&&!isOwnerAcct(ent.a)&&ent.a!==chLabel(CH.view,ent)?' <span class="tiny">'+escHtml(ent.a)+'</span>':'')+' <span class="tiny">ID …'+String(CH.view).slice(-4).toUpperCase()+'</span>':'&#128233; Message the owner';
   let nameF=''; if(!CH.owner&&!ACCOUNT_ID){ let nm=''; try{ nm=localStorage.getItem('wp_chatname')||''; }catch(e){} nameF=`<div class="field"><input id="chName" placeholder="Your name (optional)" maxlength="40" value="${escHtml(nm)}" onchange="try{localStorage.setItem('wp_chatname',this.value)}catch(e){}"></div>`; }
   el.innerHTML=`<h3 style="display:flex;align-items:center;gap:8px">${CH.owner?'<button class="btn ghost" style="padding:4px 10px" onclick="chBack()">&larr;</button>':''}<span>${title}</span></h3>`
-   +(CH.owner?'':'<p class="tiny">Send a text message to the site owner. Replies appear here. Hold a message of yours to delete it.</p>')+nameF
-   +`<div class="ch-wrap"><div class="ch-box" id="chMsgs"></div><button type="button" class="ch-down" id="chDown" onclick="chToBottom()" title="Latest message">&#8595;</button></div><div class="row" style="margin-top:8px;gap:8px"><div class="field" style="flex:1;margin:0"><input id="chIn" maxlength="1000" placeholder="Type a message…" onkeydown="if(event.key==='Enter')chSend()"></div><div class="field" style="flex:0 0 auto;margin:0"><button class="btn" onclick="chSend()">Send</button></div></div>`+foot;
+   +(CH.owner?'':'<p class="tiny">Send a message, screenshot or file (tap the paperclip) to the site owner. Replies appear here. Hold a message of yours to delete it.</p>')+nameF
+   +`<div class="ch-wrap"><div class="ch-box" id="chMsgs"></div><button type="button" class="ch-down" id="chDown" onclick="chToBottom()" title="Latest message">&#8595;</button></div><div class="row" style="margin-top:8px;gap:8px"><div class="field" style="flex:1;margin:0"><input id="chIn" maxlength="1000" placeholder="Type a message…" onkeydown="if(event.key==='Enter')chSend()"></div><div class="field" style="flex:0 0 auto;margin:0"><button class="btn ghost" type="button" title="Send a screenshot or file" onclick="document.getElementById('chFile').click()">&#128206;</button><input type="file" id="chFile" style="display:none" accept="image/*,.pdf,.txt,.csv,.zip,.doc,.docx,.xls,.xlsx" onchange="chPickFile(this)"></div><div class="field" style="flex:0 0 auto;margin:0"><button class="btn" onclick="chSend()">Send</button></div></div>`+foot;
   CH.sig=''; chLoad();
 }
 const chHue=id=>{ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))%360; return h; };
@@ -6311,12 +6351,37 @@ const chWhen=ts=>{ if(!ts) return ''; const d=new Date(ts), n=new Date(), hm=Str
 function chPaintInbox(){
   try{ if(CH.inbox) Object.keys(CH.inbox).sort((a,b)=>(CH.inbox[a].ts||0)-(CH.inbox[b].ts||0)).forEach(id=>userNum(id)); }catch(e){}
   const box=document.getElementById('chInbox'); if(!box) return;
-  if(CH.inbox===null){ box.innerHTML='<p class="tiny">Could not load messages — check your connection and that you are signed in.</p>'; return; }
+  if(CH.inbox===null){ box.innerHTML='<p class="tiny">Could not load messages — check your connection and that you are signed in.</p>'; box.dataset.h=''; return; }
   const seen=chSeenMap(), ids=Object.keys(CH.inbox).sort((a,b)=>(CH.inbox[b].ts||0)-(CH.inbox[a].ts||0));
-  if(!ids.length){ box.innerHTML='<p class="tiny">No messages yet.</p>'; return; }
-  box.innerHTML=ids.map(id=>{ const v=CH.inbox[id], un=v.from==='c'&&(v.ts||0)>(seen[id]||0), lb=chLabel(id,v);
+  if(!ids.length){ box.innerHTML='<p class="tiny">No messages yet.</p>'; box.dataset.h=''; return; }
+  const html=ids.map(id=>{ const v=CH.inbox[id], un=v.from==='c'&&(v.ts||0)>(seen[id]||0), lb=chLabel(id,v);
     const sub=(v.a&&v.a!==lb&&!isOwnerAcct(v.a)?v.a+' · ':'')+'ID …'+String(id).slice(-4).toUpperCase();
-    return `<div class="ch-row" onclick="chOpenThread('${id}')"><div class="ch-av" style="background:hsl(${chHue(id)} 55% 42%)">${escHtml((/^User \d+$/.test(lb)?lb.slice(5):lb.charAt(0)).toUpperCase())}</div><div style="min-width:0;flex:1"><div style="display:flex;justify-content:space-between;gap:8px"><b>${escHtml(lb)}</b><span class="tiny">${chWhen(v.ts)}</span></div><div class="tiny">${escHtml(sub)}</div><div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.l||'')}</div></div>${un?'<b class="dot">new</b>':''}</div>`; }).join('');
+    return `<div class="ch-row" data-id="${id}" onclick="chOpenThread('${id}')"><div class="ch-av" style="background:hsl(${chHue(id)} 55% 42%)">${escHtml((/^User \d+$/.test(lb)?lb.slice(5):lb.charAt(0)).toUpperCase())}</div><div style="min-width:0;flex:1"><div style="display:flex;justify-content:space-between;gap:8px"><b>${escHtml(lb)}</b><span class="tiny">${chWhen(v.ts)}</span></div><div class="tiny">${escHtml(sub)}</div><div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.l||'')}</div></div>${un?'<b class="dot">new</b>':''}${CH.rowDel===id?'<button type="button" class="ch-rdel" data-id="'+id+'" title="Delete conversation">&#128465;</button>':''}</div>`; }).join('');
+  if(box.dataset.h!==html){ box.dataset.h=html; box.innerHTML=html; }
+  chBindInbox(box);
+}
+let chRowLP=null, chRowShown=0;
+function chBindInbox(box){
+  if(box.dataset.b) return; box.dataset.b='1';
+  box.addEventListener('pointerdown',e=>{ if(e.target.closest('.ch-rdel')) return; const r=e.target.closest('.ch-row'); if(!r) return; clearTimeout(chRowLP);
+    chRowLP=setTimeout(()=>{ CH.rowDel=r.dataset.id; chRowShown=Date.now(); try{ navigator.vibrate&&navigator.vibrate(30); }catch(x){} box.dataset.h=''; chPaintInbox(); },500); });
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>box.addEventListener(ev,()=>clearTimeout(chRowLP),true));
+  box.addEventListener('contextmenu',e=>{ if(e.target.closest('.ch-row')) e.preventDefault(); });
+  box.addEventListener('click',e=>{
+    const d=e.target.closest('.ch-rdel'); if(d){ e.stopPropagation(); chDelConv(d.dataset.id); return; }
+    if(Date.now()-chRowShown<700){ e.stopPropagation(); return; }
+    if(CH.rowDel){ CH.rowDel=null; box.dataset.h=''; chPaintInbox(); e.stopPropagation(); }
+  },true);
+}
+async function chDelConv(id){
+  if(!confirm('Delete this whole conversation and all its messages?')) return;
+  try{ await chAuth();
+    try{ const fl=(await chApi('/messages?chat_id=eq.'+encodeURIComponent(id)+'&file_url=not.is.null&select=file_url'))||[], base=CHAT_CFG.url+'/storage/v1/object/public/chat-files/';
+      await Promise.all(fl.map(f=>String(f.file_url).startsWith(base)?fetch(CHAT_CFG.url+'/storage/v1/object/chat-files/'+f.file_url.slice(base.length),{method:'DELETE',headers:{apikey:CHAT_CFG.key,Authorization:'Bearer '+CH.tok}}).catch(()=>{}):null)); }catch(e){}
+    await chApi('/messages?chat_id=eq.'+encodeURIComponent(id),{method:'DELETE'});
+    await chApi('/chats?id=eq.'+encodeURIComponent(id),{method:'DELETE'});
+    CH.rowDel=null; if(CH.view===id) CH.view=null; toastM('Conversation deleted'); chInbox();
+  }catch(e){ toastM('Could not delete the conversation'); }
 }
 let chLP=null, chShown=0;
 function chDownSync(){ const box=document.getElementById('chMsgs'), d=document.getElementById('chDown'); if(!box||!d) return; const far=box.scrollHeight-box.scrollTop-box.clientHeight>120; d.classList.toggle('show',far); if(!far) d.classList.remove('new'); }
@@ -6338,6 +6403,7 @@ async function chDel(k){
   const id=CH.owner?CH.view:chId();
   try{ if(CH.owner){ await chAuth(); await chApi('/messages?id=eq.'+encodeURIComponent(k)+'&chat_id=eq.'+encodeURIComponent(id),{method:'DELETE'}); }
     else await chApi('/rpc/chat_delete',{method:'POST',body:{p_chat:id,p_id:+k}});
+    if(CH.owner){ try{ await chApi('/rpc/chat_tidy',{method:'POST',body:{p_chat:id}}); const left=(await chApi('/messages?chat_id=eq.'+encodeURIComponent(id)+'&select=id&limit=1'))||[]; if(!left.length){ CH.view=null; toastM('Conversation deleted'); chRender(); chInbox(); return; } }catch(e){} }
     CH.sig=''; chLoad(); }catch(e){ toastM('Could not delete the message'); }
 }
 async function chInboxRows(){
@@ -6347,11 +6413,19 @@ async function chInboxRows(){
 async function chInbox(){ try{ CH.inbox=await chInboxRows(); }catch(e){ CH.inbox=null; } chPaintInbox(); }
 function chOpenThread(id){ CH.view=id; chRender(); }
 function chBack(){ CH.view=null; chRender(); chInbox(); }
+const chSize=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
+function chFileHtml(m){
+  if(!m.fu) return ''; const base=CHAT_CFG.url+'/storage/v1/object/public/chat-files/'; if(!String(m.fu).startsWith(base)) return '';
+  const u=escHtml(m.fu), n=escHtml(m.fn||'file');
+  if(/^image\//.test(m.ft||'')) return '<a href="'+u+'" target="_blank" rel="noopener"><img class="ch-img" loading="lazy" src="'+u+'" alt="'+n+'"></a>';
+  return '<a class="ch-file" href="'+u+'" target="_blank" rel="noopener" download="'+n+'">&#128196; '+n+(m.fs?' &middot; '+chSize(m.fs):'')+'</a>';
+}
 function chPaint(arr){
   const box=document.getElementById('chMsgs'); if(!box) return; const near=box.scrollHeight-box.scrollTop-box.clientHeight<80, mine=CH.owner?'o':'c';
   const ulab=CH.owner?chLabel(CH.view,CH.inbox&&CH.inbox[CH.view]).slice(0,18):'You';
-  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m ${m.f}${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}"><b class="tag">${m.f==='o'?'Owner':(CH.owner?'User '+userNum(CH.view):'User')}</b><span class="tx">${escHtml(m.t||'')}</span><small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
+  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m ${m.f}${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}"><b class="tag">${m.bc?'&#128226; Owner':(m.f==='o'?'Owner':(CH.owner?'User '+userNum(CH.view):'User'))}</b>${chFileHtml(m)}${m.t?'<span class="tx">'+escHtml(m.t)+'</span>':''}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
   const had=+box.dataset.n||0; box.dataset.n=arr.length;
+  const stick=near||!box.dataset.init; box.querySelectorAll('img.ch-img').forEach(i=>{ if(!i.complete) i.addEventListener('load',()=>{ if(stick) box.scrollTop=box.scrollHeight; }); });
   if(near||!box.dataset.init){ box.scrollTop=box.scrollHeight; box.dataset.init='1'; }
   else if(arr.length>had){ const d=document.getElementById('chDown'); if(d) d.classList.add('new'); }
   chBindBox(); chDownSync();
@@ -6359,12 +6433,34 @@ function chPaint(arr){
 async function chLoad(){
   const id=CH.owner?CH.view:chId(); if(!id) return;
   try{ let rows;
-    if(CH.owner){ await chAuth(); rows=((await chApi('/messages?chat_id=eq.'+encodeURIComponent(id)+'&select=id,sender,body,ts&order=id.desc&limit=100'))||[]).reverse(); }
+    if(CH.owner){ await chAuth(); rows=((await chApi('/messages?chat_id=eq.'+encodeURIComponent(id)+'&select=id,sender,body,ts,file_url,file_name,file_type,file_size&order=id.desc&limit=100'))||[]).reverse(); }
     else rows=(await chApi('/rpc/chat_fetch',{method:'POST',body:{p_chat:id}}))||[];
-    const arr=rows.map(m=>({k:m.id,f:m.sender,t:m.body,ts:m.ts}));
+    const arr=rows.map(m=>({k:m.id,f:m.sender,t:m.body,ts:m.ts,fu:m.file_url,fn:m.file_name,ft:m.file_type,fs:m.file_size}));
+    if(!CH.owner){ try{ const bc=(await chApi('/rpc/broadcast_fetch',{method:'POST',body:{p_since:0}}))||[]; bc.forEach(b=>arr.push({k:'b'+b.id,f:'o',t:b.body,ts:+b.ts,bc:1})); arr.sort((x,y)=>(+x.ts)-(+y.ts));
+        const mx=bc.length?Math.max(...bc.map(b=>+b.ts)):0; if(mx&&mx>(+localStorage.getItem('wp_bcseen')||0)){ localStorage.setItem('wp_bcseen',String(mx)); chBg(); } }catch(e){} }
     const sg=arr.length+':'+(arr.length?arr[arr.length-1].k:''); if(sg!==CH.sig){ CH.sig=sg; chPaint(arr); }
     const other=CH.owner?'c':'o', lo=arr.filter(m=>m.f===other).pop(); if(lo){ chSeen(id,lo.ts); chBg(); }
   }catch(e){}
+}
+async function chPickFile(inp){
+  const f=inp.files&&inp.files[0]; inp.value=''; if(!f) return;
+  if(f.size>10*1024*1024){ toastM('File too large (max 10 MB)'); return; }
+  const cap=document.getElementById('chIn'), t=((cap&&cap.value)||'').trim();
+  toastM('Sending file…');
+  try{
+    const id=CH.owner?CH.view:chId(); if(CH.owner) await chAuth();
+    const safe=String(f.name||'file').replace(/[^\w.\-]+/g,'_').slice(-60)||'file';
+    const rnd=Array.from(crypto.getRandomValues(new Uint8Array(6)),x=>x.toString(16).padStart(2,'0')).join('');
+    const path=id+'/'+Date.now()+'-'+rnd+'-'+safe;
+    const h={apikey:CHAT_CFG.key,'x-upsert':'false'}; if(f.type) h['Content-Type']=f.type; if(CH.owner&&CH.tok) h.Authorization='Bearer '+CH.tok;
+    const r=await fetch(CHAT_CFG.url+'/storage/v1/object/chat-files/'+path,{method:'POST',headers:h,body:f});
+    if(!r.ok){ let m=''; try{ m=(await r.json()).message||''; }catch(e){} throw new Error(m||('upload '+r.status)); }
+    const url=CHAT_CFG.url+'/storage/v1/object/public/chat-files/'+path, ts=Date.now(), ft=f.type||'application/octet-stream';
+    if(CH.owner){ await chApi('/messages',{method:'POST',body:{chat_id:id,sender:'o',body:t,ts,file_url:url,file_name:f.name,file_type:ft,file_size:f.size}});
+      await chApi('/chats?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:{last:'You: '+(t||('\uD83D\uDCCE '+f.name)).slice(0,80),last_ts:ts,last_from:'o',owner_ts:ts}}); }
+    else await chApi('/rpc/chat_send_f',{method:'POST',body:{p_chat:id,p_name:chName(),p_acct:ACCOUNT_ID||'',p_text:t,p_file_url:url,p_file_name:f.name,p_file_type:ft,p_file_size:f.size}});
+    if(cap) cap.value=''; CH.sig=''; chLoad();
+  }catch(e){ toastM('Could not send the file: '+(e.message||'error')); }
 }
 async function chSend(){
   const inp=document.getElementById('chIn'); if(!inp) return; const t=(inp.value||'').trim(); if(!t) return; inp.value='';
@@ -6406,7 +6502,9 @@ async function chBg(){
   if(!chOn()) return;
   try{ const seen=chSeenMap();
     if(CH.owner){ const j=await chInboxRows(); CH.inbox=j; let n=0; Object.keys(j).forEach(id=>{ if(j[id].from==='c'&&(j[id].ts||0)>(seen[id]||0)) n++; }); chBadge(n); if(n>CH.toasted&&!CH.open) toastM('✉️ New message'); CH.toasted=n; }
-    else { const ots=+(await chApi('/rpc/chat_owner_ts',{method:'POST',body:{p_chat:chId()}}))||0, un=ots>(seen[chId()]||0); chBadge(un?1:0); if(un&&!CH.open&&ots>CH.toasted){ CH.toasted=ots; chNotify(); } }
+    else { const ots=+(await chApi('/rpc/chat_owner_ts',{method:'POST',body:{p_chat:chId()}}))||0, un=ots>(seen[chId()]||0);
+      let bts=0; try{ const bc=(await chApi('/rpc/broadcast_fetch',{method:'POST',body:{p_since:+(localStorage.getItem('wp_bcseen')||0)}}))||[]; bts=bc.length?Math.max(...bc.map(b=>+b.ts)):0; }catch(e){}
+      chBadge((un||bts)?1:0); const nt=Math.max(un?ots:0,bts); if(nt&&!CH.open&&nt>CH.toasted){ CH.toasted=nt; chNotify(); } }
   }catch(e){}
 }
 { const _gc=goToTab; goToTab=function(n){ _gc.apply(this,arguments); try{ if(n==='contact') chOpen(); else chClose(); }catch(e){} }; }
