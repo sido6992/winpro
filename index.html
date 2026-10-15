@@ -259,6 +259,26 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .ch-m img.ch-img{display:block;max-width:min(220px,100%);max-height:240px;border-radius:8px;margin:2px 0}
 .ch-m a.ch-file{display:block;color:inherit;text-decoration:underline;font-size:12px;margin:2px 0;word-break:break-word}
 .ch-card{border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:10px}
+.ch-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}.ch-head h3{margin:0}
+.ch-hb{display:flex;gap:6px}.ch-hbtn{border:0;border-radius:8px;color:#fff;font-weight:700;font-size:12px;padding:6px 10px;cursor:pointer}.ch-hbtn.on{outline:2px solid #fff}
+.card.ch-full{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;max-width:none!important}
+.ch-top{display:flex;align-items:center;gap:8px;padding:8px 8px;background:#202c33;font-weight:800;font-size:15px}
+.ch-back{background:#8b5a2b;color:#fff;border:0;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.ch-full .ch-wrap .ch-box{height:calc(100vh - 335px);height:calc(100dvh - 335px)}
+.ch-box{border:0!important;border-radius:0!important;background:#0b141a;background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);background-size:18px 18px;padding:8px 6px!important}
+.ch-box .ch-m{border:0;box-shadow:0 1px 1px rgba(0,0,0,.35);border-radius:8px;padding:5px 8px 3px}
+.ch-box .ch-m.c{background:#202c33;color:#e9edef}
+.ch-box .ch-m.c.me{background:#005c4b}
+.ch-box .ch-m.o{background:#facc15;color:#1a1400}
+.ch-box .ch-m.me{margin-left:auto;margin-right:0;border-top-right-radius:2px}
+.ch-box .ch-m:not(.me){border-top-left-radius:2px}
+.ch-m .tk{margin-left:3px;font-size:11px;letter-spacing:-2px;font-weight:700}
+.ch-m.o .tk{color:rgba(0,0,0,.5)}.ch-m.c .tk{color:rgba(255,255,255,.65)}.ch-m .tk.rd{color:#1d9bf0!important}
+body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab{display:none!important}
+.ch-bar{display:flex;align-items:center;gap:6px;padding:6px;background:#0b141a}
+.ch-bar #chIn{flex:1;min-width:0;border:0;border-radius:22px;background:#2a3942;color:#e9edef;padding:11px 14px;font:inherit;font-size:14px;outline:0}
+.ch-clip{background:transparent;border:0;font-size:22px;cursor:pointer;color:#8696a0;padding:0 4px}
+.ch-send{flex:0 0 42px;width:42px;height:42px;border:0;border-radius:50%;background:#00a884;color:#fff;font-size:18px;cursor:pointer}
 .ch-card summary{cursor:pointer}
 .ch-card textarea,.ch-card input{background:var(--bg);color:inherit;border:1px solid var(--border);border-radius:8px;padding:8px;font:inherit;width:100%;box-sizing:border-box}
 .dt-sig.go{background:#22c55e;animation:dtBlinkG 1s ease-in-out infinite}
@@ -6299,14 +6319,18 @@ async function chOwnerLogin(){
 }
 function chInviteUrl(){ return location.origin+location.pathname.replace(/index\.html$/,''); }
 const chInviteMsg=()=>'Join me on WIN PRO, a Deriv trading site with bots, analysis and live charts: '+chInviteUrl();
-function chOwnerTools(){
-  return '<details class="ch-card"><summary><b>&#128226; Message everyone</b></summary><p class="tiny">Everyone who opens this site gets this message in their chat and can reply to you.</p><textarea id="bcIn" maxlength="500" rows="3" placeholder="Write your message…"></textarea><button class="btn" style="margin-top:6px" onclick="bcSend()">Send to everyone</button><div id="bcList" style="margin-top:8px"></div></details>'
-  +'<details class="ch-card"><summary><b>&#128279; Invite people to the site</b></summary>'
+const CH_COL=['#22c55e','#ef4444','#3b82f6','#f59e0b','#a855f7','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6'];
+const chUserCol=lb=>{ const m=/^User (\d+)$/.exec(lb||''); return m?CH_COL[(+m[1]-1)%CH_COL.length]:''; };
+function chTool(k){ CH.tool=(CH.tool===k?'':k); const p=document.getElementById('chPanel'); if(p) p.innerHTML=chPanelHtml(); document.querySelectorAll('.ch-hb button').forEach(x=>x.classList.toggle('on',x.dataset.k===CH.tool)); if(CH.tool==='bc') bcLoad(); }
+function chPanelHtml(){
+  if(CH.tool==='bc') return '<div class="ch-card"><b>&#128226; Message everyone</b><textarea id="bcIn" maxlength="500" rows="3" placeholder="Write your message…" style="margin-top:6px"></textarea><button class="btn" style="margin-top:6px" onclick="bcSend()">Send to everyone</button><div id="bcList" style="margin-top:8px"></div></div>';
+  if(CH.tool==='inv') return '<div class="ch-card"><b>&#128279; Invite people to the site</b>'
   +'<div class="row" style="gap:6px;flex-wrap:wrap;margin:8px 0"><button class="btn" onclick="invGo(\'wa\')">WhatsApp</button><button class="btn" onclick="invGo(\'fb\')">Facebook</button><button class="btn" onclick="invGo(\'tg\')">Telegram</button><button class="btn" onclick="invGo(\'sms\')">SMS</button><button class="btn" onclick="invGo(\'mail\')">Email</button><button class="btn" onclick="invGo(\'share\')">Share…</button><button class="btn ghost" onclick="invGo(\'copy\')">Copy link</button></div>'
   +'<input id="invPhone" placeholder="Phone number with country code, e.g. 2547…" inputmode="tel"><div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0"><button class="btn" onclick="invGo(\'waNum\')">WhatsApp this number</button><button class="btn ghost" onclick="invGo(\'smsNum\')">SMS this number</button></div>'
   +'<input id="invFb" placeholder="Facebook username"><button class="btn" style="margin:6px 0" onclick="invGo(\'fbUser\')">Message on Facebook</button>'
   +'<input id="invTg" placeholder="Telegram username"><button class="btn" style="margin:6px 0" onclick="invGo(\'tgUser\')">Message on Telegram</button>'
-  +'<p class="tiny">Facebook and Telegram cannot pre-fill the text, so the invite message is copied for you to paste into the chat.</p></details>';
+  +'<p class="tiny">Facebook and Telegram cannot pre-fill the text, so the invite message is copied for you to paste into the chat.</p></div>';
+  return '';
 }
 function invGo(k){
   const u=chInviteUrl(), m=chInviteMsg(), e=encodeURIComponent, v=id=>((document.getElementById(id)||{}).value||'').trim(), go=x=>window.open(x,'_blank','noopener');
@@ -6333,15 +6357,17 @@ async function bcDel(id){ try{ await chAuth(); await chApi('/broadcasts?id=eq.'+
 function chOwnerOut(){ CH.owner=false; CH.tok=''; CH.view=null; try{ localStorage.removeItem('wp_chatrt'); }catch(e){} commGate(); chRender(); }
 function chBadge(n){ const b=document.getElementById('chBadge'); if(b){ b.style.display=n?'':'none'; b.textContent=n>9?'9+':n; } }
 function chRender(){
-  const el=document.getElementById('chatRoot'); if(!el) return;
+  const el=document.getElementById('chatRoot'); if(!el) return; el.classList.toggle('ch-full',!(CH.owner&&!CH.view));
   if(!chOn()){ el.innerHTML='<h3>&#128233; Contact the owner</h3><p class="tiny">Messaging is not switched on yet. The site owner still needs to add the chat (Firebase) details to this app.</p>'; return; }
-  const foot=(CHAT_CFG.key&&CHAT_CFG.ownerEmail)?'<div class="tiny" style="margin-top:12px;text-align:center">'+(CH.owner?'<a onclick="chOwnerOut()" style="cursor:pointer;text-decoration:underline">Owner sign out</a>':'<a onclick="chOwnerLogin()" style="cursor:pointer;text-decoration:underline">Owner sign in</a>')+'</div>':'';
-  if(CH.owner&&!CH.view){ el.innerHTML='<h3>&#128233; Messages from users</h3>'+chOwnerTools()+'<p class="tiny" style="margin:0 0 6px">Hold a conversation to delete it.</p><div id="chInbox"><p class="tiny">Loading…</p></div>'+foot; chPaintInbox(); bcLoad(); return; }
-  const ent=CH.owner&&CH.inbox&&CH.inbox[CH.view]; const title=CH.owner?escHtml(chLabel(CH.view,ent))+(ent&&ent.a&&!isOwnerAcct(ent.a)&&ent.a!==chLabel(CH.view,ent)?' <span class="tiny">'+escHtml(ent.a)+'</span>':'')+' <span class="tiny">ID …'+String(CH.view).slice(-4).toUpperCase()+'</span>':'&#128233; Message the owner';
-  let nameF=''; if(!CH.owner&&!ACCOUNT_ID){ let nm=''; try{ nm=localStorage.getItem('wp_chatname')||''; }catch(e){} nameF=`<div class="field"><input id="chName" placeholder="Your name (optional)" maxlength="40" value="${escHtml(nm)}" onchange="try{localStorage.setItem('wp_chatname',this.value)}catch(e){}"></div>`; }
-  el.innerHTML=`<h3 style="display:flex;align-items:center;gap:8px">${CH.owner?'<button class="btn ghost" style="padding:4px 10px" onclick="chBack()">&larr;</button>':''}<span>${title}</span></h3>`
-   +(CH.owner?'':'<p class="tiny">Send a message, screenshot or file (tap the paperclip) to the site owner. Replies appear here. Hold a message of yours to delete it.</p>')+nameF
-   +`<div class="ch-wrap"><div class="ch-box" id="chMsgs"></div><button type="button" class="ch-down" id="chDown" onclick="chToBottom()" title="Latest message">&#8595;</button></div><div class="row" style="margin-top:8px;gap:8px"><div class="field" style="flex:1;margin:0"><input id="chIn" maxlength="1000" placeholder="Type a message…" onkeydown="if(event.key==='Enter')chSend()"></div><div class="field" style="flex:0 0 auto;margin:0"><button class="btn ghost" type="button" title="Send a screenshot or file" onclick="document.getElementById('chFile').click()">&#128206;</button><input type="file" id="chFile" style="display:none" accept="image/*,.pdf,.txt,.csv,.zip,.doc,.docx,.xls,.xlsx" onchange="chPickFile(this)"></div><div class="field" style="flex:0 0 auto;margin:0"><button class="btn" onclick="chSend()">Send</button></div></div>`+foot;
+  const gbtn='style="background:#16a34a;color:#fff;border:0;border-radius:8px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer"';
+  const foot=(CHAT_CFG.key&&CHAT_CFG.ownerEmail)?'<div style="margin:10px 0;text-align:center">'+(CH.owner?'<button type="button" '+gbtn+' onclick="chOwnerOut()">Owner sign out</button>':'<button type="button" '+gbtn+' onclick="chOwnerLogin()">Owner sign in</button>')+'</div>':'';
+  if(CH.owner&&!CH.view){ el.innerHTML='<div class="ch-head"><h3>&#128233; Messages from users</h3><div class="ch-hb"><button type="button" data-k="bc" class="ch-hbtn'+(CH.tool==='bc'?' on':'')+'" style="background:#f97316" onclick="chTool(\'bc\')">&#128226; All</button><button type="button" data-k="inv" class="ch-hbtn'+(CH.tool==='inv'?' on':'')+'" style="background:#0ea5e9" onclick="chTool(\'inv\')">&#128279; Invite</button></div></div><div id="chPanel">'+chPanelHtml()+'</div><div id="chInbox"><p class="tiny">Loading…</p></div>'+foot; chPaintInbox(); bcLoad(); return; }
+  const ent=CH.owner&&CH.inbox&&CH.inbox[CH.view]; const lb=CH.owner?chLabel(CH.view,ent):'', col=chUserCol(lb);
+  const title=CH.owner?'<span style="color:'+(col||'inherit')+'">'+escHtml(lb)+'</span>'+(ent&&ent.a&&!isOwnerAcct(ent.a)&&ent.a!==lb?' <span class="tiny">'+escHtml(ent.a)+'</span>':'')+' <span class="tiny">ID …'+String(CH.view).slice(-4).toUpperCase()+'</span>':'&#128233; Message the owner';
+  let nameF=''; if(!CH.owner&&!ACCOUNT_ID){ let nm=''; try{ nm=localStorage.getItem('wp_chatname')||''; }catch(e){} nameF='<div class="field" style="margin:6px"><input id="chName" placeholder="Your name (optional)" maxlength="40" value="'+escHtml(nm)+'" onchange="try{localStorage.setItem(\'wp_chatname\',this.value)}catch(e){}"></div>'; }
+  el.innerHTML='<div class="ch-top">'+(CH.owner?'<button type="button" class="ch-back" onclick="chBack()">Back</button>':'')+'<span class="ch-ttl">'+title+'</span></div>'+nameF
+   +'<div class="ch-wrap"><div class="ch-box" id="chMsgs"></div><button type="button" class="ch-down" id="chDown" onclick="chToBottom()" title="Latest message">&#8595;</button></div>'
+   +'<div class="ch-bar"><button type="button" class="ch-clip" title="Send a screenshot or file" onclick="document.getElementById(\'chFile\').click()">&#128206;</button><input type="file" id="chFile" style="display:none" accept="image/*,.pdf,.txt,.csv,.zip,.doc,.docx,.xls,.xlsx" onchange="chPickFile(this)"><input id="chIn" maxlength="1000" placeholder="Type a message…" onkeydown="if(event.key===\'Enter\')chSend()"><button type="button" class="ch-send" onclick="chSend()">&#10148;</button></div>'+foot;
   CH.sig=''; chLoad();
 }
 const chHue=id=>{ let h=0; for(const c of String(id)) h=(h*31+c.charCodeAt(0))%360; return h; };
@@ -6356,7 +6382,7 @@ function chPaintInbox(){
   if(!ids.length){ box.innerHTML='<p class="tiny">No messages yet.</p>'; box.dataset.h=''; return; }
   const html=ids.map(id=>{ const v=CH.inbox[id], un=v.from==='c'&&(v.ts||0)>(seen[id]||0), lb=chLabel(id,v);
     const sub=(v.a&&v.a!==lb&&!isOwnerAcct(v.a)?v.a+' · ':'')+'ID …'+String(id).slice(-4).toUpperCase();
-    return `<div class="ch-row" data-id="${id}" onclick="chOpenThread('${id}')"><div class="ch-av" style="background:hsl(${chHue(id)} 55% 42%)">${escHtml((/^User \d+$/.test(lb)?lb.slice(5):lb.charAt(0)).toUpperCase())}</div><div style="min-width:0;flex:1"><div style="display:flex;justify-content:space-between;gap:8px"><b>${escHtml(lb)}</b><span class="tiny">${chWhen(v.ts)}</span></div><div class="tiny">${escHtml(sub)}</div><div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.l||'')}</div></div>${un?'<b class="dot">new</b>':''}${CH.rowDel===id?'<button type="button" class="ch-rdel" data-id="'+id+'" title="Delete conversation">&#128465;</button>':''}</div>`; }).join('');
+    const uc=chUserCol(lb); return `<div class="ch-row" data-id="${id}" onclick="chOpenThread('${id}')"><div class="ch-av" style="background:${uc||'hsl('+chHue(id)+' 55% 42%)'}">${escHtml((/^User \d+$/.test(lb)?lb.slice(5):lb.charAt(0)).toUpperCase())}</div><div style="min-width:0;flex:1"><div style="display:flex;justify-content:space-between;gap:8px"><b style="${uc?'color:'+uc:''}">${escHtml(lb)}</b><span class="tiny">${chWhen(v.ts)}</span></div><div class="tiny">${escHtml(sub)}</div><div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(v.l||'')}</div></div>${un?'<b class="dot">new</b>':''}${CH.rowDel===id?'<button type="button" class="ch-rdel" data-id="'+id+'" title="Delete conversation">&#128465;</button>':''}</div>`; }).join('');
   if(box.dataset.h!==html){ box.dataset.h=html; box.innerHTML=html; }
   chBindInbox(box);
 }
@@ -6406,13 +6432,17 @@ async function chDel(k){
     if(CH.owner){ try{ await chApi('/rpc/chat_tidy',{method:'POST',body:{p_chat:id}}); const left=(await chApi('/messages?chat_id=eq.'+encodeURIComponent(id)+'&select=id&limit=1'))||[]; if(!left.length){ CH.view=null; toastM('Conversation deleted'); chRender(); chInbox(); return; } }catch(e){} }
     CH.sig=''; chLoad(); }catch(e){ toastM('Could not delete the message'); }
 }
+let chPingAt=0;
+async function chOwnerPing(){ if(Date.now()-chPingAt<15000) return; chPingAt=Date.now(); try{ await chApi('/app_state?id=eq.1',{method:'PATCH',body:{owner_seen_ts:Date.now()}}); }catch(e){} }
+function chPendingBc(){ const cp=CH.bcCopied||new Set(); const b=(CH.bcCache||[]).filter(x=>!cp.has(x.id)&&Date.now()-(+x.ts)<3*864e5).sort((x,y)=>(+y.ts)-(+x.ts))[0]; return b?b.id:null; }
 async function chInboxRows(){
-  await chAuth(); const rows=(await chApi('/chats?select=id,name,acct,last,last_ts,last_from&order=last_ts.desc'))||[], o={};
-  rows.forEach(r=>{ o[r.id]={n:r.name,a:r.acct,l:r.last,ts:r.last_ts,from:r.last_from}; }); return o;
+  await chAuth(); chOwnerPing(); const rows=(await chApi('/chats?select=id,name,acct,last,last_ts,last_from,user_seen_ts,user_read_ts&order=last_ts.desc'))||[], o={};
+  rows.forEach(r=>{ o[r.id]={n:r.name,a:r.acct,l:r.last,ts:r.last_ts,from:r.last_from,us:+r.user_seen_ts||0,ur:+r.user_read_ts||0}; }); return o;
 }
 async function chInbox(){ try{ CH.inbox=await chInboxRows(); }catch(e){ CH.inbox=null; } chPaintInbox(); }
 function chOpenThread(id){ CH.view=id; chRender(); }
 function chBack(){ CH.view=null; chRender(); chInbox(); }
+function chTicks(m){ const rc=CH.rc||{s:0,r:0}, rd=rc.r>=m.ts, dl=rc.s>=m.ts; return '<span class="tk'+(rd?' rd':'')+'">'+((rd||dl)?'\u2713\u2713':'\u2713')+'</span>'; }
 const chSize=b=>b>1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
 function chFileHtml(m){
   if(!m.fu) return ''; const base=CHAT_CFG.url+'/storage/v1/object/public/chat-files/'; if(!String(m.fu).startsWith(base)) return '';
@@ -6423,7 +6453,7 @@ function chFileHtml(m){
 function chPaint(arr){
   const box=document.getElementById('chMsgs'); if(!box) return; const near=box.scrollHeight-box.scrollTop-box.clientHeight<80, mine=CH.owner?'o':'c';
   const ulab=CH.owner?chLabel(CH.view,CH.inbox&&CH.inbox[CH.view]).slice(0,18):'You';
-  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m ${m.f}${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}"><b class="tag">${m.bc?'&#128226; Owner':(m.f==='o'?'Owner':(CH.owner?'User '+userNum(CH.view):'User'))}</b>${chFileHtml(m)}${m.t?'<span class="tx">'+escHtml(m.t)+'</span>':''}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
+  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m ${m.f}${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}"><b class="tag"${(CH.owner&&m.f==='c')?' style="color:'+chUserCol('User '+userNum(CH.view))+'"':''}>${m.bc?'&#128226; Owner':(m.f==='o'?'Owner':(CH.owner?'User '+userNum(CH.view):'User'))}</b>${chFileHtml(m)}${m.t?'<span class="tx">'+escHtml(m.t)+'</span>':''}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}${m.f===mine&&!m.bc?chTicks(m):''}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
   const had=+box.dataset.n||0; box.dataset.n=arr.length;
   const stick=near||!box.dataset.init; box.querySelectorAll('img.ch-img').forEach(i=>{ if(!i.complete) i.addEventListener('load',()=>{ if(stick) box.scrollTop=box.scrollHeight; }); });
   if(near||!box.dataset.init){ box.scrollTop=box.scrollHeight; box.dataset.init='1'; }
@@ -6433,13 +6463,15 @@ function chPaint(arr){
 async function chLoad(){
   const id=CH.owner?CH.view:chId(); if(!id) return;
   try{ let rows;
-    if(CH.owner){ await chAuth(); rows=((await chApi('/messages?chat_id=eq.'+encodeURIComponent(id)+'&select=id,sender,body,ts,file_url,file_name,file_type,file_size&order=id.desc&limit=100'))||[]).reverse(); }
-    else rows=(await chApi('/rpc/chat_fetch',{method:'POST',body:{p_chat:id}}))||[];
-    const arr=rows.map(m=>({k:m.id,f:m.sender,t:m.body,ts:m.ts,fu:m.file_url,fn:m.file_name,ft:m.file_type,fs:m.file_size}));
-    if(!CH.owner){ try{ const bc=(await chApi('/rpc/broadcast_fetch',{method:'POST',body:{p_since:0}}))||[]; bc.forEach(b=>arr.push({k:'b'+b.id,f:'o',t:b.body,ts:+b.ts,bc:1})); arr.sort((x,y)=>(+x.ts)-(+y.ts));
+    if(CH.owner){ await chAuth(); rows=((await chApi('/messages?chat_id=eq.'+encodeURIComponent(id)+'&select=id,sender,body,ts,file_url,file_name,file_type,file_size,bc_id&order=id.desc&limit=100'))||[]).reverse();
+      try{ const rc=(await chApi('/chats?id=eq.'+encodeURIComponent(id)+'&select=user_seen_ts,user_read_ts'))||[]; CH.rc=rc[0]?{s:+rc[0].user_seen_ts||0,r:+rc[0].user_read_ts||0}:{s:0,r:0}; chOwnerPing(); }catch(e){} }
+    else{ rows=(await chApi('/rpc/chat_fetch',{method:'POST',body:{p_chat:id}}))||[]; try{ const rc=await chApi('/rpc/chat_touch',{method:'POST',body:{p_chat:id,p_read:true}}); const r0=Array.isArray(rc)?rc[0]:rc; CH.rc={s:+(r0&&r0.owner_seen)||0,r:+(r0&&r0.owner_read)||0}; }catch(e){} }
+    const arr=rows.map(m=>({k:m.id,f:m.sender,t:m.body,ts:m.ts,fu:m.file_url,fn:m.file_name,ft:m.file_type,fs:m.file_size,bc:m.bc_id?1:0,bcid:m.bc_id||0}));
+    if(!CH.owner){ try{ const bc=(await chApi('/rpc/broadcast_fetch',{method:'POST',body:{p_since:0}}))||[]; CH.bcCache=bc; CH.bcCopied=new Set(arr.filter(x=>x.bcid).map(x=>+x.bcid)); bc.forEach(b=>{ if(!CH.bcCopied.has(+b.id)) arr.push({k:'b'+b.id,f:'o',t:b.body,ts:+b.ts,bc:1}); }); arr.sort((x,y)=>(+x.ts)-(+y.ts));
         const mx=bc.length?Math.max(...bc.map(b=>+b.ts)):0; if(mx&&mx>(+localStorage.getItem('wp_bcseen')||0)){ localStorage.setItem('wp_bcseen',String(mx)); chBg(); } }catch(e){} }
-    const sg=arr.length+':'+(arr.length?arr[arr.length-1].k:''); if(sg!==CH.sig){ CH.sig=sg; chPaint(arr); }
-    const other=CH.owner?'c':'o', lo=arr.filter(m=>m.f===other).pop(); if(lo){ chSeen(id,lo.ts); chBg(); }
+    const sg=arr.length+':'+(arr.length?arr[arr.length-1].k:'')+':'+(CH.rc?CH.rc.s+'/'+CH.rc.r:''); if(sg!==CH.sig){ CH.sig=sg; chPaint(arr); }
+    const other=CH.owner?'c':'o', lo=arr.filter(m=>m.f===other&&!m.bc).pop(); if(lo){ chSeen(id,lo.ts); chBg(); }
+    if(CH.owner&&lo&&lo.ts>((CH.rdSent||{})[id]||0)&&!document.hidden){ (CH.rdSent=CH.rdSent||{})[id]=lo.ts; chApi('/chats?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:{owner_read_ts:Math.max(Date.now(),lo.ts+1)}}).catch(()=>{}); }
   }catch(e){}
 }
 async function chPickFile(inp){
@@ -6458,7 +6490,7 @@ async function chPickFile(inp){
     const url=CHAT_CFG.url+'/storage/v1/object/public/chat-files/'+path, ts=Date.now(), ft=f.type||'application/octet-stream';
     if(CH.owner){ await chApi('/messages',{method:'POST',body:{chat_id:id,sender:'o',body:t,ts,file_url:url,file_name:f.name,file_type:ft,file_size:f.size}});
       await chApi('/chats?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:{last:'You: '+(t||('\uD83D\uDCCE '+f.name)).slice(0,80),last_ts:ts,last_from:'o',owner_ts:ts}}); }
-    else await chApi('/rpc/chat_send_f',{method:'POST',body:{p_chat:id,p_name:chName(),p_acct:ACCOUNT_ID||'',p_text:t,p_file_url:url,p_file_name:f.name,p_file_type:ft,p_file_size:f.size}});
+    else await chApi('/rpc/chat_send_f',{method:'POST',body:{p_chat:id,p_name:chName(),p_acct:ACCOUNT_ID||'',p_text:t,p_file_url:url,p_file_name:f.name,p_file_type:ft,p_file_size:f.size,p_bc:chPendingBc()}});
     if(cap) cap.value=''; CH.sig=''; chLoad();
   }catch(e){ toastM('Could not send the file: '+(e.message||'error')); }
 }
@@ -6467,7 +6499,7 @@ async function chSend(){
   const id=CH.owner?CH.view:chId(), ts=Date.now();
   try{
     if(CH.owner){ await chAuth(); await chApi('/messages',{method:'POST',body:{chat_id:id,sender:'o',body:t,ts}}); await chApi('/chats?id=eq.'+encodeURIComponent(id),{method:'PATCH',body:{last:'You: '+t.slice(0,80),last_ts:ts,last_from:'o',owner_ts:ts}}); }
-    else await chApi('/rpc/chat_send',{method:'POST',body:{p_chat:id,p_name:chName(),p_acct:ACCOUNT_ID||'',p_text:t}});
+    else await chApi('/rpc/chat_send_f',{method:'POST',body:{p_chat:id,p_name:chName(),p_acct:ACCOUNT_ID||'',p_text:t,p_bc:chPendingBc()}});
     CH.sig=''; chLoad();
   }catch(e){ inp.value=t; toastM('Message not sent — check your connection'); }
 }
@@ -6503,6 +6535,7 @@ async function chBg(){
   try{ const seen=chSeenMap();
     if(CH.owner){ const j=await chInboxRows(); CH.inbox=j; let n=0; Object.keys(j).forEach(id=>{ if(j[id].from==='c'&&(j[id].ts||0)>(seen[id]||0)) n++; }); chBadge(n); if(n>CH.toasted&&!CH.open) toastM('✉️ New message'); CH.toasted=n; }
     else { const ots=+(await chApi('/rpc/chat_owner_ts',{method:'POST',body:{p_chat:chId()}}))||0, un=ots>(seen[chId()]||0);
+      try{ await chApi('/rpc/chat_touch',{method:'POST',body:{p_chat:chId(),p_read:false}}); }catch(e){}
       let bts=0; try{ const bc=(await chApi('/rpc/broadcast_fetch',{method:'POST',body:{p_since:+(localStorage.getItem('wp_bcseen')||0)}}))||[]; bts=bc.length?Math.max(...bc.map(b=>+b.ts)):0; }catch(e){}
       chBadge((un||bts)?1:0); const nt=Math.max(un?ots:0,bts); if(nt&&!CH.open&&nt>CH.toasted){ CH.toasted=nt; chNotify(); } }
   }catch(e){}
