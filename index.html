@@ -267,8 +267,7 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .ch-full .ch-wrap .ch-box{height:calc(100vh - 335px);height:calc(100dvh - 335px)}
 .ch-box{border:0!important;border-radius:0!important;background:#0b141a;background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);background-size:18px 18px;padding:8px 6px!important}
 .ch-box .ch-m{border:0;box-shadow:0 1px 1px rgba(0,0,0,.35);border-radius:8px;padding:5px 8px 3px}
-.ch-box .ch-m.c{background:#202c33;color:#e9edef}
-.ch-box .ch-m.c.me{background:#005c4b}
+.ch-box .ch-m.c{background:#0f766e;color:#fff}
 .ch-box .ch-m.o{background:#facc15;color:#1a1400}
 .ch-box .ch-m.me{margin-left:auto;margin-right:0;border-top-right-radius:2px}
 .ch-box .ch-m:not(.me){border-top-left-radius:2px}
@@ -5038,6 +5037,7 @@ function cxFindPartner(j){ let res=null; (function walk(o){ if(res!==null||!o||t
   if(['wallet_type','type','name','category','kind'].some(k=>typeof o[k]==='string'&&/partner/i.test(o[k]))){ for(const k of ['balance','available_balance','available','total_balance','amount']){ let v=o[k]; if(v&&typeof v==='object') v=v.amount!=null?v.amount:v.balance; const n=cxNum(v); if(isFinite(n)){ res=n; return; } } }
   Object.keys(o).forEach(k=>walk(o[k])); })(j); return res; }
 async function commXferLoad(){
+  return;   // Partners wallet card removed
   if(CX.busy) return; CX.busy=true; CX.err=''; commWalletFill();
   try{ let rows=[], cur=null, pages=0;
     do{ const j=await commGet('/wallet/v1/transactions/partner'+(cur?'?page_cursor='+encodeURIComponent(cur):'?per_page=1000')); rows=rows.concat(cxRows(j)); cur=cxNext(j); pages++; }while(cur&&pages<40);
@@ -5047,7 +5047,7 @@ async function commXferLoad(){
   CX.busy=false; commWalletFill();
 }
 function commWalletFill(){
-  const el=$('commWallet'); if(!el) return; const bal=CX.bal!=null?CX.bal:commW.bal;
+  const el=$('commWallet'); if(!el) return; el.innerHTML=''; return; const bal=CX.bal!=null?CX.bal:commW.bal;
   const x=(CX.busy&&CX.out==null)?'Loading…':(CX.err&&CX.out==null)?'<span style="color:#fb7185;font-size:12px;font-family:var(--font)">'+escHtml(CX.err)+'</span>':'$'+gf(CX.out||0);
   el.innerHTML='<div style="margin:0 0 12px;padding:12px;border:1px solid #2dd4bf;border-radius:12px;background:#2dd4bf14"><div class="tiny" style="color:#2dd4bf;font-weight:800;text-transform:uppercase">&#128091; My Partners Wallet</div>'
    +'<div style="display:flex;gap:18px;margin-top:6px;flex-wrap:wrap"><div><span class="tiny">Balance</span><br><b style="font-family:var(--mono);font-size:18px">$'+gf(bal)+'</b></div><div><span class="tiny">Total transferred out</span><br><b style="font-family:var(--mono);font-size:18px">'+x+'</b></div></div>'
@@ -5075,7 +5075,7 @@ async function commLoad(){
   const T=(l,c,k,money)=>k?'<div class="cm-tile" style="border-color:'+c+';background:'+c+'22"><small style="color:'+c+'">'+l+'</small><b>'+(money?'$'+gf(A[k]):Math.round(A[k]).toLocaleString())+'</b></div>':'';
   const tiles=(kMarkup||kCli)?T('Total app markup','#fbbf24',kMarkup,true)+T('Total clients','#2dd4bf',kCli,false):'';
   let h='<div class="tiny">'+a+' → '+b+' (UTC)</div>';
-  if(tiles) h+='<div class="cm-tiles">'+tiles+'</div><div id="commWallet"></div>'+'<div id="commAppsBox">'+commApps(COMM_MK)+'</div><!--cab-->';
+  if(tiles) h+='<div class="cm-tiles">'+tiles+'</div>'+'<div id="commAppsBox">'+commApps(COMM_MK)+'</div><!--cab-->';
   else if(!errs.length) h+='<p class="tiny" style="margin-top:8px">Deriv returned no commission figures for this period.</p>'+raws.join('');
   if(errs.length&&!tiles) h+='<div class="cm-err">'+errs.map(escHtml).join('<br>')+'</div>';
   commOut=h; commBusy=false; commRender(true); commXferLoad(); if(COMM_MK) commAppLookup(COMM_MK);
@@ -5088,10 +5088,10 @@ function commRender(keep){
     +'<h3 class="h-tools">&#128176; Commission <span><button type="button" class="mini-btn ref" onclick="commLoad()">&#8635; Refresh</button></span></h3>'
     +'<select onchange="commRange(this.value)" style="margin-bottom:10px">'+COMM_RANGES.map(x=>'<option value="'+x[0]+'"'+(x[0]===COMM_DAYS?' selected':'')+'>'+x[1]+'</option>').join('')+'</select>'
     +'<a class="btn" style="display:block;text-align:center;text-decoration:none;background:var(--teal)" href="'+PARTNERS_URL+'" target="_blank" rel="noopener">&#128184; Transfer / Withdraw (Deriv Partners wallet)</a>'
-    +'<details'+(have||live?'':' open')+' style="margin:12px 0"><summary class="tiny" style="cursor:pointer;color:var(--amber);font-weight:700">'+(have?'&#9989; Commission token saved':live?'&#9989; Using your Deriv login (optional: add a separate token)':'&#128273; Commission token needed')+'</summary>'
+    +((have||live)?'':'<details open style="margin:12px 0"><summary class="tiny" style="cursor:pointer;color:var(--amber);font-weight:700">'+(have?'&#9989; Commission token saved':live?'&#9989; Using your Deriv login (optional: add a separate token)':'&#128273; Commission token needed')+'</summary>'
     +'<p class="tiny" style="margin:8px 0">Create a Deriv API token with the <b>application_read</b> scope and paste it here. It is stored only in this browser and never touches your trading login.</p>'
     +'<input id="cmTok" type="password" placeholder="Token with application_read scope" autocomplete="off" style="width:100%;margin-bottom:6px"><input id="cmApp" type="text" value="'+escHtml(COMM.app||CLIENT_ID)+'" style="width:100%;margin-bottom:6px" placeholder="App ID">'
-    +'<div class="g-btns" style="margin-top:6px"><button class="btn" style="background:var(--amber)" onclick="commSave()">Save</button><button class="btn ghost" onclick="commClear()">Remove</button></div></details>'
+    +'<div class="g-btns" style="margin-top:6px"><button class="btn" style="background:var(--amber)" onclick="commSave()">Save</button><button class="btn ghost" onclick="commClear()">Remove</button></div></details>')
     +'<div id="commOut">'+(commOut||'<p class="tiny">Tap Refresh to load your commission report.</p>')+'</div></div>';
   commWalletFill();
   if(!keep&&(have||live)&&!commOut&&!commBusy) commLoad();
@@ -6453,7 +6453,7 @@ function chFileHtml(m){
 function chPaint(arr){
   const box=document.getElementById('chMsgs'); if(!box) return; const near=box.scrollHeight-box.scrollTop-box.clientHeight<80, mine=CH.owner?'o':'c';
   const ulab=CH.owner?chLabel(CH.view,CH.inbox&&CH.inbox[CH.view]).slice(0,18):'You';
-  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m ${m.f}${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}"><b class="tag"${(CH.owner&&m.f==='c')?' style="color:'+chUserCol('User '+userNum(CH.view))+'"':''}>${m.bc?'&#128226; Owner':(m.f==='o'?'Owner':(CH.owner?'User '+userNum(CH.view):'User'))}</b>${chFileHtml(m)}${m.t?'<span class="tx">'+escHtml(m.t)+'</span>':''}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}${m.f===mine&&!m.bc?chTicks(m):''}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
+  box.innerHTML=arr.length?arr.map(m=>{ const d=new Date(m.ts||0); return `<div class="ch-m ${m.f}${m.f===mine?' me':''}" data-k="${m.k}" data-f="${m.f}"><b class="tag"${(CH.owner&&m.f==='c')?' style="color:'+chUserCol('User '+userNum(CH.view))+';background:rgba(0,0,0,.38);padding:0 5px;border-radius:4px;width:max-content"':''}>${m.bc?'&#128226; Owner':(m.f==='o'?'Owner':(CH.owner?'User '+userNum(CH.view):'User'))}</b>${chFileHtml(m)}${m.t?'<span class="tx">'+escHtml(m.t)+'</span>':''}<small>${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}${m.f===mine&&!m.bc?chTicks(m):''}</small></div>`; }).join(''):'<p class="tiny" style="text-align:center;margin-top:20px">No messages yet — say hello.</p>';
   const had=+box.dataset.n||0; box.dataset.n=arr.length;
   const stick=near||!box.dataset.init; box.querySelectorAll('img.ch-img').forEach(i=>{ if(!i.complete) i.addEventListener('load',()=>{ if(stick) box.scrollTop=box.scrollHeight; }); });
   if(near||!box.dataset.init){ box.scrollTop=box.scrollHeight; box.dataset.init='1'; }
