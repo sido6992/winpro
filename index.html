@@ -273,7 +273,7 @@ label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px}
 .ch-box .ch-m:not(.me){border-top-left-radius:2px}
 .ch-m .tk{margin-left:3px;font-size:11px;letter-spacing:-2px;font-weight:700}
 .ch-m.o .tk{color:rgba(0,0,0,.5)}.ch-m.c .tk{color:rgba(255,255,255,.65)}.ch-m .tk.rd{color:#1d9bf0!important}
-body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab{display:none!important}
+body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,body:has(#view-guide.active) #botFab,body:has(#view-guide.active) #infoFab{display:none!important}
 .ch-bar{display:flex;align-items:center;gap:6px;padding:6px;background:#0b141a}
 .ch-bar #chIn{flex:1;min-width:0;border:0;border-radius:22px;background:#2a3942;color:#e9edef;padding:11px 14px;font:inherit;font-size:14px;outline:0}
 .ch-clip{background:transparent;border:0;font-size:22px;cursor:pointer;color:#8696a0;padding:0 4px}
@@ -301,6 +301,17 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab{d
 #view-dtrader .dt-risk-row{gap:6px;margin-bottom:6px}
 #view-dtrader .trade-btns{margin-top:6px}
 #view-dtrader .trade-btns .btn{padding:12px}
+#chartCard{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;border-radius:0!important}
+#chartCard::before,#chartCard::after{display:none!important}
+.sidebar .side-links{grid-template-columns:repeat(auto-fill,minmax(66px,1fr))!important;gap:6px!important}
+.sidebar .side-links .side-link{padding:7px 3px!important;min-height:56px!important;gap:3px!important;font-size:10px!important;border-radius:10px!important}
+.sidebar .side-links .side-link .ti{font-size:20px!important}
+.btn small.eb{display:block;font-size:11px;font-weight:700;opacity:.92;margin-top:1px;letter-spacing:.2px}
+.spk{vertical-align:-3px}.spk .w{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;animation:spkw 1s infinite}.spk .w2{animation-delay:.2s}.spk .w3{animation-delay:.4s}
+@keyframes spkw{0%{opacity:.12}50%{opacity:1}100%{opacity:.12}}
+.dv-ind{border:0;background:rgba(34,197,94,.18);color:#22c55e;border-radius:8px;padding:4px 8px;cursor:pointer}
+.gd{border:1px solid var(--border);border-radius:12px;background:var(--panel);margin-bottom:8px;padding:0 12px}.gd summary{cursor:pointer;padding:12px 0;font-weight:800;font-size:14px}
+.gd p,.gd li{font-size:13px;line-height:1.55}.gd ul{margin:0 0 10px 18px;padding:0}.gd p{margin:0 0 8px}
 #dvPill{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:70;background:rgba(6,33,15,.92);color:#86efac;border:1px solid #22c55e;border-radius:999px;padding:6px 14px;font:700 12px var(--font);max-width:92vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;display:none}
 #dvPill.show{display:block}#dvPill.err{background:rgba(69,10,10,.92);color:#fecaca;border-color:#ef4444}#dvPill.hit{background:#22c55e;color:#06210f}
 .info-fab{left:10px;right:auto;bottom:calc(150px + env(safe-area-inset-bottom,0px));width:52px;height:52px;background:rgba(255,154,60,.16);border:1.5px dashed rgba(255,154,60,.85);color:#ffb066;box-shadow:none;font-size:22px;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
@@ -712,7 +723,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 <div class="sidebar" id="sidebar">
   <button class="sidebar-close" onclick="toggleSidebar(false)">&#10005;</button>
   <h3>Menu</h3>
-  <div class="side-links"><div class="side-link" style="border-color:var(--lime);color:var(--lime)" onclick="goToTab('livetrades');toggleSidebar(false)"><span class="ti">&#128200;</span><span>Live Trades</span></div>
+  <div class="side-links"><div class="side-link" style="border-color:var(--teal);color:var(--teal);font-weight:900" onclick="goToTab('guide');toggleSidebar(false)"><span class="ti">&#128214;</span><span>How to use</span></div>
+  <div class="side-link" style="border-color:var(--lime);color:var(--lime)" onclick="goToTab('livetrades');toggleSidebar(false)"><span class="ti">&#128200;</span><span>Live Trades</span></div>
   <div class="side-link" style="border-color:var(--teal);color:var(--teal)" onclick="goToTab('copytrading');toggleSidebar(false)"><span class="ti">&#128257;</span><span>Copy Trading</span></div>
   <div class="side-link" style="border-color:var(--blue);color:var(--blue)" onclick="goToTab('tradehistory');toggleSidebar(false)"><span class="ti">&#128337;</span><span>Trade History</span></div>
   <div class="side-link" style="border-color:var(--violet);color:var(--violet)" onclick="goToTab('freebots');toggleSidebar(false)"><span class="ti">&#129302;</span><span>Bots</span></div>
@@ -755,6 +767,80 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 </div>
 
 <!-- COMMISSION / CASHIER (sidebar tabs) -->
+<div class="view" id="view-guide"><div style="max-width:720px;margin:0 auto">
+  <h3 style="margin:0 0 4px">&#128214; How to use WIN PRO</h3>
+  <p class="tiny" style="margin:0 0 10px">A simple tour of every tab, tool and strategy. Tap a heading to open it. New here? Start with the first one and practise on a <b>demo account</b> before using real money.</p>
+
+  <details class="gd" open><summary>&#128640; 1. Getting started &mdash; connect your account</summary>
+    <ul><li>Open the <b>Login</b> tab (bottom right). Tap <b>Continue with Deriv</b> to sign in on Deriv&rsquo;s own page, or paste a Deriv <b>API token</b> and tap <b>Connect with API token</b>.</li>
+    <li>Once connected you will see your account and <b>Balance</b> at the top. A demo account uses virtual money; a real account uses real money.</li>
+    <li>In <b>Login</b> you can also <b>Switch Account</b>, <b>Reconnect</b> or <b>Log out</b>.</li>
+    <li>The big number beside the logo (<b>Digit</b>) is the last digit of the current price tick.</li>
+    <li>Open the &#9776; menu (top left) to reach all the extra tabs described below. In the menu you can also show amounts in Kenyan shillings (KSh).</li></ul></details>
+
+  <details class="gd"><summary>&#128200; 2. Chart</summary>
+    <ul><li>Pick the <b>market</b>, the chart style (candles or line) and the <b>time frame</b> from the top bar. The live price and candle countdown show under it.</li>
+    <li><b>&#9998; Draw</b> menu: <b>Trendline</b> (drag on the chart), <b>Horizontal line</b> (tap where you want it), <b>Rectangle</b> (drag), <b>TP / SL box</b> (drag to set take-profit and stop-loss levels, then tap <b>Trade</b>), <b>T Text</b> (tap the chart, type your note, done), <b>Signal</b> (scans the market for an entry idea) and <b>Voice</b>.</li>
+    <li><b>Text on the chart:</b> choose <b>T Text</b>, tap the spot, type the words. Tap a text to select it, then drag it to move. Its colour, words and size can be changed in the list below the chart, and the <b>&#10005;</b> button deletes it.</li>
+    <li><b>&fnof; Indicators</b> adds RSI, Moving Average, Bollinger Bands, Parabolic SAR, MACD, Momentum and more. Each one can be recoloured, changed or removed from the same list.</li>
+    <li>The small buttons at the bottom of the chart let you place <b>Rise</b> / <b>Fall</b> trades or <b>START BOT</b> straight from the chart. The &#128274; button locks or unlocks moving them.</li></ul></details>
+
+  <details class="gd"><summary>&#128185; 3. DTrader &mdash; place a trade by hand</summary>
+    <ul><li>Choose the <b>Symbol</b>, the <b>Trade Type</b>, your <b>Stake</b> and the <b>Duration</b>. Depending on the type you will also see <b>Barrier</b>, <b>Digit (0-9)</b>, <b>Selected Tick</b>, <b>Multiplier</b> or <b>Growth Rate</b>.</li>
+    <li><b>Take Profit / Stop Loss</b> close the trade automatically at the profit or loss you set. <b>Martingale x on loss</b> multiplies the next stake after a loss &mdash; powerful but risky, so use small numbers.</li>
+    <li>The two big buttons place the trade (for example <b>Rise</b> / <b>Fall</b>, <b>Even</b> / <b>Odd</b>, <b>Over</b> / <b>Under</b>). Under each button you see its <b>entry point</b>: the best entry digit(s) for digit trades, or the entry pattern for others. A &#9889; means the entry is happening right now.</li>
+    <li>The <b>SIGNAL</b> button gives a suggested side; <b>ON/OFF</b> beside it turns the signal on or off. The speaker button turns on <b>voice commands</b> for this tab.</li>
+    <li><b>Profit / Loss</b> shows your running total and <b>Close all</b> closes every open trade.</li></ul></details>
+
+  <details class="gd"><summary>&#129302; 4. Bot Builder (Bot tab)</summary>
+    <ul><li>A bot places trades for you automatically using the rules you choose.</li>
+    <li>Pick a ready-made <b>Strategy (presets)</b> such as Even/Odd Scalper, Over/Under, Differs, Touch Hunter or Multiplier Buyer, or choose <b>Custom</b> and set everything yourself.</li>
+    <li>Settings: <b>Symbol</b>, <b>Trade Type</b>, <b>Digit</b>, <b>Barriers</b>, <b>Base Stake</b>, <b>Duration</b>, <b>Max Trades</b>, <b>Take Profit</b>, <b>Stop Loss</b> and <b>Martingale</b>. The bot stops by itself when it reaches your profit, loss or trade limit.</li>
+    <li>Tap <b>Start Bot</b> to begin and <b>Stop Bot</b> to end. The <b>Bot Log</b> lists every trade and result.</li></ul></details>
+
+  <details class="gd"><summary>&#128202; 5. Analysis</summary>
+    <ul><li>Shows live statistics for every trade type (Rise/Fall, Higher/Lower, Even/Odd, Over/Under, Matches/Differs, Touch, Asian, Reset, High/Low Tick, Only Ups/Downs, Ends and Stays) for the market you choose.</li>
+    <li>Each side shows its <b>percentage</b> and <b>hit rate</b>. The <b>Digit entry</b>, <b>Rise/Fall pattern</b> and <b>Hit rate</b> minimum boxes decide how strict the entry advice is.</li>
+    <li>Tap a type to load it, then use <b>Trade in DTrader</b> or <b>Load into Bot</b>. The <b>TP / SL levels</b> here are shared with the Bot Builder, Armed and Scanner tabs.</li></ul></details>
+
+  <details class="gd"><summary>&#127919; 6. Armed (Sniper entry)</summary>
+    <ul><li>Waits for the right moment and fires one trade for you. Set the symbol, trade type and digit/barrier, then the <b>Entry Thresholds</b>: <b>Min Confidence</b>, <b>Min Hit Rate</b> and <b>Min Frequency</b>.</li>
+    <li>Add <b>Take Profit / Stop Loss</b> and an optional <b>Martingale</b>. Turn on <b>Re-arm after trigger</b> to keep going.</li>
+    <li>Tap <b>ARM SNIPER</b> to start; the same button disarms it. The <b>Sniper Log</b> records what happened.</li></ul></details>
+
+  <details class="gd"><summary>&#128301; 7. Scanner (Favourable Scanner)</summary>
+    <ul><li>Scans many markets at once and lists the ones that look favourable right now.</li>
+    <li><b>Refresh</b> rescans. <b>Dock</b> pins the scanner as a small window. Set <b>Take Profit</b> and <b>Stop Loss</b>, then tap <b>BOT &#9654;</b> next to a market to send it to a bot.</li></ul></details>
+
+  <details class="gd"><summary>&#9889; 8. Speed Bot</summary>
+    <ul><li>Trades on every tick for fast action. Choose the market, type, stake and digit, then <b>Take Profit</b> and <b>Stop Loss</b>.</li>
+    <li>Optional: <b>Ticks</b> (blank = auto), <b>Martingale</b>, <b>Alternate trades</b> with another type, and <b>Runs</b> (blank = unlimited).</li>
+    <li>Tap <b>START SPEED BOT</b>. Watch the <b>Bot Logs</b> for results. Use small stakes &mdash; it moves fast.</li></ul></details>
+
+  <details class="gd"><summary>&#128201; 9. Live Trades, Trade History &amp; GOAL</summary>
+    <ul><li><b>Live Trades</b> lists your open trades with their running profit, and <b>Close all</b> closes them.</li>
+    <li><b>Trade History</b> shows every trade and a digits history (Even/Odd, Over/Under, Matches/Differs). Use <b>Refresh</b> or the bin to clear it.</li>
+    <li><b>GOAL</b>: enter what you want to achieve, your target amount, starting capital and how long you give yourself, then <b>Save goal</b> to see a plan and track progress.</li></ul></details>
+
+  <details class="gd"><summary>&#129302; 10. Bots, Import Bot &amp; Copy Trading</summary>
+    <ul><li><b>Bots</b> holds free ready-made strategies (Rise/Fall, Digits, Ticks, Barrier, Multipliers). Tap one and choose <b>Load into Bot Builder</b>.</li>
+    <li><b>Import Bot</b> lets you bring in a Deriv Bot XML file you already own.</li>
+    <li><b>Copy Trading</b>: paste a trader&rsquo;s copy token to copy their trades with your own stake cap, martingale, take profit and stop loss. <b>Copy Demo &rarr; Real</b> mirrors your demo trades on your real account. <b>Stop Copying</b> ends it.</li></ul></details>
+
+  <details class="gd"><summary>&#128172; 11. Ask AI, Cashier &amp; Contact Owner</summary>
+    <ul><li><b>Ask AI</b>: type a question about trading or this site and tap <b>Send</b>.</li>
+    <li><b>Cashier</b>: opens Deriv&rsquo;s deposit and withdrawal pages (log in or sign up) and shows your payment history.</li>
+    <li><b>Contact Owner</b>: chat with the site owner. You can send messages, screenshots and files with the paperclip. The owner may also send a message to everyone, and you can reply to it.</li></ul></details>
+
+  <details class="gd"><summary>&#127908; 12. Voice commands</summary>
+    <ul><li>Voice can be switched on separately in the Chart, DTrader, Bot, Armed, Speed Bot and Scanner tabs. When it is on, a small <b>speaker with moving sound waves</b> appears on that button.</li>
+    <li>It only listens while that tab is open. When you switch it on you will see examples of what you can say. Tap the speaker again to switch it off. Your browser must allow the microphone.</li></ul></details>
+
+  <details class="gd"><summary>&#9888;&#65039; 13. Trade safely</summary>
+    <ul><li>Practise on a <b>demo account</b> first and keep stakes small.</li>
+    <li>Always set a <b>Stop Loss</b> and a <b>Take Profit</b>. Be careful with <b>Martingale</b>: it can grow your losses quickly.</li>
+    <li>No signal, bot or strategy wins every time. Only trade money you can afford to lose.</li></ul></details>
+</div></div>
 <div class="view" id="view-commission"><div id="commRoot"></div></div>
 <div class="view" id="view-cashier"><div id="cashRoot"></div></div>
 <div class="view" id="view-contact"><div class="card" style="max-width:980px;width:100%;margin:0 auto" id="chatRoot"></div></div>
@@ -935,7 +1021,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
           <option value="7200">2 Hours</option>
           <option value="14400">4 Hours</option>
           <option value="86400">1 Day</option>
-        </select><select id="drawSel" onchange="drawSelChange(this)"><option value="">&#9998; Draw</option><option value="trend">Trendline</option><option value="sr">Horizontal line (S/R)</option><option value="rect">Rectangle</option><option value="pos">TP / SL box (Buy/Sell)</option><option value="signal">&#128161; Signal (scan market)</option><option value="voice" id="dvChartOpt">&#127908; Voice: OFF</option></select><select id="indSel" onchange="indSelChange(this)"><option value="">&#402; Indicators</option><option value="rsi">RSI</option><option value="ma">Moving Average</option><option value="bb">Bollinger Bands</option><option value="sar">Parabolic SAR</option><option value="bull">Bulls/Bears Power</option><option value="mom">Momentum</option><option value="vol">Volumes</option><option value="ad">Accumulation/Distribution</option><option value="macd">MACD</option><option value="stoch">Stochastic</option><option value="atr">ATR (volatility)</option></select><button class="ct-btn" onclick="toggleDrawPanel()" title="Edit objects">&#9881;</button></div>
+        </select><select id="drawSel" onchange="drawSelChange(this)"><option value="">&#9998; Draw</option><option value="trend">Trendline</option><option value="sr">Horizontal line (S/R)</option><option value="rect">Rectangle</option><option value="text">T Text (write on chart)</option><option value="pos">TP / SL box (Buy/Sell)</option><option value="signal">&#128161; Signal (scan market)</option><option value="voice" id="dvChartOpt">&#127908; Voice: OFF</option></select><button type="button" class="dv-btn dv-ind" id="dvChartInd" data-dv="chart" onclick="dvToggle('chart')" title="Voice is ON for the chart — tap to turn off" style="display:none"></button><select id="indSel" onchange="indSelChange(this)"><option value="">&#402; Indicators</option><option value="rsi">RSI</option><option value="ma">Moving Average</option><option value="bb">Bollinger Bands</option><option value="sar">Parabolic SAR</option><option value="bull">Bulls/Bears Power</option><option value="mom">Momentum</option><option value="vol">Volumes</option><option value="ad">Accumulation/Distribution</option><option value="macd">MACD</option><option value="stoch">Stochastic</option><option value="atr">ATR (volatility)</option></select><button class="ct-btn" onclick="toggleDrawPanel()" title="Edit objects">&#9881;</button></div>
     <div class="chart-sub"><span id="candleCountdownField"><b id="candleCountdown">--:--</b></span><span id="drawHint"></span><span id="mktInfo"></span><div class="price" id="livePrice">--</div></div>
     <span id="cqBtns" style="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:45;max-width:98vw"><span style="display:flex;gap:12px;align-items:center"><button id="cqLock" title="Lock / unlock moving" style="border:0;border-radius:8px;padding:8px 9px;font-size:14px;background:rgba(255,255,255,.14);color:#fff">&#128274;</button><span id="cqGrip" title="Drag to move" style="display:none;touch-action:none;cursor:grab;font-size:20px;color:#fff;padding:0 4px;user-select:none">&#10021;</span><button id="cqBuy" style="border:0;border-radius:9px;padding:11px 16px;font-size:14px;font-weight:800;background:#16c784;color:#04210f;text-transform:uppercase" onclick="placeTrade('btn1')">BUY</button><button id="cqSell" style="border:0;border-radius:9px;padding:11px 16px;font-size:14px;font-weight:800;background:#ff4d6d;color:#fff;text-transform:uppercase" onclick="placeTrade('btn2')">SELL</button><button id="cqStart" style="border:0;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:800;background:#cfc58a;color:#2b2708" onclick="fabToggleBot()">START BOT</button></span></span>
     <div id="chPl" class="hidden-field"></div>
@@ -2218,15 +2304,15 @@ function applyChartView(){
 // ---- Chart tools: draw on the chart like MT5 (drag to draw, drag handles to edit) + indicators ----
 let chartObjs=[],drawMode=null,sel=null,drag=null,tmpObj=null,chartBars=[],objRT={},objSeq=1,drawCv=null;
 try{ chartObjs=JSON.parse(localStorage.getItem('wp_chart_objs')||'[]'); objSeq=chartObjs.reduce((m,o)=>Math.max(m,o.id),0)+1; }catch(e){}
-const OBJ_NAMES={trend:'Trendline',pos:'TP/SL Box',sr:'Horizontal line',rect:'Rectangle',ma:'Moving Average',bb:'Bollinger Bands',sar:'Parabolic SAR',rsi:'RSI',mom:'Momentum',bull:'Bulls/Bears Power',vol:'Volumes',ad:'Accum/Distribution',macd:'MACD',stoch:'Stochastic',atr:'ATR'};
-const OBJ_COL={pos:'#14e0c4',trend:'#5aa9ff',sr:'#f5c542',rect:'#a78bfa',ma:'#ff9f43',bb:'#5aa9ff',sar:'#f5c542',rsi:'#14e0c4',mom:'#ff5c7a',bull:'#14e0c4',vol:'#7c8aa8',ad:'#a78bfa',macd:'#5aa9ff',stoch:'#ff9f43',atr:'#f5c542'};
+const OBJ_NAMES={text:'Text',trend:'Trendline',pos:'TP/SL Box',sr:'Horizontal line',rect:'Rectangle',ma:'Moving Average',bb:'Bollinger Bands',sar:'Parabolic SAR',rsi:'RSI',mom:'Momentum',bull:'Bulls/Bears Power',vol:'Volumes',ad:'Accum/Distribution',macd:'MACD',stoch:'Stochastic',atr:'ATR'};
+const OBJ_COL={text:'#ffffff',pos:'#14e0c4',trend:'#5aa9ff',sr:'#f5c542',rect:'#a78bfa',ma:'#ff9f43',bb:'#5aa9ff',sar:'#f5c542',rsi:'#14e0c4',mom:'#ff5c7a',bull:'#14e0c4',vol:'#7c8aa8',ad:'#a78bfa',macd:'#5aa9ff',stoch:'#ff9f43',atr:'#f5c542'};
 const OBJ_PER={ma:20,bb:20,rsi:14,mom:14,bull:13,stoch:14,atr:14}, SUBK=['rsi','mom','bull','vol','ad','macd','stoch','atr'];
-const isDrawK=k=>k==='trend'||k==='sr'||k==='rect'||k==='pos', mine=o=>!isDrawK(o.kind)||!o.sym||o.sym===currentSymbol;
+const isDrawK=k=>k==='trend'||k==='sr'||k==='rect'||k==='pos'||k==='text', mine=o=>!isDrawK(o.kind)||!o.sym||o.sym===currentSymbol;
 const saveObjs=()=>{ try{ localStorage.setItem('wp_chart_objs',JSON.stringify(chartObjs)); }catch(e){} };
 function setHint(t){ const h=document.getElementById('drawHint'); if(h) h.textContent=t; }
 function toggleDrawPanel(){ document.getElementById('drawPanel').classList.toggle('hidden-field'); renderObjList(); sizeChartToScreen(); }
-function syncCv(){ ensureCanvas(); { const so=chartObjs.find(x=>x.id===sel); if(so&&so.kind==='pos'&&document.getElementById('drawPanel').classList.contains('hidden-field')){ document.getElementById('drawPanel').classList.remove('hidden-field'); renderObjList(); setTimeout(sizeChartToScreen,0); } } drawCv.style.pointerEvents=(drawMode||sel!=null)?'auto':'none';
-  setHint(drawMode?(drawMode==='sr'?'Tap chart to place line':'Drag on chart to draw'):(sel!=null?'Drag handles to edit · tap empty area to finish':'')); }
+function syncCv(){ ensureCanvas(); { const so=chartObjs.find(x=>x.id===sel); if(so&&(so.kind==='pos'||so.kind==='text')&&document.getElementById('drawPanel').classList.contains('hidden-field')){ document.getElementById('drawPanel').classList.remove('hidden-field'); renderObjList(); setTimeout(sizeChartToScreen,0); } } drawCv.style.pointerEvents=(drawMode||sel!=null)?'auto':'none';
+  setHint(drawMode?(drawMode==='sr'?'Tap chart to place line':drawMode==='text'?'Tap chart where the text should go':'Drag on chart to draw'):(sel!=null?'Drag handles to edit · tap empty area to finish':'')); }
 function drawSelChange(el){ const v=el.value; el.value=''; if(!v) return; if(v==='voice'){ dvToggle('chart'); return; } if(v==='signal'){ try{ sigScan(); }catch(e){} return; } drawMode=v; sel=null; syncCv(); }
 function indSelChange(el){ const v=el.value; el.value=''; if(!v) return;
   chartObjs.push({id:objSeq++,kind:v,color:OBJ_COL[v],period:OBJ_PER[v]||14,ma:'sma'}); saveObjs(); applyObjs(); renderObjList(); }
@@ -2241,12 +2327,13 @@ function placePosTrade(id){
   log('tradeLog',(up?'Buy':'Sell')+' '+marketName(currentSymbol)+' — TP +$'+tpA.toFixed(2)+' / SL -$'+slA.toFixed(2)+' (closes automatically at the box levels)');
 }
 function removeObj(id){ chartObjs=chartObjs.filter(o=>o.id!==id); if(sel===id) sel=null; saveObjs(); applyObjs(); renderObjList(); syncCv(); }
-function editObj(id,k,v,redraw){ const o=chartObjs.find(x=>x.id===id); if(!o) return; o[k]=(k==='period')?Math.max(2,parseInt(v)||14):v; saveObjs(); applyObjs(); if(redraw) renderObjList(); }
+function editObj(id,k,v,redraw){ const o=chartObjs.find(x=>x.id===id); if(!o) return; if(k==='text'&&!String(v).trim()) return; o[k]=(k==='period')?Math.max(2,parseInt(v)||14):(k==='size')?Math.max(8,Math.min(60,parseInt(v)||14)):v; saveObjs(); applyObjs(); if(redraw) renderObjList(); }
 function renderObjList(){
   const el=document.getElementById('objList'); if(!el) return;
   el.innerHTML=chartObjs.filter(mine).map(o=>`<div class="obj-row"><input type="color" value="${o.color}" oninput="editObj(${o.id},'color',this.value)"><span class="nm" onclick="${isDrawK(o.kind)?`sel=${o.id};syncCv()`:''}">${OBJ_NAMES[o.kind]}</span>`
     +(OBJ_PER[o.kind]?`<input type="number" min="2" value="${o.period}" onchange="editObj(${o.id},'period',this.value)">`:'')
     +(o.kind==='ma'?`<select onchange="editObj(${o.id},'ma',this.value)"><option value="sma"${o.ma==='sma'?' selected':''}>SMA</option><option value="ema"${o.ma==='ema'?' selected':''}>EMA</option></select>`:'')
+    +(o.kind==='text'?`<input type="text" value="${escHtml(o.text||'')}" maxlength="80" onchange="editObj(${o.id},'text',this.value)" style="min-width:90px"><input type="number" min="8" max="60" value="${o.size||14}" onchange="editObj(${o.id},'size',this.value)" title="Text size">`:'')
     +(o.kind==='pos'?`<button style="color:var(--teal)" onclick="placePosTrade(${o.id})">&#9654; Trade</button>`:'')
     +(o.kind==='trend'?`<label><input type="checkbox" ${o.ext?'checked':''} onchange="editObj(${o.id},'ext',this.checked)"> Extend</label>`:'')
     +`<button onclick="removeObj(${o.id})">&#10005;</button></div>`).join('')||'<div class="tiny">Nothing added. Use Draw / Indicators.</div>';
@@ -2310,11 +2397,14 @@ function ensureCanvas(){ const host=document.getElementById('chart'); if(!host||
   drawCv=document.createElement('canvas'); drawCv.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;z-index:3;pointer-events:none;touch-action:none'; host.appendChild(drawCv);
   const xy=e=>{ const r=drawCv.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; };
   drawCv.addEventListener('pointerdown',e=>{ e.preventDefault(); try{drawCv.setPointerCapture(e.pointerId);}catch(_){} const {x,y}=xy(e), p=fromXY(x,y);
-    if(drawMode){ if(!p) return; if(drawMode==='sr'){ const o={id:objSeq++,kind:'sr',color:OBJ_COL.sr,sym:currentSymbol,price:p.price}; chartObjs.push(o); sel=o.id; drawMode=null; saveObjs(); applyObjs(); renderObjList(); }
+    if(drawMode){ if(!p) return;
+      if(drawMode==='text'){ const tx=prompt('Type the text to write on the chart:',''); drawMode=null; if(tx&&tx.trim()){ const o={id:objSeq++,kind:'text',color:'#ffffff',sym:currentSymbol,p1:p,text:tx.trim().slice(0,80),size:14}; chartObjs.push(o); sel=o.id; saveObjs(); applyObjs(); renderObjList(); } syncCv(); return; }
+      if(drawMode==='sr'){ const o={id:objSeq++,kind:'sr',color:OBJ_COL.sr,sym:currentSymbol,price:p.price}; chartObjs.push(o); sel=o.id; drawMode=null; saveObjs(); applyObjs(); renderObjList(); }
       else tmpObj={id:objSeq++,kind:drawMode,color:OBJ_COL[drawMode],sym:currentSymbol,p1:p,p2:p}; return; }
     const h=hit(x,y); if(h){ sel=h.o.id; drag={o:h.o,part:h.part,a:pt(h.o.p1),b:pt(h.o.p2),x,y,s:p,snap:JSON.parse(JSON.stringify(h.o))}; } else { sel=null; syncCv(); } });
   drawCv.addEventListener('pointermove',e=>{ const {x,y}=xy(e), p=fromXY(x,y);
     if(tmpObj){ if(p) tmpObj.p2=p; return; } if(!drag||!p) return; const o=drag.o;
+    if(o.kind==='text'){ const np=fromXY(drag.a.x+(x-drag.x),drag.a.y+(y-drag.y)); if(np) o.p1=np; return; }
     if(o.kind==='sr'){ o.price=p.price; if(objRT[o.id]&&objRT[o.id].line) objRT[o.id].line.applyOptions({price:p.price}); return; }
     if(o.kind==='pos'){ const S=drag.snap, pa=drag.part;
       if(pa==='tp') o.tp=p.price; else if(pa==='sl') o.sl=p.price; else if(pa==='r') o.t2=p.time; else if(pa==='p1') o.p1.time=p.time;
@@ -2347,6 +2437,7 @@ function fromXY(x,y){ const t=xToTime(x), price=series.coordinateToPrice(y); ret
 function segD(p,a,b){ const l=(b.x-a.x)**2+(b.y-a.y)**2; let t=l?((p.x-a.x)*(b.x-a.x)+(p.y-a.y)*(b.y-a.y))/l:0; t=Math.max(0,Math.min(1,t)); return Math.hypot(p.x-a.x-t*(b.x-a.x),p.y-a.y-t*(b.y-a.y)); }
 function hit(x,y){ const P={x,y}; const list=chartObjs.filter(o=>isDrawK(o.kind)&&mine(o)).sort((a,b)=>(b.id===sel)-(a.id===sel));
   for(const o of list){
+    if(o.kind==='text'){ const a=pt(o.p1); if(!a) continue; const sz=o.size||14, c2=drawCv.getContext('2d'); c2.font='bold '+sz+'px sans-serif'; const wd=c2.measureText(o.text).width; if(x>=a.x-8&&x<=a.x+wd+8&&y>=a.y-sz-8&&y<=a.y+10) return {o,part:'body'}; continue; }
     if(o.kind==='sr'){ const yy=series.priceToCoordinate(+o.price); if(yy!=null&&Math.abs(yy-y)<14) return {o,part:'body'}; continue; }
     if(o.kind==='pos'){ const a=pt(o.p1), x2=timeToX(o.t2), yT=series.priceToCoordinate(o.tp), yS=series.priceToCoordinate(o.sl); if(!a||x2==null||yT==null||yS==null) continue;
       for(const [n,hx,hy] of [['tp',x2,yT],['sl',x2,yS],['r',x2,a.y],['p1',a.x,a.y]]) if(Math.hypot(x-hx,y-hy)<22) return {o,part:n};
@@ -2372,6 +2463,8 @@ function drawOverlay(){
       const st=o.stake||parseFloat(document.getElementById('dtStake').value)||1, mu=o.mult||parseInt(document.getElementById('dtMultiplier').value)||100, e=v.p1.price, am=d=>(st*mu*Math.abs(d)/e).toFixed(2);
       g.font='11px sans-serif'; if(o.hit){ g.fillStyle='#ffd34d'; g.fillText(o.hit+' touched \u2014 trades stopped',x0+4,a.y-4); } const cl=y=>Math.max(12,Math.min(h-4,y)); g.fillStyle='#14e0c4'; g.fillText('TP +'+curS(am(v.tp-e)),Math.max(4,x0+4),cl(yT+(yT<a.y?12:-4))); g.fillStyle='#ff5c7a'; g.fillText('SL -'+curS(am(v.sl-e)),Math.max(4,x0+4),cl(yS+(yS<a.y?12:-4)));
       if(o.id===sel){ dot({x:x2,y:yT},'#14e0c4'); dot({x:x2,y:yS},'#ff5c7a'); dot({x:x2,y:a.y},'#e6ecff'); dot(a,'#e6ecff'); } return; }
+    if(o.kind==='text'){ const a=pt(o.p1); if(!a) return; const sz=o.size||14; g.font='bold '+sz+'px sans-serif'; g.textBaseline='alphabetic'; g.lineWidth=3; g.strokeStyle='rgba(0,0,0,.65)'; g.strokeText(o.text,a.x,a.y); g.fillStyle=o.color; g.fillText(o.text,a.x,a.y);
+      if(o.id===sel){ const wd=g.measureText(o.text).width; g.strokeStyle=o.color; g.lineWidth=1; g.setLineDash([4,3]); g.strokeRect(a.x-4,a.y-sz-3,wd+8,sz+10); g.setLineDash([]); } return; }
     const a=pt(o.p1), b=pt(o.p2); if(!a||!b) return; g.strokeStyle=o.color; g.lineWidth=2;
     if(o.kind==='rect'){ g.fillStyle=o.color+'33'; g.fillRect(a.x,a.y,b.x-a.x,b.y-a.y); g.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y); }
     else{ let e=b; if(o.ext&&b.x!==a.x){ const k=(b.y-a.y)/(b.x-a.x), X=b.x>a.x?w:0; e={x:X,y:a.y+k*(X-a.x)}; } g.beginPath(); g.moveTo(a.x,a.y); g.lineTo(e.x,e.y); g.stroke(); }
@@ -4237,7 +4330,7 @@ function buildEntry(s,sym){
     if(s.kind==='ou') e.digit=s.dig();
     const useRows = t.ok.length ? t.ok : t.rows;
     if(useRows.length){
-      const E=useRows.map(x=>x.d); e.q=true; e.conf=useRows[0].pct; e.runs=recommendedRuns(e.conf);
+      const E=useRows.map(x=>x.d); e.digs=E; e.q=true; e.conf=useRows[0].pct; e.runs=recommendedRuns(e.conf);
       e.text = t.ok.length
         ? `Entry digit ${useRows.map(x=>x.d+' ('+x.pct.toFixed(0)+'%)').join(', ')} after 3 ${r.opName} in a row`
         : `Armed below ${thr}% (best ${useRows[0].d} = ${useRows[0].pct.toFixed(0)}%) — waiting for entry digit after 3 ${r.opName} in a row`;
@@ -4251,7 +4344,7 @@ function buildEntry(s,sym){
     rows.sort((a,b)=>b.pct-a.pct); allRows.sort((a,b)=>b.pct-a.pct);
     const useRows = rows.length ? rows : allRows.slice(0,4);
     if(useRows.length){
-      const E=useRows.map(x=>x.d); e.q=true; e.conf=useRows[0].pct; e.runs=mt?2:Math.min(5,recommendedRuns(e.conf));
+      const E=useRows.map(x=>x.d); e.digs=E; e.q=true; e.conf=useRows[0].pct; e.runs=mt?2:Math.min(5,recommendedRuns(e.conf));
       e.text = rows.length
         ? `${mt?'Hot':'Cold'} digits ${useRows.slice(0,4).map(x=>x.d+' ('+x.pct.toFixed(0)+'%)').join(', ')} — trades the digit that just printed`
         : `Armed early — best ${mt?'match':'differ'} digit${useRows.length>1?'s':''} ${useRows.map(x=>x.d+' ('+x.pct.toFixed(0)+'%)').join(', ')} so far`;
@@ -6280,6 +6373,25 @@ function dtEntryCheck(){
 { const _pt=placeTrade; placeTrade=function(){ DTE.hold=0; try{ dtEntryPaint(); }catch(e){} return _pt.apply(this,arguments); }; }
 setInterval(function(){ try{ dtEntryPaint(); }catch(e){} },400);
 
+/* ===== DTrader: entry point shown inside each trade button ===== */
+const DT_TT_MAP={updown:'rf',higherlower:'hl',touch:'tc',matchdiff:'md',evenodd:'eo',overunder:'ou',asianupdown:'as',resetcallput:'rs',tickhighlow:'ht',onlyupsdowns:'ru',endsinout:'ee',staysbetween:'ss'};
+function dtEntryCaption(card,i,sym){
+  let s=card.sides[i]; const dg=parseInt(($('dtDigit')||{}).value);
+  if(s.kind==='ou'&&!isNaN(dg)){ const over=/over/.test(s.bot); s=Object.assign({},s,{dig:()=>dg,rule:()=>over?{tgt:x=>x>dg,opp:d=>d<=dg,opName:'\u2264'+dg}:{tgt:x=>x<dg,opp:d=>d>=dg,opName:'\u2265'+dg}}); }
+  const e=buildEntry(s,sym); if(!e) return ''; let ok=false; try{ ok=!!(e.test&&e.test(sym)); }catch(x){}
+  if(s.kind==='eo'||s.kind==='ou'||s.kind==='md'){ if(!e.digs||!e.digs.length) return 'Entry \u2026'; return (ok?'\u26A1 ':'')+'Entry digit '+e.digs.slice(0,3).join(' \u00B7 '); }
+  if(s.kind==='rf') return (ok?'\u26A1 ':'')+'Entry: '+(s.up?'after 3 falls':'after 3 rises');
+  return ok?'\u26A1 Entry ready':'Entry: waiting';
+}
+function dtEntryButtons(){
+  const v=$('view-dtrader'); if(!v||!v.classList.contains('active')) return;
+  const card=TT.find(c=>c.id===DT_TT_MAP[$('dtTradeType').value]), sym=$('dtSymbol').value;
+  [1,2].forEach(n=>{ const b=$('dtBtn'+n); if(!b||b.style.display==='none') return; let cap=''; if(card&&card.sides[n-1]){ try{ cap=dtEntryCaption(card,n-1,sym); }catch(e){ cap=''; } }
+    let sm=b.querySelector('small.eb'); if(!cap){ if(sm) sm.remove(); return; } if(!sm){ sm=document.createElement('small'); sm.className='eb'; b.appendChild(sm); } if(sm.textContent!==cap) sm.textContent=cap; });
+}
+setInterval(function(){ try{ dtEntryButtons(); }catch(e){} },1000);
+{ const _t2=dtTradeTypeChange; dtTradeTypeChange=function(){ _t2.apply(this,arguments); try{ dtEntryButtons(); }catch(e){} }; }
+
 /* ===== CONTACT OWNER: live text chat between site users and the owner (Firebase Realtime Database, REST only) ===== */
 const CHAT_CFG={url:'https://dqssynmyblualkgczvyq.supabase.co',key:'sb_publishable_THf1GdR7imeTxQReRw3Vow_LQtyRYw5',ownerEmail:'saiditsimba6992@gmail.com'};   // Supabase project for the owner chat
 const CH={tok:'',tokExp:0,owner:false,view:null,open:false,sig:'',inbox:null,toasted:0,timer:null};
@@ -6550,9 +6662,12 @@ const DV={on:{},rec:null,running:false,done:{},lastTrade:0,restarts:0,lastStart:
   SR:window.SpeechRecognition||window.webkitSpeechRecognition};
 const DV_TABS={bot:'Bot',sniperscan:'Sniper Scan',speedbot:'Speed Bot',dtrader:'DTrader',chart:'Chart'};
 function dvTab(){ const v=document.querySelector('.view.active'); return v?v.id.replace('view-',''):''; }
-function dvPill(t,cls){ let p=$('dvPill'); if(!p){ p=document.createElement('div'); p.id='dvPill'; document.body.appendChild(p); } if(t==null){ p.className=''; return; } p.textContent=t; p.className='show'+(cls?' '+cls:''); }
+function dvPill(t,cls){ const p=$('dvPill'); if(p) p.className=''; if(t==null||/Listening/.test(t)) return; try{ toastM(t); }catch(e){} }   // no banner at the top any more
+const DV_SPK='<svg class="spk" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 9v6h4l5 4V5L7 9H3z" fill="currentColor"/><path class="w w1" d="M15 9.5a3.5 3.5 0 010 5"/><path class="w w2" d="M17.5 7a7 7 0 010 10"/><path class="w w3" d="M20 4.5a10.5 10.5 0 010 15"/></svg>';
 function dvButtons(){
-  document.querySelectorAll('[data-dv]').forEach(b=>{ const on=!!DV.on[b.dataset.dv]; b.classList.toggle('on',on); if(b.classList.contains('dv-wide')) b.innerHTML='&#127908; Voice: '+(on?'ON':'OFF'); });
+  document.querySelectorAll('[data-dv]').forEach(b=>{ const on=!!DV.on[b.dataset.dv]; b.classList.toggle('on',on);
+    if(b.id==='dvChartInd'){ b.style.display=on?'':'none'; b.innerHTML=DV_SPK; return; }
+    if(b.classList.contains('dv-wide')) b.innerHTML=(on?DV_SPK:'&#127908;')+' Voice: '+(on?'ON':'OFF'); else b.innerHTML=on?DV_SPK:'&#127908;'; });
   const o=$('dvChartOpt'); if(o) o.textContent='\u{1F3A4} Voice: '+(DV.on.chart?'ON':'OFF');
 }
 function dvToggle(tab){
