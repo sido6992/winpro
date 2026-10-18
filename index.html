@@ -788,7 +788,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
     <li>The small buttons at the bottom of the chart let you place <b>Rise</b> / <b>Fall</b> trades or <b>START BOT</b> straight from the chart. The &#128274; button locks or unlocks moving them.</li></ul></details>
 
   <details class="gd"><summary>&#128185; 3. DTrader &mdash; place a trade by hand</summary>
-    <ul><li>Choose the <b>Symbol</b>, the <b>Trade Type</b>, your <b>Stake</b> and the <b>Duration</b>. Depending on the type you will also see <b>Barrier</b>, <b>Digit (0-9)</b>, <b>Selected Tick</b>, <b>Multiplier</b> or <b>Growth Rate</b>.</li>
+    <ul><li>Choose the <b>Symbol</b>, the <b>Trade Type</b>, your <b>Stake</b> and the <b>Duration</b>. Depending on the type you will also see <b>Barrier</b>, <b>Digit (0-9)</b>, <b>Selected Tick</b>, <b>Leverage (1:X)</b> for Buy/Sell trades, or <b>Growth Rate</b>.</li>
     <li><b>Take Profit / Stop Loss</b> close the trade automatically at the profit or loss you set. <b>Martingale x on loss</b> multiplies the next stake after a loss &mdash; powerful but risky, so use small numbers.</li>
     <li>The two big buttons place the trade (for example <b>Rise</b> / <b>Fall</b>, <b>Even</b> / <b>Odd</b>, <b>Over</b> / <b>Under</b>). Under each button you see its <b>entry point</b>: the best entry digit(s) for digit trades, or the entry pattern for others. A &#9889; means the entry is happening right now.</li>
     <li>The <b>SIGNAL</b> button gives a suggested side; <b>ON/OFF</b> beside it turns the signal on or off. The speaker button turns on <b>voice commands</b> for this tab.</li>
@@ -812,7 +812,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 
   <details class="gd"><summary>&#128301; 7. Scanner (Favourable Scanner)</summary>
     <ul><li>Scans many markets at once and lists the ones that look favourable right now.</li>
-    <li><b>Refresh</b> rescans. <b>Dock</b> pins the scanner as a small window. Set <b>Take Profit</b> and <b>Stop Loss</b>, then tap <b>BOT &#9654;</b> next to a market to send it to a bot.</li></ul></details>
+    <li><b>Refresh</b> rescans. <b>Dock</b> pins the scanner as a small window. Set <b>Take Profit</b> and <b>Stop Loss</b>, then tap <b>BOT &#9654;</b> next to a market to send it to a bot.</li>
+    <li>While the scanner is trading it re-checks every second and quickly switches to another market or trade type when the setup stops being favourable. If it loses <b>4 trades in a row</b> it stops completely until you tap the button to restart.</li></ul></details>
 
   <details class="gd"><summary>&#9889; 8. Speed Bot</summary>
     <ul><li>Trades on every tick for fast action. Choose the market, type, stake and digit, then <b>Take Profit</b> and <b>Stop Loss</b>.</li>
@@ -1107,8 +1108,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
           <select id="dtSelectedTick"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
         </div>
         <div class="field" id="dtMultiplierField">
-          <label>Multiplier (x)</label>
-          <select id="dtMultiplier"><option>10</option><option>50</option><option selected>100</option><option>200</option><option>500</option><option>1000</option></select>
+          <label>Leverage (1:X)</label>
+          <select id="dtMultiplier"><option value="10">1:10</option><option value="50">1:50</option><option value="100" selected>1:100</option><option value="200">1:200</option><option value="500">1:500</option><option value="1000">1:1000</option></select><div class="tiny" id="dtLevInfo"></div>
         </div>
         <div class="field" id="dtLimitField"><label>TP / SL ($, optional)</label><div style="display:flex;gap:4px"><input id="dtTP" type="number" min="0" step="0.01" placeholder="TP"><input id="dtSL" type="number" min="0" step="0.01" placeholder="SL"></div></div>
         <div class="field" id="dtGrowthField">
@@ -1225,8 +1226,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
           <input id="botSelTick" type="number" value="5" min="1" max="5">
         </div>
         <div class="field hidden-field" id="botMultiplierField">
-          <label>Multiplier (x)</label>
-          <select id="botMultiplier"><option>10</option><option>50</option><option selected>100</option><option>200</option><option>500</option><option>1000</option></select>
+          <label>Leverage (1:X)</label>
+          <select id="botMultiplier"><option value="10">1:10</option><option value="50">1:50</option><option value="100" selected>1:100</option><option value="200">1:200</option><option value="500">1:500</option><option value="1000">1:1000</option></select><div class="tiny" id="botLevInfo"></div>
         </div>
       </div>
       <div class="rec-chips hidden-field" id="botBarrierRecs"></div>
@@ -3135,7 +3136,7 @@ const CODE_LABELS = {
   DIGITEVEN:'Even',DIGITODD:'Odd',DIGITOVER:'Over',DIGITUNDER:'Under',
   DIGITMATCH:'Matches',DIGITDIFF:'Differs',ASIANU:'Asian Up',ASIAND:'Asian Down',
   RUNHIGH:'Only Ups',RUNLOW:'Only Downs',RESETCALL:'Reset Call',RESETPUT:'Reset Put',
-  TICKHIGH:'High Tick',TICKLOW:'Low Tick',MULTUP:'Multiplier Up',MULTDOWN:'Multiplier Down',
+  TICKHIGH:'High Tick',TICKLOW:'Low Tick',MULTUP:'Buy (leverage)',MULTDOWN:'Sell (leverage)',
   ACCU:'Accumulator',ONETOUCH:'Touch',NOTOUCH:'No Touch',EXPIRYRANGE:'Ends Between',
   EXPIRYMISS:'Ends Outside',RANGE:'Stays Between',UPORDOWN:'Goes Outside',TURBOSLONG:'Turbo Long',TURBOSSHORT:'Turbo Short',VANILLALONGCALL:'Vanilla Call',VANILLALONGPUT:'Vanilla Put'
 };
@@ -4260,7 +4261,7 @@ function renderRecommendations(prefix, cfg){
       const opts=[...ms.options].map(o=>parseInt(o.value)).filter(x=>x>0);
       const rv=(bmedian(closes,5)||0.001)/Math.abs(last||1), maxSafe=1/(2.5*rv*Math.sqrt(12));
       const safe=opts.filter(m=>m<=maxSafe), best=safe.length?Math.max(...safe):Math.min(...opts);
-      multEl.innerHTML=opts.map(m=>`<div class="rec-chip${m===best?' best':''}" style="${m>maxSafe?'opacity:.55':''}" onclick="applyMultiplierRec('${prefix}',${m})">${m}x${m===best?' &#9733;':''}</div>`).join('')+`<div class="tiny" style="width:100%">&#9733; best fit (auto-selected) · stop-out at ~${(100/best).toFixed(2)}% move · dim = too tight for current volatility</div>`;
+      multEl.innerHTML=opts.map(m=>`<div class="rec-chip${m===best?' best':''}" style="${m>maxSafe?'opacity:.55':''}" onclick="applyMultiplierRec('${prefix}',${m})">1:${m}${m===best?' &#9733;':''}</div>`).join('')+`<div class="tiny" style="width:100%">&#9733; best fit (auto-selected) · stop-out at ~${(100/best).toFixed(2)}% move · dim = too tight for current volatility</div>`;
       multEl.classList.remove('hidden-field'); applyMultiplierRec(prefix,best);
     }
   }
@@ -4270,6 +4271,13 @@ function applyBarrierRec(prefix, hi, lo){
   if(b1) b1.value=hi;
   if(b2 && !b2.closest('.hidden-field')) b2.value=lo;
 }
+function levInfo(){
+  [['dt','dtStake','dtMultiplier','dtLevInfo'],['bot','botStake','botMultiplier','botLevInfo']].forEach(([g,sid,mid,iid])=>{
+    const el=document.getElementById(iid); if(!el) return; const st=parseFloat((document.getElementById(sid)||{}).value)||0, m=parseInt((document.getElementById(mid)||{}).value)||0;
+    el.textContent=st&&m?('Margin $'+st.toFixed(2)+' \u00D7 '+m+' = $'+(st*m).toLocaleString(undefined,{maximumFractionDigits:2})+' position \u00B7 stop-out at about '+(100/m).toFixed(2)+'% against you'):''; });
+}
+['dtStake','dtMultiplier','botStake','botMultiplier'].forEach(id=>{ const e=document.getElementById(id); if(e) ['input','change'].forEach(ev=>e.addEventListener(ev,levInfo)); });
+setInterval(levInfo,1500); levInfo();
 function applyMultiplierRec(prefix, val){
   const sel=document.getElementById(prefix+'Multiplier');
   if(sel) sel.value=String(val);
@@ -6130,7 +6138,7 @@ function drOnReal(m){
 { const _hm=handleMessage; handleMessage=function(m){ _hm(m); try{ if(m&&m.msg_type==='buy'&&m.req_id!=null&&DRPEND[m.req_id]){ const o=DRPEND[m.req_id]; delete DRPEND[m.req_id]; if(!m.error&&m.buy&&DR.on&&drIsDemo()) drMirror(o); } }catch(e){} }; }
 
 // ---- SniperScan guard: stop / switch when the traded setup stops being favourable ----
-const SG={run:false,internal:false,o:null,cur:null,streak:0,wins:0,losses:0,badSince:0,blocked:false,reason:'',reasons:[],failId:null,until:0,pending:null,pendTimer:null};
+const SG={cons:0,halted:false,bad:{},lastTick:0,run:false,internal:false,o:null,cur:null,streak:0,wins:0,losses:0,badSince:0,blocked:false,reason:'',reasons:[],failId:null,until:0,pending:null,pendTimer:null};
 function scTrendInfo(sym){
   try{
     const s=computeSignal(sym); if(!s||!s.ready) return {t:'Trend —',c:''};
@@ -6146,10 +6154,11 @@ function scReasons(cur){
     r.push(marketName(o0.sym)+' · '+o0.famLabel+(now?': best side changed '+o0.side+' → '+now.side:' no longer shows a setup'));
   } else {
     if(!cur.fav) r.push('Not favourable any more — below '+cur.miss.join(', '));
-    if(cur.hit<o0.hit-12) r.push('Hit rate fell '+o0.hit.toFixed(0)+'% → '+cur.hit.toFixed(0)+'%');
+    if(cur.hit<o0.hit-8) r.push('Hit rate fell '+o0.hit.toFixed(0)+'% → '+cur.hit.toFixed(0)+'%');
     if(cur.fam==='updown'||cur.fam==='asian'){ const t=scTrendInfo(cur.sym); if(t.d&&t.d!=='NEUTRAL'&&((t.d==='CALL')!==/Rise|Up/.test(cur.side))) r.push('Trend turned '+(t.d==='CALL'?'up':'down')+' against '+cur.side); }
   }
   if(SG.streak>=2) r.push(SG.streak+' losses in a row on this setup');
+  if(SG.losses>=3&&SG.losses>SG.wins) r.push('This run is losing (W'+SG.wins+' / L'+SG.losses+')');
   return r;
 }
 function scStartPending(){
@@ -6171,7 +6180,8 @@ function scSwitch(alt,reasons){
   if(botBusy) SG.pendTimer=setTimeout(scStartPending,35000); else scStartPending();
 }
 function scAct(reasons){
-  const o0=SG.o, alt=scanFav.find(o=>!(o.sym===o0.sym&&o.bot===o0.bot&&o.side===o0.side));
+  const o0=SG.o, bk=o=>o.sym+'|'+o.bot+'|'+o.side; SG.bad[bk(o0)]=Date.now();
+  const alt=scanFav.find(o=>!(o.sym===o0.sym&&o.bot===o0.bot&&o.side===o0.side)&&!(SG.bad[bk(o)]&&Date.now()-SG.bad[bk(o)]<90000));
   SG.failId=o0.id; SG.badSince=0;
   if(alt){ scSwitch(alt,reasons); return; }
   botRunning=false; botBusy=false; STOPS++; botClearTimers();
@@ -6188,12 +6198,20 @@ function scGuard(all){
     const o0=SG.o, cur=all.find(o=>o.sym===o0.sym&&o.bot===o0.bot&&o.side===o0.side);
     SG.cur=cur||null;
     const rs=scReasons(cur);
-    if(rs.length){ if(!SG.badSince) SG.badSince=now; if(now-SG.badSince>=3500||SG.streak>=2) scAct(rs); }
+    if(rs.length){ if(!SG.badSince) SG.badSince=now; if(now-SG.badSince>=1000||SG.streak>=2||(cur&&!cur.fav&&SG.streak>=1)) scAct(rs); }
     else SG.badSince=0;
-  } else if(SG.blocked){
+  } else if(SG.blocked&&!SG.halted){
     const other=scanFav.find(o=>o.id!==SG.failId), same=scanFav.some(o=>o.id===SG.failId)&&now>SG.until;
     if(other||same){ if(other&&scanSel===SG.failId) scanSel=other.id; SG.blocked=false; SG.reason=''; SG.reasons=[]; SG.failId=null; }
   }
+}
+function scHalt(){
+  botRunning=false; botBusy=false; STOPS++; botClearTimers(); clearTimeout(SG.pendTimer);
+  try{ document.getElementById('botStatus').textContent='Stopped — 4 losses in a row'; updateFab(); }catch(e){}
+  SG.run=false; SG.pending=null; SG.halted=true; SG.blocked=true; SG.until=Infinity;
+  SG.reasons=['4 losses in a row \u2014 scanner stopped']; SG.reason=SG.reasons[0];
+  log('sniperLog','STOP \u2014 4 losses in a row. Scanner halted until you restart it.'); log('botLog','Scanner stopped the bot: 4 losses in a row');
+  toastM('Scanner STOPPED \u2014 4 losses in a row'); try{ renderWatcher(lastScan); }catch(e){}
 }
 function scPaint(){
   const stEl=$('sniperStatus'), go=$('fcwGo'), ana=$('fcwAna'); if(!stEl||!go||!ana) return;
@@ -6211,13 +6229,14 @@ function scPaint(){
   }
   if(SG.run||SG.wins||SG.losses) chips.push(span('Run W'+SG.wins+' / L'+SG.losses+(SG.streak?' · '+SG.streak+' in a row':''),SG.streak>=2?'r':(SG.wins>SG.losses?'g':'')));
   let why='';
-  if(SG.blocked) why='<div class="why">&#9940; <b>STOP</b> — '+SG.reasons.map(escHtml).join(' · ')+'<br>Trading is locked until a favourable setup appears.</div>';
+  if(SG.blocked) why='<div class="why">&#9940; <b>STOP</b> — '+SG.reasons.map(escHtml).join(' · ')+'<br>'+(SG.halted?'Tap the button below to restart when you are ready.':'Trading is locked until a favourable setup appears.')+'</div>';
   else if(SG.run&&SG.badSince){ const rs=scReasons(SG.cur||undefined); if(rs.length) why='<div class="why" style="border-color:#ffc61a;color:#ffe08a;background:rgba(255,198,26,.1)">&#9888; Watching: '+rs.map(escHtml).join(' · ')+'</div>'; }
   ana.innerHTML=chips.join('')+why;
-  if(SG.blocked){ stEl.textContent='STOP'; stEl.className='sniper-status st-stop'; go.className='fc-go stop'; go.textContent='STOP — wait for a favourable setup'; }
+  if(SG.blocked){ stEl.textContent='STOP'; stEl.className='sniper-status st-stop'; go.className='fc-go stop'; go.textContent=SG.halted?'STOPPED \u2014 4 losses in a row \u00B7 tap to restart':'STOP \u2014 wait for a favourable setup'; }
 }
 { const _rw=renderWatcher; renderWatcher=function(all){ _rw(all); try{ scGuard(all||lastScan||[]); scPaint(); }catch(e){} }; }
 { const _t=fcWatcherTap; fcWatcherTap=function(){
+    if(SG.halted&&!botRunning){ SG.halted=false; SG.blocked=false; SG.reason=''; SG.reasons=[]; SG.cons=0; SG.streak=0; SG.losses=0; SG.wins=0; SG.failId=null; SG.bad={}; try{ renderWatcher(lastScan); }catch(e){} }
     if(botRunning){ SG.run=false; SG.pending=null; return _t(); }
     if(SG.blocked){ toastM('STOP — '+(SG.reason||'conditions are unfavourable')+'. Wait for a favourable setup.'); renderWatcher(lastScan); return; }
     _t();
@@ -6226,7 +6245,7 @@ function scPaint(){
     if(SG.blocked) return;
     const o=selOpp();
     SG.internal=true; try{ _a(); }finally{ SG.internal=false; }
-    if(botRunning&&o){ SG.run=true; SG.o=o; SG.streak=0; SG.wins=0; SG.losses=0; SG.badSince=0; SG.pending=null; }
+    if(botRunning&&o){ SG.run=true; SG.o=o; SG.streak=0; SG.cons=0; SG.wins=0; SG.losses=0; SG.badSince=0; SG.pending=null; }
   }; }
 { const _sb=startBot; startBot=function(){ if(!SG.internal){ SG.run=false; SG.pending=null; } return _sb.apply(this,arguments); }; }
 // every closed contract: scanner run results, pending switch, copy-martingale ladder
@@ -6234,13 +6253,17 @@ function scPaint(){
     const r=_ph.apply(this,arguments);
     try{
       const src=contractSource[id];
+      if((SG.run||SG.pending)&&(src==='bot'||src===undefined)){ if(profit<0) SG.cons++; else if(profit>0) SG.cons=0; }
       if(SG.run&&(src==='bot'||src===undefined)){ if(profit<0){ SG.streak++; SG.losses++; } else if(profit>0){ SG.streak=0; SG.wins++; } }
+      if(SG.cons>=4&&!SG.halted&&(SG.run||SG.pending)){ scHalt(); return r; }
       if(SG.pending) setTimeout(scStartPending,2500);
       if(!src&&!SG.run) copyMartResult(profit);
     }catch(e){}
     return r;
   }; }
 
+// while the scanner is trading, re-scan every second so a bad setup is dropped within about a second
+setInterval(function(){ try{ if(!SG.run||!SG.o||SG.blocked) return; const n=Date.now(); if(n-SG.lastTick>1000){ SG.lastTick=n; scannerTick(); } }catch(e){} },500);
 // ---- v11: Every-Tick bots (1-tick contracts back to back) ----
 const ADP={dir:null,hist:[]};
 function botGapMs(){ const u=document.getElementById('botDurationUnit'), d=parseInt(document.getElementById('botDuration').value); return (u&&u.value==='t'&&d<=1)?250:1200; }
