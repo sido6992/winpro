@@ -507,15 +507,31 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 .th-head h3{margin:0;font-size:15px}
 .th-list{width:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;max-height:calc(100vh - 230px);max-height:calc(100dvh - 230px);font-family:var(--mono)}
 .th-total{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:17px;padding:6px 2px;background:var(--bg,#0b1220);border-bottom:1px solid #ffe600}
-.th-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 8px;padding:4px 2px;margin:0;font-size:11.5px;line-height:1.3;border-bottom:1px solid #ffe600;word-break:break-word;content-visibility:auto;contain-intrinsic-size:auto 24px}
-.th-row .th-l{flex:1 1 auto;min-width:0}
-.th-row .th-r{flex:0 0 auto;text-align:right;white-space:nowrap}
-.th-row.up{color:var(--up)} .th-row.down{color:var(--down)}
+.th-row{display:grid;grid-template-columns:minmax(74px,34%) 1fr;align-items:stretch;margin:0;padding:0;border-bottom:1px solid #ffe600;line-height:1.25;content-visibility:auto;contain-intrinsic-size:auto 34px}
+.th-row .th-t{display:flex;flex-direction:column;justify-content:center;gap:1px;padding:3px 5px 3px 2px;border-right:1px solid #ffe600;font-size:9.5px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.th-row .th-t .stk{color:#fff;font-size:9.5px}
+.th-row .th-d{display:flex;flex-direction:column;justify-content:center;gap:1px;padding:3px 2px 3px 7px;font-size:11.5px;min-width:0;overflow-wrap:anywhere}
+.th-row .th-d .res{font-size:12.5px}
+.th-row.up .res{color:var(--up)} .th-row.down .res{color:var(--down)} .th-row .res.even{color:var(--amber)}
+.th-row .th-d .nm{color:var(--text)}
 #fcHistory .fc-body{padding:6px 6px 8px}
 #fcHistoryBody{max-height:calc(64vh - 120px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .float-card{max-width:calc(100vw - 12px)}
 #botPane #botLog{max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px);min-height:120px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;width:100%;font-size:12px;word-break:break-word;overflow-wrap:anywhere}
 #botPane #botLog div{padding:4px 2px}
+#view-bot .card.a-violet{padding:8px 10px;margin-bottom:8px}
+#view-bot .card.a-violet h3{margin:0 0 4px;font-size:11px}
+#view-bot .card.a-violet .row{flex-wrap:nowrap;gap:6px;margin-bottom:5px}
+#view-bot .card.a-violet .row.hidden-field{display:none}
+#view-bot .card.a-violet .field{min-width:0}
+#view-bot .card.a-violet label{font-size:9.5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-bot .card.a-violet select,#view-bot .card.a-violet input{padding:5px 6px;font-size:12px;text-overflow:ellipsis}
+#view-bot .card.a-violet .duration-combo input{font-size:13px;min-width:40px}
+#view-bot .card.a-violet .tiny{font-size:9.5px;margin:2px 0 3px;line-height:1.25}
+#view-bot .card.a-violet .trade-btns{grid-template-columns:1fr 1fr 1.3fr;gap:6px;margin-top:6px}
+#view-bot .card.a-violet .trade-btns .btn{padding:8px 4px;font-size:12px}
+#view-bot .card.a-violet .dv-wide{grid-column:auto}
+#view-bot .grid{gap:8px}
 /* ---- additions: token login, goal tracker, live trades tab, history tools, account colours ---- */
 .or-sep{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;margin:14px 0 10px}
 .or-sep:before,.or-sep:after{content:"";flex:1;height:1px;background:var(--border)}
@@ -1224,6 +1240,10 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
             ><option selected>5</option><option>6</option><option>7</option><option>8</option><option>9</option>
           </select>
         </div>
+        <div class="field">
+          <label>Max Trades</label>
+          <input id="botMaxTrades" type="number" value="7" min="1">
+        </div>
       </div>
       <div class="row">
         <div class="field toggle hidden-field" id="botEqualsField" style="align-self:flex-end">
@@ -1265,12 +1285,6 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
               <option value="h">Hours</option>
             </select>
           </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="field">
-          <label>Max Trades</label>
-          <input id="botMaxTrades" type="number" value="7" min="1">
         </div>
       </div>
       <div class="row dt-risk-row">
@@ -1867,9 +1881,11 @@ function showLogin(){
   const r = document.getElementById('loginResume'); if(r) r.style.display = hasValidToken() ? 'block' : 'none';
   document.getElementById('loginOverlay').classList.remove('hidden');
 }
+const BOTLOG_OK=/^(Result:|Bot started|Bot stopped|Take Profit|Stop Loss|Runs reached|Max trades|Scanner stopped)/;
 function log(elId,msg){
   const el = document.getElementById(elId);
   if(!el) return;
+  if(elId==='botLog' && !BOTLOG_OK.test(String(msg))) return;
   const d = document.createElement('div');
   const t = new Date().toLocaleTimeString();
   d.textContent = `[${t}] ${msg}`;
@@ -1878,6 +1894,7 @@ function log(elId,msg){
 function logHTML(elId,html){
   const el = document.getElementById(elId);
   if(!el) return;
+  if(elId==='botLog' && !BOTLOG_OK.test(String(html).replace(/<[^>]*>/g,''))) return;
   const d = document.createElement('div');
   const t = new Date().toLocaleTimeString();
   d.innerHTML = `[${t}] ${html}`;
@@ -3306,6 +3323,13 @@ function pushHistory(symbolLabel, profit, win, contractId, contractType, resultO
   const sel = document.getElementById('fcViewSelect');
   if(sel && sel.value==='history') renderFloatHistory();
 }
+function thRow(h, secs){
+  const t = new Date(h.time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:secs?'2-digit':undefined,hour12:false});
+  const cls = h.result==='won'?'up':h.result==='lost'?'down':'';
+  const nm = h.growth ? h.title : `${h.type} — ${h.symbolLabel||'--'}`;
+  const sgn = h.profit>0?'+':(h.profit<0?'-':'');
+  return `<div class="th-row ${cls}"><div class="th-t"><span>${t}</span><span class="stk">Stake $${(h.stake||0).toFixed(2)}</span></div><div class="th-d"><span class="nm">${nm}</span><b class="res ${h.result==='even'?'even':''}">${h.result.toUpperCase()} ${sgn}$${Math.abs(h.profit).toFixed(2)}</b></div></div>`;
+}
 function renderSidebarHistory(){
   const el = document.getElementById('sidebarHistory');
   const filt = (document.getElementById('histFilter')||{}).value || 'all';
@@ -3316,12 +3340,7 @@ function renderSidebarHistory(){
   const total = rows.reduce((s,h)=>s+h.profit,0);
   const totalCls = total>0?'up':(total<0?'down':'');
   el.innerHTML = `<div class="th-total"><span>Total P/L</span><span class="${totalCls}">${total>=0?'+':'-'}$${Math.abs(total).toFixed(2)}</span></div>`
-    + rows.map(h=>{
-      const t = new Date(h.time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-      const st = `<span style="color:#fff">Stake $${(h.stake||0).toFixed(2)}</span>`;
-      if(h.growth) return `<div class="th-row ${cls[h.result]}" style="${clr[h.result]}"><span class="th-l">${t} <b>${h.title}</b></span><span class="th-r">${h.result} $${Math.abs(h.profit).toFixed(2)} · ${st}</span></div>`;
-      return `<div class="th-row ${cls[h.result]}" style="${clr[h.result]}"><span class="th-l">${t} ${h.type} — ${h.symbolLabel||''}</span><span class="th-r">${h.result.toUpperCase()} $${h.profit.toFixed(2)} · ${st}</span></div>`;
-    }).join('');
+    + rows.map(h=>thRow(h,true)).join('');
 }
 function onBuyResult(buy){
   botErrStreak=0; lastBuy=null;
@@ -3395,7 +3414,7 @@ function startBot(){
   if(botEntry){
     document.getElementById('botStatus').textContent='Armed — waiting for entry';
     document.getElementById('botEntryInfo').textContent='Armed: '+botEntry.text+' · '+botMax+' runs';
-    log('botLog','Armed. Entry: '+botEntry.text+' · runs: '+botMax);
+    log('botLog','Bot started. Entry: '+botEntry.text+' · runs: '+botMax);
     return;
   }
   document.getElementById('botStatus').textContent='Running';
@@ -3974,10 +3993,7 @@ function renderFloatHistory(){
     const rcls = {won:'win',lost:'loss',even:''};
     const rclr = {won:'',lost:'',even:'color:var(--amber)'};
     body.innerHTML = `<div class="th-total"><span>Total P/L</span><span class="${totalCls}">${total>=0?'+':'-'}$${Math.abs(total).toFixed(2)}</span></div>`
-      + tradeHistory.map(h=>{
-        const t = new Date(h.time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-        return `<div class="th-row ${h.result==='won'?'up':h.result==='lost'?'down':''}" style="${rclr[h.result]}"><span class="th-l">${t} ${h.type} · ${h.symbolLabel||'--'}</span><span class="th-r">${h.result.toUpperCase()} $${h.profit.toFixed(2)} · <span style="color:#fff">$${(h.stake||0).toFixed(2)}</span></span></div>`;
-      }).join('');
+      + tradeHistory.map(h=>thRow(h,false)).join('');
   } else if(mode==='account'){
     const total = tradeHistory.reduce((s,h)=>s+h.profit,0);
     const plLabel = total>=0 ? 'Profit' : 'Loss';
