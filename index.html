@@ -500,6 +500,22 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 .verdict{font-size:21px;font-weight:900;text-align:center;padding:12px 6px;margin:8px 0;border-radius:10px;border:2px solid var(--border)}
 .verdict.up{background:rgba(29,233,182,.12);border-color:var(--teal);color:var(--teal)}
 .verdict.down{background:rgba(255,77,109,.12);border-color:var(--rose);color:var(--rose)}
+
+/* ---- flat, phone-fit trade history + bot log (no card) ---- */
+.flat-pane{width:100%;max-width:none;margin:0;padding:0 2px;background:transparent;border:0;border-radius:0;box-shadow:none}
+.th-head{display:flex;justify-content:space-between;align-items:center;gap:6px;margin:0 0 6px}
+.th-head h3{margin:0;font-size:15px}
+.th-list{width:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;max-height:calc(100vh - 230px);max-height:calc(100dvh - 230px);font-family:var(--mono)}
+.th-total{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:17px;padding:6px 2px;background:var(--bg,#0b1220);border-bottom:1px solid #ffe600}
+.th-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 8px;padding:4px 2px;margin:0;font-size:11.5px;line-height:1.3;border-bottom:1px solid #ffe600;word-break:break-word;content-visibility:auto;contain-intrinsic-size:auto 24px}
+.th-row .th-l{flex:1 1 auto;min-width:0}
+.th-row .th-r{flex:0 0 auto;text-align:right;white-space:nowrap}
+.th-row.up{color:var(--up)} .th-row.down{color:var(--down)}
+#fcHistory .fc-body{padding:6px 6px 8px}
+#fcHistoryBody{max-height:calc(64vh - 120px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.float-card{max-width:calc(100vw - 12px)}
+#botPane #botLog{max-height:calc(100vh - 150px);max-height:calc(100dvh - 150px);min-height:120px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;width:100%;font-size:12px;word-break:break-word;overflow-wrap:anywhere}
+#botPane #botLog div{padding:4px 2px}
 /* ---- additions: token login, goal tracker, live trades tab, history tools, account colours ---- */
 .or-sep{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;margin:14px 0 10px}
 .or-sep:before,.or-sep:after{content:"";flex:1;height:1px;background:var(--border)}
@@ -909,10 +925,10 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 
 <!-- TRADE HISTORY (was sidebar) -->
 <div class="view" id="view-tradehistory">
-  <div class="card" style="max-width:480px;margin:0 auto">
-    <h3 class="h-tools">Trade History <span><button type="button" class="mini-btn ref" onclick="refreshHistory()">&#8635; Refresh</button> <button type="button" class="mini-btn del" onclick="clearTradeHistory()">&#128465; Delete</button></span></h3>
+  <div class="flat-pane">
+    <h3 class="h-tools th-head">Trade History <span><button type="button" class="mini-btn ref" onclick="refreshHistory()">&#8635; Refresh</button> <button type="button" class="mini-btn del" onclick="clearTradeHistory()">&#128465; Delete</button></span></h3>
     <div class="field"><select id="histFilter" onchange="renderSidebarHistory()"><option value="all">All trades</option><option value="growth">Accumulating markets only (Buy/Sell, Accumulators, Reset, Asian)</option><option value="digits">Digits history (Even/Odd, Over/Under, Matches/Differs)</option></select></div>
-    <div id="sidebarHistory" class="log" style="max-height:60vh"></div>
+    <div id="sidebarHistory" class="th-list"></div>
   </div>
 </div>
 
@@ -1277,7 +1293,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
         <button type="button" class="btn ghost dv-btn dv-wide" data-dv="bot" onclick="dvToggle('bot')">&#127908; Voice: OFF</button>
       </div>
     </div>
-    <div class="card a-orange">
+    <div class="flat-pane" id="botPane">
       <div class="hidden-field">
         <div class="stat"><span>Status</span><span id="botStatus">Idle</span></div>
         <div class="stat"><span>Trades run</span><span id="botCount">0</span></div>
@@ -1857,7 +1873,7 @@ function log(elId,msg){
   const d = document.createElement('div');
   const t = new Date().toLocaleTimeString();
   d.textContent = `[${t}] ${msg}`;
-  el.prepend(d);
+  el.prepend(d); while(el.childElementCount>500) el.lastElementChild.remove();
 }
 function logHTML(elId,html){
   const el = document.getElementById(elId);
@@ -1865,7 +1881,7 @@ function logHTML(elId,html){
   const d = document.createElement('div');
   const t = new Date().toLocaleTimeString();
   d.innerHTML = `[${t}] ${html}`;
-  el.prepend(d);
+  el.prepend(d); while(el.childElementCount>500) el.lastElementChild.remove();
 }
 
 // ---- DERIV OAUTH 2.0 + PKCE ----
@@ -3285,7 +3301,7 @@ function pushHistory(symbolLabel, profit, win, contractId, contractType, resultO
   const growth = isGrowthContract(contractType);
   const title = growth ? marketName(symbolLabel||'')+' - '+growthLabel(contractType) : '';
   tradeHistory.unshift({symbolLabel, profit, win, result, type:tradeTypeLabel(contractType, barrier), id:contractId, time:Date.now(), growth, title, stake:parseFloat(stake)||0, acct:ACCOUNT_ID});
-  if(tradeHistory.length>200) tradeHistory.pop(); saveJ('wp_hist',tradeHistory);
+  if(tradeHistory.length>5000) tradeHistory.length=5000; saveJ('wp_hist',tradeHistory);
   renderSidebarHistory();
   const sel = document.getElementById('fcViewSelect');
   if(sel && sel.value==='history') renderFloatHistory();
@@ -3299,11 +3315,12 @@ function renderSidebarHistory(){
   const clr = {won:'',lost:'',even:'color:var(--amber)'};
   const total = rows.reduce((s,h)=>s+h.profit,0);
   const totalCls = total>0?'up':(total<0?'down':'');
-  el.innerHTML = `<div class="stat" style="font-weight:900;font-size:24px;margin-bottom:10px;padding:10px 4px;border-bottom:1px solid var(--border)"><span>Total P/L</span><span class="${totalCls}">${total>=0?'+':'-'}$${Math.abs(total).toFixed(2)}</span></div>`
+  el.innerHTML = `<div class="th-total"><span>Total P/L</span><span class="${totalCls}">${total>=0?'+':'-'}$${Math.abs(total).toFixed(2)}</span></div>`
     + rows.map(h=>{
-      const t = `[${new Date(h.time).toLocaleTimeString()}]`;
-      if(h.growth) return `<div class="${cls[h.result]}" style="${clr[h.result]}">${t} <b>${h.title}</b> ${h.result} $${Math.abs(h.profit).toFixed(2)} · <span style="color:#fff">Stake $${(h.stake||0).toFixed(2)}</span></div>`;
-      return `<div class="${cls[h.result]}" style="${clr[h.result]}">${t} ${h.type} — ${h.result.toUpperCase()} $${h.profit.toFixed(2)} · <span style="color:#fff">Stake $${(h.stake||0).toFixed(2)}</span> — ${h.symbolLabel||''}</div>`;
+      const t = new Date(h.time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const st = `<span style="color:#fff">Stake $${(h.stake||0).toFixed(2)}</span>`;
+      if(h.growth) return `<div class="th-row ${cls[h.result]}" style="${clr[h.result]}"><span class="th-l">${t} <b>${h.title}</b></span><span class="th-r">${h.result} $${Math.abs(h.profit).toFixed(2)} · ${st}</span></div>`;
+      return `<div class="th-row ${cls[h.result]}" style="${clr[h.result]}"><span class="th-l">${t} ${h.type} — ${h.symbolLabel||''}</span><span class="th-r">${h.result.toUpperCase()} $${h.profit.toFixed(2)} · ${st}</span></div>`;
     }).join('');
 }
 function onBuyResult(buy){
@@ -3956,8 +3973,11 @@ function renderFloatHistory(){
     const totalCls = total>0?'up':(total<0?'down':'');
     const rcls = {won:'win',lost:'loss',even:''};
     const rclr = {won:'',lost:'',even:'color:var(--amber)'};
-    body.innerHTML = `<div class="stat" style="font-weight:900;font-size:22px;margin-bottom:8px;padding:8px 4px;border-bottom:1px solid var(--border)"><span>Total P/L</span><span class="${totalCls}">${total>=0?'+':''}$${total.toFixed(2)}</span></div>`
-      + tradeHistory.slice(0,10).map(h=>`<div class="hist-item ${rcls[h.result]}" style="${rclr[h.result]}"><span>${h.type} · ${h.symbolLabel||'--'}</span><span>${h.result.toUpperCase()} $${h.profit.toFixed(2)} · <span style="color:#fff">Stake $${(h.stake||0).toFixed(2)}</span></span></div>`).join('');
+    body.innerHTML = `<div class="th-total"><span>Total P/L</span><span class="${totalCls}">${total>=0?'+':'-'}$${Math.abs(total).toFixed(2)}</span></div>`
+      + tradeHistory.map(h=>{
+        const t = new Date(h.time).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+        return `<div class="th-row ${h.result==='won'?'up':h.result==='lost'?'down':''}" style="${rclr[h.result]}"><span class="th-l">${t} ${h.type} · ${h.symbolLabel||'--'}</span><span class="th-r">${h.result.toUpperCase()} $${h.profit.toFixed(2)} · <span style="color:#fff">$${(h.stake||0).toFixed(2)}</span></span></div>`;
+      }).join('');
   } else if(mode==='account'){
     const total = tradeHistory.reduce((s,h)=>s+h.profit,0);
     const plLabel = total>=0 ? 'Profit' : 'Loss';
