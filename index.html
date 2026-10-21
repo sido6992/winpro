@@ -6632,24 +6632,27 @@ function thFetch(){
   send({profit_table:1,description:1,limit:200,offset:TH.off,sort:'DESC',date_from:from,date_to:to,passthrough:{thr:1}});
 }
 { const _hm=handleMessage; handleMessage=function(m){
-  if(m&&m.msg_type==='profit_table'&&m.passthrough&&m.passthrough.thr){
+  let mine=false; try{ mine=!!(m&&m.msg_type==='profit_table'&&m.passthrough&&m.passthrough.thr); }catch(e){}
+  if(mine){ try{
     TH.busy=false;
     if(m.error){ TH.err=m.error.message||'Could not load history'; TH.done=true; $('thRangeInfo').textContent=TH.err; renderSidebarHistory(); return; }
     const tr=(m.profit_table&&m.profit_table.transactions)||[];
     TH.rows=TH.rows.concat(tr.map(thConv)); TH.off+=tr.length; if(tr.length<200) TH.done=true;
     $('thRangeInfo').textContent='Last '+({1:'24 hours',7:'7 days',30:'30 days',365:'12 months'}[TH.days]||TH.days+' days')+' \u00B7 '+TH.rows.length+' trades'+(TH.done?'':' (scroll for more)');
-    renderSidebarHistory(); return;
+    renderSidebarHistory(); }catch(e){ TH.busy=false; } return;
   }
   return _hm.apply(this,arguments);
 }; }
 { const _rsh=renderSidebarHistory; renderSidebarHistory=function(){
   if(TH.mode!=='range') return _rsh.apply(this,arguments);
+  try{
   const el=$('sidebarHistory'); if(!el) return;
   const filt=($('histFilter')||{}).value||'all';
   const rows=filt==='digits'?TH.rows.filter(h=>/even|odd|over|under|match|differ/i.test(h.type||'')):TH.rows;
   if(!rows.length){ el.innerHTML='<div class="tiny">'+(TH.busy?'Loading\u2026':(TH.err||'No trades in this period.'))+'</div>'; return; }
   const total=rows.reduce((a,h)=>a+h.profit,0), cl=total>0?'up':(total<0?'down':'');
   el.innerHTML='<div class="th-total"><span>Total P/L ('+rows.length+')</span><span class="'+cl+'">'+(total>=0?'+':'-')+'$'+Math.abs(total).toFixed(2)+'</span></div>'+rows.map(h=>thRow(h,true)).join('')+(TH.busy?'<div class="tiny" style="padding:6px">Loading more\u2026</div>':'');
+  }catch(e){ return _rsh.apply(this,arguments); }
 }; }
 { const _rf=refreshHistory; refreshHistory=function(){ if(TH.mode==='range'){ TH.rows=[]; TH.off=0; TH.done=false; TH.err=''; thFetch(); return; } return _rf.apply(this,arguments); }; }
 { const el=$('sidebarHistory'); if(el) el.addEventListener('scroll',function(){ if(TH.mode==='range'&&el.scrollTop+el.clientHeight>=el.scrollHeight-120) thFetch(); }); }
@@ -6722,8 +6725,18 @@ const ALT_S=[
    if(L.every(x=>!x.up)&&L[2].body>=L[1].body) return {d:'PUT',conf:AX.cap(60+L[2].body/(L[0].body||1e-9)*4,0,92),why:['3 falling Heikin-Ashi candles']};
    return NEU('mixed candles'); }}
 ];
+const ALT_CACHE={}; let ALT_BUSY=false;
 function altRun(key,sym){
-  const c=(tickBuffers[sym]||[]).map(p=>p.q); if(c.length<35) return null;
+  const buf=tickBuffers[sym]||[]; if(buf.length<35) return null;
+  const n=buf.length, ck=key+'|'+n+'|'+buf[n-1].q+'|'+buf[n-2].q+'|'+buf[n-3].q, hit=ALT_CACHE[sym+'|'+key];
+  if(hit&&hit.k===ck) return hit.r;
+  if(ALT_BUSY) return null;                       // re-entry guard: strategies must never call themselves again (trend helper asks for the signal)
+  ALT_BUSY=true; let r=null;
+  try{ r=altRun0(key,sym,buf.slice(-200).map(p=>p.q)); }catch(e){ r=null; } finally{ ALT_BUSY=false; }
+  ALT_CACHE[sym+'|'+key]={k:ck,r}; return r;
+}
+function altRun0(key,sym,c){
+  if(c.length<35) return null;
   const run1=q=>{ try{ return q.f(c); }catch(e){ return null; } };
   if(key!=='consensus'){ const q=ALT_S.find(x=>x.k===key); const r=q&&run1(q); return r?{dir:r.d,conf:Math.round(r.conf),why:r.why,name:q.name}:null; }
   let up=0,dn=0,nu=0,nd=0; const why=[], name=ALT_S[0].name;
@@ -6734,9 +6747,11 @@ function altRun(key,sym){
   return {dir:side,conf:Math.min(98,Math.round(avg*100*(0.55+0.45*share)+nn*2)),why,name};
 }
 { const _cs=computeSignal; computeSignal=function(sym){
-  const b=_cs.apply(this,arguments); if(!ALT.on||!b||!b.ready) return b;
-  let r=null; try{ r=altRun(ALT.key,sym); }catch(e){} if(!r) return b;
-  return Object.assign({},b,{direction:r.dir,confidence:r.conf,reasons:r.why.length?r.why:b.reasons,alt:r.name});
+  const b=_cs.apply(this,arguments);
+  try{ if(!ALT.on||!b||!b.ready) return b;
+    const r=altRun(ALT.key,sym); if(!r) return b;
+    return Object.assign({},b,{direction:r.dir,confidence:r.conf,reasons:(r.why&&r.why.length)?r.why:b.reasons,alt:r.name});
+  }catch(e){ return b; }
 }; }
 function altUI(){
   const b=$('altBtn'), sel=$('altSel'), st=$('altStat'); if(!b||!sel||!st) return;
