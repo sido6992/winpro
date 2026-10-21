@@ -532,6 +532,29 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 #view-bot .card.a-violet .trade-btns .btn{padding:8px 4px;font-size:12px}
 #view-bot .card.a-violet .dv-wide{grid-column:auto}
 #view-bot .grid{gap:8px}
+
+/* ---- v3: DTrader fits the screen, history ranges, strategy picker ---- */
+#view-dtrader{overflow-x:hidden;max-width:100vw}
+#view-dtrader .grid{grid-template-columns:minmax(0,1fr)}
+#view-dtrader .card{min-width:0;max-width:100%;overflow:hidden;box-sizing:border-box}
+#view-dtrader .dt-h{flex-wrap:wrap;min-width:0}
+#view-dtrader .dt-sigwrap{max-width:100%;min-width:0}
+#view-dtrader .dt-sig{max-width:calc(100vw - 150px)}
+#view-dtrader .dt-sigwarn{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word;overflow-wrap:anywhere;max-width:100%;box-sizing:border-box}
+#view-dtrader .row{flex-wrap:wrap;min-width:0}
+#view-dtrader .field{min-width:0;flex:1 1 90px}
+#view-dtrader .trade-btns{grid-template-columns:repeat(2,minmax(0,1fr))}
+#view-dtrader .trade-btns[style*="1fr"]{grid-template-columns:minmax(0,1fr)!important}
+#view-dtrader .trade-btns .btn{min-width:0;white-space:normal;word-break:break-word;line-height:1.2}
+#view-dtrader .trade-btns .btn small.eb{display:block;white-space:normal;font-size:10px;font-weight:600;opacity:.92;line-height:1.25;margin-top:2px;overflow-wrap:anywhere}
+#view-dtrader .rec-chips{flex-wrap:wrap;max-width:100%}
+.th-range{display:flex;gap:4px;margin:0 0 6px}
+.th-range button{flex:1 1 0;min-width:0;padding:6px 2px;font:700 11px var(--font);border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:7px;cursor:pointer}
+.th-range button.on{background:var(--teal);color:#08101f;border-color:var(--teal)}
+.alt-row{display:flex;gap:6px;align-items:center;margin-top:8px}
+.alt-btn{flex:0 0 auto;padding:7px 10px;font:800 11px var(--font);border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;white-space:nowrap}
+.alt-btn.on{background:#22c55e;color:#06210f;border-color:#22c55e}
+.alt-row select{flex:1 1 0;min-width:0;padding:7px 8px;font-size:12px}
 /* ---- additions: token login, goal tracker, live trades tab, history tools, account colours ---- */
 .or-sep{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;margin:14px 0 10px}
 .or-sep:before,.or-sep:after{content:"";flex:1;height:1px;background:var(--border)}
@@ -943,6 +966,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 <div class="view" id="view-tradehistory">
   <div class="flat-pane">
     <h3 class="h-tools th-head">Trade History <span><button type="button" class="mini-btn ref" onclick="refreshHistory()">&#8635; Refresh</button> <button type="button" class="mini-btn del" onclick="clearTradeHistory()">&#128465; Delete</button></span></h3>
+    <div class="th-range" id="thRange"><button type="button" class="on" data-r="local" onclick="thRange('local')">Saved</button><button type="button" data-r="1" onclick="thRange(1)">1 Day</button><button type="button" data-r="7" onclick="thRange(7)">1 Week</button><button type="button" data-r="30" onclick="thRange(30)">1 Month</button><button type="button" data-r="365" onclick="thRange(365)">1 Year</button></div>
+    <div class="tiny" id="thRangeInfo" style="margin:0 0 4px"></div>
     <div class="field"><select id="histFilter" onchange="renderSidebarHistory()"><option value="all">All trades</option><option value="growth">Accumulating markets only (Buy/Sell, Accumulators, Reset, Asian)</option><option value="digits">Digits history (Even/Odd, Over/Under, Matches/Differs)</option></select></div>
     <div id="sidebarHistory" class="th-list"></div>
   </div>
@@ -1332,6 +1357,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
       </div>
       <select id="anSymbol" onchange="syncSymbol(this.value,this.id)" style="width:180px"></select>
     </div>
+    <div class="alt-row"><button type="button" class="alt-btn" id="altBtn" onclick="altToggle()">Strategy: OFF</button><select id="altSel" onchange="altPick(this.value)" style="display:none"></select></div>
+    <div class="tiny" id="altStat" style="margin-top:4px"></div>
   </div>
 
   <div class="card a-blue">
@@ -6497,6 +6524,232 @@ function dtEntryButtons(){
 }
 setInterval(function(){ try{ dtEntryButtons(); }catch(e){} },1000);
 { const _t2=dtTradeTypeChange; dtTradeTypeChange=function(){ _t2.apply(this,arguments); try{ dtEntryButtons(); }catch(e){} }; }
+
+/* ===== v3: single entry digit, entry points for every type, auto duration ===== */
+function dtOneEntry(s,sym){
+  const dg=parseInt(($('dtDigit')||{}).value);
+  if(s.kind==='ou'&&!isNaN(dg)){ const over=/over/.test(s.bot); s=Object.assign({},s,{dig:()=>dg,rule:()=>over?{tgt:x=>x>dg,opp:d=>d<=dg,opName:'\u2264'+dg}:{tgt:x=>x<dg,opp:d=>d>=dg,opName:'\u2265'+dg}}); }
+  const e=buildEntry(s,sym); if(!e||!e.digs||!e.digs.length) return {e,s,digit:null,ok:false};
+  const D=e.digs[0];
+  let ok=false;
+  if(s.kind==='md'){ const d=digitsOf(sym); ok=d.length>0&&d[d.length-1]===D; }
+  else { const r=s.rule(), d=digitsOf(sym), n=d.length; ok=n>=3&&d.slice(-3).every(r.opp)&&d[n-1]===D; }
+  return {e,s,digit:D,ok};
+}
+function dtDeep(s,sym){
+  const d=SN[s.bot]; if(!d) return {ok:false,line:'',score:0};
+  const c=(tickBuffers[sym]||[]).map(p=>p.q), x=sniperCtx(sym);
+  if(!x||c.length<45) return {ok:false,score:0,line:'Collecting ticks\u2026'};
+  const r=snCheck(x,d.sn), sg=computeSignal(sym); let tr=null; try{ tr=scTrendInfo(sym); }catch(e){}
+  const bm=bmedian(c,5), hit=snRates(c,d,5,d.k*bm).hit, want=d.sn==='up'?'CALL':d.sn==='down'?'PUT':null;
+  let sc=0; const why=[];
+  if(r&&r.ok){ sc+=40; why.push(d.sn==='squeeze'?'volatility squeezed':d.sn==='expand'?'breakout starting':'fresh EMA3/8 cross'); }
+  if(want){
+    if(sg.ready&&sg.direction===want){ sc+=Math.min(25,Math.round(sg.confidence/4)); why.push('signal '+sg.confidence+'%'); }
+    if(tr&&tr.d===want){ sc+=15; why.push('trend agrees'); } else if(tr&&tr.d&&tr.d!=='NEUTRAL'){ sc-=15; why.push('trend against'); }
+    if(x.rsi!=null&&(want==='CALL'?x.rsi<78:x.rsi>22)) sc+=5;
+  } else { sc+=(r&&r.ok)?15:0; }
+  sc+=hit>=55?15:(hit>=45?5:0);
+  const against=want&&tr&&tr.d&&tr.d!=='NEUTRAL'&&tr.d!==want;
+  const ok=!!(r&&r.ok)&&sc>=65&&!against;
+  return {ok,score:Math.max(0,Math.min(100,sc)),hit,why,want,sg,r};
+}
+dtEntryTest=function(){
+  const a=DTS.applied; if(!a||!a.bot) return null; const sym=$('dtSymbol').value;
+  if(a.bot==='mult'){ const r=snCheck(sniperCtx(sym),a.side==='btn2'?'down':'up'); return r&&r.ok?{ok:true}:null; }
+  let s0=null; for(const t of TT){ const f=t.sides.find(x=>x.bot===a.bot); if(f){ s0=f; break; } } if(!s0) return null;
+  if(s0.kind==='eo'||s0.kind==='ou'||s0.kind==='md'){ const o=dtOneEntry(s0,sym); return o.ok?{ok:true}:null; }
+  if(s0.kind==='sn'){ const o=dtDeep(s0,sym); return o.ok?{ok:true}:null; }
+  const e=buildEntry(s0,sym); return e&&e.test?e.test(sym):null;
+};
+dtEntryCaption=function(card,i,sym){
+  const s=card.sides[i];
+  if(s.kind==='eo'||s.kind==='ou'||s.kind==='md'){
+    const o=dtOneEntry(s,sym); if(o.digit==null) return 'Entry digit \u2026';
+    const hit=o.e.conf?' \u00B7 '+Math.round(o.e.conf)+'%':'';
+    return (o.ok?'\u26A1 ENTER NOW \u00B7 ':'Entry digit ')+(o.ok?'digit ':'')+o.digit+hit;
+  }
+  if(s.kind==='rf'){ const e=buildEntry(s,sym); let ok=false; try{ ok=!!(e.test&&e.test(sym)); }catch(x){} return (ok?'\u26A1 ENTER NOW \u00B7 ':'Entry: ')+(s.up?'after 3 falls, then rise':'after 3 rises, then fall'); }
+  if(s.kind==='sn'){
+    const o=dtDeep(s,sym); if(o.line) return o.line;
+    const e=buildEntry(s,sym), lv=[]; if(e.barrier) lv.push('barrier '+e.barrier+(e.barrier2?' / '+e.barrier2:'')); if(e.selTick) lv.push('tick '+e.selTick); lv.push(e.dur+' ticks');
+    const base=o.ok?'\u26A1 ENTER NOW \u00B7 '+o.score+'/100':'Wait \u00B7 '+o.score+'/100';
+    return base+'\n'+(o.ok?o.why.slice(0,3).join(' \u00B7 ')+' \u00B7 ':'needs fresh cross + signal \u226570% \u00B7 ')+'hit '+Math.round(o.hit||0)+'% \u00B7 '+lv.join(' \u00B7 ');
+  }
+  return '';
+};
+dtEntryButtons=function(){
+  const v=$('view-dtrader'); if(!v||!v.classList.contains('active')) return;
+  const card=TT.find(c=>c.id===DT_TT_MAP[$('dtTradeType').value]), sym=$('dtSymbol').value;
+  [1,2].forEach(n=>{ const b=$('dtBtn'+n); if(!b||b.style.display==='none') return; let cap=''; if(card&&card.sides[n-1]){ try{ cap=dtEntryCaption(card,n-1,sym); }catch(e){ cap=''; } }
+    let sm=b.querySelector('small.eb'); if(!cap){ if(sm) sm.remove(); return; } if(!sm){ sm=document.createElement('small'); sm.className='eb'; b.appendChild(sm); } if(sm.textContent!==cap) sm.textContent=cap; sm.style.whiteSpace='pre-line'; });
+};
+
+const DT_DUR={updown:[1,10],higherlower:[5,10],touch:[5,10],endsinout:[2,10],staysbetween:[2,10],matchdiff:[1,10],evenodd:[1,10],overunder:[1,10],asianupdown:[5,10],onlyupsdowns:[2,5],resetcallput:[5,10],tickhighlow:[5,5]};
+function dtAutoDuration(clampOnly){
+  const key=$('dtTradeType').value, cfg=TRADE_TYPES[key]; if(!cfg||cfg.isMultiplier||cfg.isAccumulator) return;
+  const sym=$('dtSymbol').value, code=key==='higherlower'?'CALL*':cfg.btn1.code, cf=CF[sym], info=(cf&&cf!=='err')?cf[code]:null;
+  const inp=$('dtDuration'), un=$('dtDurationUnit'), lab=$('dtDurField')&&$('dtDurField').querySelector('label'); if(!inp||!un) return;
+  let unit='t', mn=1, mx=1e9, tickOnly=false;
+  if(info&&info.tick){ unit='t'; mn=info.tick.min; mx=info.tick.max; tickOnly=!info.alt; }
+  else if(info&&info.alt){ unit=info.alt.unit; mn=info.alt.n; }
+  else if(DT_DUR[key]){ unit='t'; mn=DT_DUR[key][0]; mx=DT_DUR[key][1]; tickOnly=true; }
+  else return;
+  if(clampOnly){ if(un.value!==unit && !tickOnly) return; }
+  if(un.value!==unit){ un.value=unit; inp.value=String(unit==='t'?Math.min(mx,Math.max(mn,5)):mn); }
+  let v=parseInt(inp.value)||mn; v=Math.min(mx,Math.max(mn,v)); inp.value=String(v);
+  inp.min=mn; if(mx<1e9) inp.max=mx; else inp.removeAttribute('max');
+  if(lab) lab.textContent='Duration \u00B7 '+(mn===mx?'fixed '+mn:mn+(mx<1e9?'\u2013'+mx:'+'))+' '+({t:'ticks',s:'sec',m:'min',h:'hr',d:'day'}[unit]||'');
+  try{ const sel=$('dtSelectedTick'); if(sel&&unit==='t'&&key==='tickhighlow') sel.value=String(Math.min(parseInt(sel.value)||3,5)); }catch(e){}
+}
+{ const _t3=dtTradeTypeChange; dtTradeTypeChange=function(){ _t3.apply(this,arguments); try{ loadContractsFor($('dtSymbol').value); dtAutoDuration(); }catch(e){} }; }
+{ const _ocf=onContractsFor; onContractsFor=function(sym,cf){ _ocf.apply(this,arguments); try{ if(sym===$('dtSymbol').value) dtAutoDuration(); }catch(e){} }; }
+{ const _sa=dtSigApply; dtSigApply=function(){ _sa.apply(this,arguments); try{ dtAutoDuration(); }catch(e){} }; }
+{ const _pt2=placeTrade; placeTrade=function(){ try{ dtAutoDuration(true); }catch(e){} return _pt2.apply(this,arguments); }; }
+{ const u=$('dtDurationUnit'); if(u) u.addEventListener('change',function(){ try{ dtAutoDuration(true); }catch(e){} }); }
+try{ dtAutoDuration(); }catch(e){}
+
+/* ===== v3: Trade history by period (1 day / week / month / year) from your Deriv account ===== */
+const TH={mode:'local',rows:[],busy:false,off:0,done:false,days:0,err:''};
+const TH_LABEL={}; try{ Object.keys(TRADE_TYPES).forEach(k=>{ const t=TRADE_TYPES[k]; if(t.btn1) TH_LABEL[t.btn1.code]=t.btn1.label.replace(/[\u25B2\u25BC]/g,'').trim(); if(t.btn2) TH_LABEL[t.btn2.code]=t.btn2.label.replace(/[\u25B2\u25BC]/g,'').trim(); }); }catch(e){}
+function thConv(t){
+  const sc=t.shortcode||'', m=/^([A-Z]+)_(R_\d+|1HZ\d+V|JD\d+|RDBEAR|RDBULL|OTC_[A-Z0-9]+|frx[A-Za-z]+|cry[A-Za-z]+|BOOM\d+N?|CRASH\d+N?|stpRNG\d*|WLD[A-Z]+)_/.exec(sc);
+  const code=m?m[1]:sc.split('_')[0], sym=m?m[2]:'', profit=(t.sell_price||0)-(t.buy_price||0);
+  let nm=sym; try{ if(sym) nm=marketName(sym)||sym; }catch(e){}
+  return {time:(t.purchase_time||0)*1000,type:TH_LABEL[code]||code,symbolLabel:nm||String(t.longcode||'').slice(0,28),stake:t.buy_price||0,profit,result:profit>0?'won':(profit<0?'lost':'even')};
+}
+function thRange(m){
+  document.querySelectorAll('#thRange button').forEach(b=>b.classList.toggle('on',String(b.dataset.r)===String(m)));
+  if(m==='local'){ TH.mode='local'; $('thRangeInfo').textContent=''; renderSidebarHistory(); return; }
+  if(!authorized||!ws||ws.readyState!==1){ document.querySelectorAll('#thRange button').forEach(b=>b.classList.toggle('on',b.dataset.r==='local')); try{ showLogin(); }catch(e){} return; }
+  TH.mode='range'; TH.days=+m; TH.rows=[]; TH.off=0; TH.done=false; TH.err=''; renderSidebarHistory(); thFetch();
+}
+function thFetch(){
+  if(TH.busy||TH.done||TH.mode!=='range') return;
+  if(!authorized||!ws||ws.readyState!==1) return;
+  TH.busy=true; $('thRangeInfo').textContent='Loading from your account\u2026';
+  const to=Math.floor(Date.now()/1000)+60, from=to-TH.days*86400;
+  send({profit_table:1,description:1,limit:200,offset:TH.off,sort:'DESC',date_from:from,date_to:to,passthrough:{thr:1}});
+}
+{ const _hm=handleMessage; handleMessage=function(m){
+  if(m&&m.msg_type==='profit_table'&&m.passthrough&&m.passthrough.thr){
+    TH.busy=false;
+    if(m.error){ TH.err=m.error.message||'Could not load history'; TH.done=true; $('thRangeInfo').textContent=TH.err; renderSidebarHistory(); return; }
+    const tr=(m.profit_table&&m.profit_table.transactions)||[];
+    TH.rows=TH.rows.concat(tr.map(thConv)); TH.off+=tr.length; if(tr.length<200) TH.done=true;
+    $('thRangeInfo').textContent='Last '+({1:'24 hours',7:'7 days',30:'30 days',365:'12 months'}[TH.days]||TH.days+' days')+' \u00B7 '+TH.rows.length+' trades'+(TH.done?'':' (scroll for more)');
+    renderSidebarHistory(); return;
+  }
+  return _hm.apply(this,arguments);
+}; }
+{ const _rsh=renderSidebarHistory; renderSidebarHistory=function(){
+  if(TH.mode!=='range') return _rsh.apply(this,arguments);
+  const el=$('sidebarHistory'); if(!el) return;
+  const filt=($('histFilter')||{}).value||'all';
+  const rows=filt==='digits'?TH.rows.filter(h=>/even|odd|over|under|match|differ/i.test(h.type||'')):TH.rows;
+  if(!rows.length){ el.innerHTML='<div class="tiny">'+(TH.busy?'Loading\u2026':(TH.err||'No trades in this period.'))+'</div>'; return; }
+  const total=rows.reduce((a,h)=>a+h.profit,0), cl=total>0?'up':(total<0?'down':'');
+  el.innerHTML='<div class="th-total"><span>Total P/L ('+rows.length+')</span><span class="'+cl+'">'+(total>=0?'+':'-')+'$'+Math.abs(total).toFixed(2)+'</span></div>'+rows.map(h=>thRow(h,true)).join('')+(TH.busy?'<div class="tiny" style="padding:6px">Loading more\u2026</div>':'');
+}; }
+{ const _rf=refreshHistory; refreshHistory=function(){ if(TH.mode==='range'){ TH.rows=[]; TH.off=0; TH.done=false; TH.err=''; thFetch(); return; } return _rf.apply(this,arguments); }; }
+{ const el=$('sidebarHistory'); if(el) el.addEventListener('scroll',function(){ if(TH.mode==='range'&&el.scrollTop+el.clientHeight>=el.scrollHeight-120) thFetch(); }); }
+
+/* ===== v3: Analysis — alternative strategy engine (replaces the standard signal when ON) ===== */
+const ALT={on:false,key:'consensus'};
+try{ ALT.on=localStorage.getItem('wp_alt_on')==='1'; ALT.key=localStorage.getItem('wp_alt_key')||'consensus'; }catch(e){}
+const AX={
+  ema(a,n){ const k=2/(n+1); let e=a[0]; for(let i=1;i<a.length;i++) e=a[i]*k+e*(1-k); return e; },
+  sma(a,n){ const q=a.slice(-n); return q.reduce((x,y)=>x+y,0)/q.length; },
+  sd(a,n){ const q=a.slice(-n), m=q.reduce((x,y)=>x+y,0)/q.length; return Math.sqrt(q.reduce((x,y)=>x+(y-m)*(y-m),0)/q.length)||1e-9; },
+  rsi(a,n){ let g=0,l=0; for(let i=a.length-n;i<a.length;i++){ const d=a[i]-a[i-1]; if(d>0) g+=d; else l-=d; } return l===0?(g===0?50:100):100-100/(1+g/l); },
+  run(a){ const s=Math.sign(a[a.length-1]-a[a.length-2]); if(!s) return {n:0,s:0}; let n=0; for(let i=a.length-1;i>0&&Math.sign(a[i]-a[i-1])===s;i--) n++; return {n,s}; },
+  cap(x,lo,hi){ return Math.max(lo,Math.min(hi,x)); }
+};
+const dirOf=q=>q>0?'CALL':q<0?'PUT':'NEUTRAL';
+const NEU=(t)=>({d:'NEUTRAL',conf:40,why:[t]});
+const ALT_S=[
+ {k:'consensus',s:'AI',name:'AI Consensus Scanner \u2014 all strategies vote (most precise)',f:null},
+ {k:'confluence',s:'EMA',name:'Triple EMA Confluence (3/8/21 + RSI + MACD)',f:c=>{
+   const n=c.length,e3=AX.ema(c.slice(-30),3),e8=AX.ema(c.slice(-40),8),e21=AX.ema(c.slice(-60),21),p=c[n-1];
+   const up=e3>e8&&e8>e21, dn=e3<e8&&e8<e21; if(!up&&!dn) return NEU('EMA3/8/21 not stacked');
+   const q=up?1:-1,r=AX.rsi(c,7),mh=macdHistogram(c),ru=AX.run(c); let a=1; const why=['EMA3/8/21 stacked '+(up?'up':'down')];
+   if(q>0?(r>50&&r<78):(r<50&&r>22)){a++;why.push('RSI7 '+r.toFixed(0));}
+   if(mh!==null&&Math.sign(mh)===q){a++;why.push('MACD '+(q>0?'positive':'negative'));}
+   if(ru.s===q&&ru.n>=2){a++;why.push(ru.n+' ticks with trend');}
+   if(q>0?p>e21:p<e21){a++;why.push('price on trend side');}
+   return {d:dirOf(q),conf:AX.cap(40+a*11,0,96),why}; }},
+ {k:'squeeze',s:'SQZ',name:'Bollinger Squeeze Breakout',f:c=>{
+   if(c.length<60) return null; const bw=[];
+   for(let i=c.length-40;i<c.length;i++){ const w=c.slice(i-19,i+1),m=w.reduce((x,y)=>x+y,0)/20,sd=Math.sqrt(w.reduce((x,y)=>x+(y-m)*(y-m),0)/20); bw.push(sd/m); }
+   const cur=Math.min(...bw.slice(-8)),srt=[...bw].sort((a,b)=>a-b),p30=srt[Math.floor(srt.length*0.3)],z=(c[c.length-1]-AX.sma(c,20))/AX.sd(c,20);
+   if(cur>p30||Math.abs(z)<1.4) return NEU('no squeeze breakout');
+   return {d:dirOf(z),conf:AX.cap(60+Math.abs(z)*10,0,95),why:['squeeze released','price '+z.toFixed(1)+'\u03C3 from mean']}; }},
+ {k:'rsirev',s:'RSI',name:'RSI Extreme Reversal (RSI7 + reversal tick)',f:c=>{
+   const n=c.length,r=AX.rsi(c,7),z=(c[n-1]-AX.sma(c,20))/AX.sd(c,20),t=Math.sign(c[n-1]-c[n-2]);
+   if(r<22&&t>0) return {d:'CALL',conf:AX.cap(56+(22-r)*1.5+Math.max(0,-z-1.5)*6,0,95),why:['RSI7 oversold '+r.toFixed(0),'reversal tick up']};
+   if(r>78&&t<0) return {d:'PUT',conf:AX.cap(56+(r-78)*1.5+Math.max(0,z-1.5)*6,0,95),why:['RSI7 overbought '+r.toFixed(0),'reversal tick down']};
+   return NEU('RSI7 '+r.toFixed(0)+' not extreme'); }},
+ {k:'momentum',s:'MOM',name:'Momentum Burst (5-tick move vs normal)',f:c=>{
+   const n=c.length,net=c[n-1]-c[n-6],med=bmedian(c,5)||1e-9,ratio=Math.abs(net)/med,ru=AX.run(c);
+   if(ratio<1.5||ru.n<3) return NEU('no momentum burst');
+   return {d:dirOf(Math.sign(net)),conf:AX.cap(55+ratio*8+ru.n*3,0,95),why:['5-tick move '+ratio.toFixed(1)+'\u00D7 normal',ru.n+' ticks in a row']}; }},
+ {k:'meanrev',s:'MR',name:'Mean Reversion (z-score fade)',f:c=>{
+   const n=c.length,z=(c[n-1]-AX.sma(c,20))/AX.sd(c,20),t=Math.sign(c[n-1]-c[n-2]);
+   if(Math.abs(z)<2.2) return NEU('z-score '+z.toFixed(1)+' is normal');
+   const q=z>0?-1:1; return {d:dirOf(q),conf:AX.cap(55+(Math.abs(z)-2)*25+(t===q?6:0),0,95),why:['stretched '+z.toFixed(1)+'\u03C3','fading back to mean']}; }},
+ {k:'pullback',s:'PB',name:'Trend Pullback Resume (EMA8 dip in EMA21 trend)',f:c=>{
+   if(c.length<70) return null; const n=c.length,e8=AX.ema(c.slice(-40),8),e21=AX.ema(c.slice(-60),21),e21o=AX.ema(c.slice(-70,-10),21),p=c[n-1],r=AX.rsi(c,7),t=Math.sign(p-c[n-2]),sd=AX.sd(c,20);
+   if(e8>e21&&e21>e21o&&Math.abs(p-e8)<0.6*sd&&r>35&&r<60&&t>0) return {d:'CALL',conf:AX.cap(66+(60-r)*0.3,0,95),why:['uptrend pullback to EMA8','RSI7 '+r.toFixed(0),'resume tick up']};
+   if(e8<e21&&e21<e21o&&Math.abs(p-e8)<0.6*sd&&r<65&&r>40&&t<0) return {d:'PUT',conf:AX.cap(66+(r-40)*0.3,0,95),why:['downtrend pullback to EMA8','RSI7 '+r.toFixed(0),'resume tick down']};
+   return NEU('no pullback setup'); }},
+ {k:'stoch',s:'STO',name:'Stochastic + MACD Cross',f:c=>{
+   const kf=a=>{ const w=a.slice(-14),hi=Math.max(...w),lo=Math.min(...w); return (a[a.length-1]-lo)/((hi-lo)||1e-9)*100; };
+   const k=kf(c),kp=kf(c.slice(0,-1)),mh=macdHistogram(c),mp=macdHistogram(c.slice(0,-1));
+   if(mh===null||mp===null) return null;
+   if(kp<20&&k>kp&&k>=20&&mh>mp) return {d:'CALL',conf:AX.cap(64+(k-kp)*0.4,0,94),why:['Stochastic crossed up from oversold','MACD rising']};
+   if(kp>80&&k<kp&&k<=80&&mh<mp) return {d:'PUT',conf:AX.cap(64+(kp-k)*0.4,0,94),why:['Stochastic crossed down from overbought','MACD falling']};
+   return NEU('no stochastic cross'); }},
+ {k:'breakout',s:'BRK',name:'Range Breakout (30-tick high/low + momentum)',f:c=>{
+   const n=c.length,pr=c.slice(-32,-2),hi=Math.max(...pr),lo=Math.min(...pr),p=c[n-1],med=bmedian(c,5)||1e-9,ru=AX.run(c);
+   if(p>hi) return {d:'CALL',conf:AX.cap(62+Math.min(25,(p-hi)/med*15)+(ru.s>0?5:0),0,95),why:['broke 30-tick high']};
+   if(p<lo) return {d:'PUT',conf:AX.cap(62+Math.min(25,(lo-p)/med*15)+(ru.s<0?5:0),0,95),why:['broke 30-tick low']};
+   return NEU('inside 30-tick range'); }},
+ {k:'heikin',s:'HA',name:'Heikin-Ashi Tick Candles (5-tick candles)',f:c=>{
+   if(c.length<45) return null; const cs=[]; for(let i=c.length-40;i+5<=c.length;i+=5){ const w=c.slice(i,i+5); cs.push({o:w[0],c:w[4],h:Math.max(...w),l:Math.min(...w)}); }
+   let pc=(cs[0].o+cs[0].h+cs[0].l+cs[0].c)/4,po=(cs[0].o+cs[0].c)/2; const ha=[];
+   cs.forEach((k,i)=>{ const hc=(k.o+k.h+k.l+k.c)/4,ho=i?(po+pc)/2:po; ha.push({up:hc>ho,body:Math.abs(hc-ho)}); po=ho; pc=hc; });
+   const L=ha.slice(-3); if(L.every(x=>x.up)&&L[2].body>=L[1].body) return {d:'CALL',conf:AX.cap(60+L[2].body/(L[0].body||1e-9)*4,0,92),why:['3 rising Heikin-Ashi candles']};
+   if(L.every(x=>!x.up)&&L[2].body>=L[1].body) return {d:'PUT',conf:AX.cap(60+L[2].body/(L[0].body||1e-9)*4,0,92),why:['3 falling Heikin-Ashi candles']};
+   return NEU('mixed candles'); }}
+];
+function altRun(key,sym){
+  const c=(tickBuffers[sym]||[]).map(p=>p.q); if(c.length<35) return null;
+  const run1=q=>{ try{ return q.f(c); }catch(e){ return null; } };
+  if(key!=='consensus'){ const q=ALT_S.find(x=>x.k===key); const r=q&&run1(q); return r?{dir:r.d,conf:Math.round(r.conf),why:r.why,name:q.name}:null; }
+  let up=0,dn=0,nu=0,nd=0; const why=[], name=ALT_S[0].name;
+  ALT_S.filter(q=>q.f).forEach(q=>{ const r=run1(q); if(!r||r.d==='NEUTRAL') return; const w=r.conf/100; if(r.d==='CALL'){ up+=w; nu++; } else { dn+=w; nd++; } why.push(q.s+' '+r.d+' '+Math.round(r.conf)+'%'); });
+  try{ const tr=scTrendInfo(sym); if(tr&&tr.d==='CALL'){ up+=0.6; nu++; why.push('trend CALL'); } else if(tr&&tr.d==='PUT'){ dn+=0.6; nd++; why.push('trend PUT'); } }catch(e){}
+  const side=up>dn?'CALL':dn>up?'PUT':'NEUTRAL', nn=side==='CALL'?nu:nd, tot=up+dn, share=tot?Math.max(up,dn)/tot:0, avg=nn?(side==='CALL'?up:dn)/nn:0;
+  if(side==='NEUTRAL'||nn<3||share<0.7) return {dir:'NEUTRAL',conf:Math.round(40+share*10),why:['no strong agreement ('+nu+' up / '+nd+' down)'],name};
+  return {dir:side,conf:Math.min(98,Math.round(avg*100*(0.55+0.45*share)+nn*2)),why,name};
+}
+{ const _cs=computeSignal; computeSignal=function(sym){
+  const b=_cs.apply(this,arguments); if(!ALT.on||!b||!b.ready) return b;
+  let r=null; try{ r=altRun(ALT.key,sym); }catch(e){} if(!r) return b;
+  return Object.assign({},b,{direction:r.dir,confidence:r.conf,reasons:r.why.length?r.why:b.reasons,alt:r.name});
+}; }
+function altUI(){
+  const b=$('altBtn'), sel=$('altSel'), st=$('altStat'); if(!b||!sel||!st) return;
+  if(!sel.options.length) sel.innerHTML=ALT_S.map(q=>'<option value="'+q.k+'">'+q.name+'</option>').join('');
+  b.textContent=ALT.on?'Strategy: ON':'Strategy: OFF'; b.classList.toggle('on',ALT.on); sel.style.display=ALT.on?'':'none'; sel.value=ALT.key;
+  if(!ALT.on){ st.textContent='Using the standard signal engine.'; return; }
+  const r=altRun(ALT.key,$('anSymbol').value); st.textContent=r?(r.dir+' '+r.conf+'% \u2014 '+r.why.slice(0,4).join(' \u00B7 ')):'Collecting ticks\u2026';
+}
+function altSave(){ try{ localStorage.setItem('wp_alt_on',ALT.on?'1':'0'); localStorage.setItem('wp_alt_key',ALT.key); }catch(e){} }
+function altToggle(){ ALT.on=!ALT.on; altSave(); altUI(); try{ renderAnalysis($('anSymbol').value); }catch(e){} }
+function altPick(v){ ALT.key=v; altSave(); altUI(); try{ renderAnalysis($('anSymbol').value); }catch(e){} }
+altUI(); setInterval(function(){ try{ const v=$('view-analysis'); if(v&&v.classList.contains('active')) altUI(); }catch(e){} },2000);
+
 
 /* ===== CONTACT OWNER: live text chat between site users and the owner (Firebase Realtime Database, REST only) ===== */
 const CHAT_CFG={url:'https://dqssynmyblualkgczvyq.supabase.co',key:'sb_publishable_THf1GdR7imeTxQReRw3Vow_LQtyRYw5',ownerEmail:'saiditsimba6992@gmail.com'};   // Supabase project for the owner chat
