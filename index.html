@@ -555,6 +555,12 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 .alt-btn{flex:0 0 auto;padding:7px 10px;font:800 11px var(--font);border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;white-space:nowrap}
 .alt-btn.on{background:#22c55e;color:#06210f;border-color:#22c55e}
 .alt-row select{flex:1 1 0;min-width:0;padding:7px 8px;font-size:12px}
+/* ---- v4: custom history period rows ---- */
+.th-custom{display:flex;gap:5px;align-items:center;margin:0 0 5px;font-size:11px;color:var(--muted);flex-wrap:nowrap}
+.th-custom span{flex:0 0 auto;white-space:nowrap}
+.th-custom input{flex:0 0 54px;width:54px;min-width:0;padding:5px 6px;font-size:12px;text-align:center}
+.th-custom select{flex:1 1 0;min-width:0;padding:5px 6px;font-size:12px}
+.th-custom button{flex:0 0 auto;padding:6px 10px;font:800 11px var(--font);border:1px solid var(--teal);background:var(--teal);color:#08101f;border-radius:7px;cursor:pointer}
 /* ---- additions: token login, goal tracker, live trades tab, history tools, account colours ---- */
 .or-sep{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;margin:14px 0 10px}
 .or-sep:before,.or-sep:after{content:"";flex:1;height:1px;background:var(--border)}
@@ -967,6 +973,9 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   <div class="flat-pane">
     <h3 class="h-tools th-head">Trade History <span><button type="button" class="mini-btn ref" onclick="refreshHistory()">&#8635; Refresh</button> <button type="button" class="mini-btn del" onclick="clearTradeHistory()">&#128465; Delete</button></span></h3>
     <div class="th-range" id="thRange"><button type="button" class="on" data-r="local" onclick="thRange('local')">Saved</button><button type="button" data-r="1" onclick="thRange(1)">1 Day</button><button type="button" data-r="7" onclick="thRange(7)">1 Week</button><button type="button" data-r="30" onclick="thRange(30)">1 Month</button><button type="button" data-r="365" onclick="thRange(365)">1 Year</button></div>
+    <div class="th-custom"><span>Show last</span><input id="thN" type="number" min="1" max="999" value="2" inputmode="numeric"><select id="thU"><option value="1">days</option><option value="7">weeks</option><option value="30">months</option><option value="365">years</option></select><button type="button" onclick="thCustom()">Show</button></div>
+    <div class="th-custom"><span>Keep saved</span><input id="thKeepN" type="number" min="0" max="999" value="0" inputmode="numeric"><select id="thKeepU"><option value="1">days</option><option value="7">weeks</option><option value="30">months</option><option value="365">years</option></select><button type="button" onclick="thKeepSave()">Set</button></div>
+    <div class="tiny" id="thKeepInfo" style="margin:0 0 4px">Keeping all saved trades (0 = forever)</div>
     <div class="tiny" id="thRangeInfo" style="margin:0 0 4px"></div>
     <div class="field"><select id="histFilter" onchange="renderSidebarHistory()"><option value="all">All trades</option><option value="growth">Accumulating markets only (Buy/Sell, Accumulators, Reset, Asian)</option><option value="digits">Digits history (Even/Odd, Over/Under, Matches/Differs)</option></select></div>
     <div id="sidebarHistory" class="th-list"></div>
@@ -6618,11 +6627,13 @@ function thConv(t){
   let nm=sym; try{ if(sym) nm=marketName(sym)||sym; }catch(e){}
   return {time:(t.purchase_time||0)*1000,type:TH_LABEL[code]||code,symbolLabel:nm||String(t.longcode||'').slice(0,28),stake:t.buy_price||0,profit,result:profit>0?'won':(profit<0?'lost':'even')};
 }
-function thRange(m){
+function thRange(m,label){
   document.querySelectorAll('#thRange button').forEach(b=>b.classList.toggle('on',String(b.dataset.r)===String(m)));
   if(m==='local'){ TH.mode='local'; $('thRangeInfo').textContent=''; renderSidebarHistory(); return; }
-  if(!authorized||!ws||ws.readyState!==1){ document.querySelectorAll('#thRange button').forEach(b=>b.classList.toggle('on',b.dataset.r==='local')); try{ showLogin(); }catch(e){} return; }
-  TH.mode='range'; TH.days=+m; TH.rows=[]; TH.off=0; TH.done=false; TH.err=''; renderSidebarHistory(); thFetch();
+  TH.days=+m; TH.label=label||({1:'24 hours',7:'7 days',30:'30 days',365:'12 months'}[m]||(m+' days'));
+  if(!authorized||!ws||ws.readyState!==1){ TH.mode='localrange'; $('thRangeInfo').textContent='Saved trades from the last '+TH.label+' (sign in to load your full account history)'; renderSidebarHistory(); return; }
+  let cached=[]; try{ const c=JSON.parse(localStorage.getItem('wp_thcache')||'null'); if(c&&c.days===TH.days&&Array.isArray(c.rows)) cached=c.rows; }catch(e){}
+  TH.mode='range'; TH.rows=cached; TH.fresh=false; TH.off=0; TH.done=false; TH.err=''; renderSidebarHistory(); thFetch();
 }
 function thFetch(){
   if(TH.busy||TH.done||TH.mode!=='range') return;
@@ -6637,18 +6648,21 @@ function thFetch(){
     TH.busy=false;
     if(m.error){ TH.err=m.error.message||'Could not load history'; TH.done=true; $('thRangeInfo').textContent=TH.err; renderSidebarHistory(); return; }
     const tr=(m.profit_table&&m.profit_table.transactions)||[];
+    if(!TH.fresh){ TH.rows=[]; TH.fresh=true; }
     TH.rows=TH.rows.concat(tr.map(thConv)); TH.off+=tr.length; if(tr.length<200) TH.done=true;
-    $('thRangeInfo').textContent='Last '+({1:'24 hours',7:'7 days',30:'30 days',365:'12 months'}[TH.days]||TH.days+' days')+' \u00B7 '+TH.rows.length+' trades'+(TH.done?'':' (scroll for more)');
+    try{ localStorage.setItem('wp_thcache',JSON.stringify({days:TH.days,ts:Date.now(),rows:TH.rows.slice(0,1500)})); }catch(e){}
+    $('thRangeInfo').textContent='Last '+(TH.label||TH.days+' days')+' \u00B7 '+TH.rows.length+' trades'+(TH.done?'':' (scroll for more)');
     renderSidebarHistory(); }catch(e){ TH.busy=false; } return;
   }
   return _hm.apply(this,arguments);
 }; }
 { const _rsh=renderSidebarHistory; renderSidebarHistory=function(){
-  if(TH.mode!=='range') return _rsh.apply(this,arguments);
+  if(TH.mode!=='range'&&TH.mode!=='localrange') return _rsh.apply(this,arguments);
   try{
+  const src=TH.mode==='localrange'?tradeHistory.filter(h=>h.time>=Date.now()-TH.days*864e5):TH.rows;
   const el=$('sidebarHistory'); if(!el) return;
   const filt=($('histFilter')||{}).value||'all';
-  const rows=filt==='digits'?TH.rows.filter(h=>/even|odd|over|under|match|differ/i.test(h.type||'')):TH.rows;
+  const rows=filt==='digits'?src.filter(h=>/even|odd|over|under|match|differ/i.test(h.type||'')):src;
   if(!rows.length){ el.innerHTML='<div class="tiny">'+(TH.busy?'Loading\u2026':(TH.err||'No trades in this period.'))+'</div>'; return; }
   const total=rows.reduce((a,h)=>a+h.profit,0), cl=total>0?'up':(total<0?'down':'');
   el.innerHTML='<div class="th-total"><span>Total P/L ('+rows.length+')</span><span class="'+cl+'">'+(total>=0?'+':'-')+'$'+Math.abs(total).toFixed(2)+'</span></div>'+rows.map(h=>thRow(h,true)).join('')+(TH.busy?'<div class="tiny" style="padding:6px">Loading more\u2026</div>':'');
@@ -6764,6 +6778,75 @@ function altSave(){ try{ localStorage.setItem('wp_alt_on',ALT.on?'1':'0'); local
 function altToggle(){ ALT.on=!ALT.on; altSave(); altUI(); try{ renderAnalysis($('anSymbol').value); }catch(e){} }
 function altPick(v){ ALT.key=v; altSave(); altUI(); try{ renderAnalysis($('anSymbol').value); }catch(e){} }
 altUI(); setInterval(function(){ try{ const v=$('view-analysis'); if(v&&v.classList.contains('active')) altUI(); }catch(e){} },2000);
+
+/* ===== v4: history periods you choose (days / weeks / months / years) + how long to keep saved trades ===== */
+const THP={n:2,u:1,keepN:0,keepU:1}; try{ Object.assign(THP,JSON.parse(localStorage.getItem('wp_thpref')||'{}')); }catch(e){}
+const TH_UNIT={1:['day','days'],7:['week','weeks'],30:['month','months'],365:['year','years']};
+function thSpan(n,u){ const w=TH_UNIT[u]||TH_UNIT[1]; return n+' '+(n===1?w[0]:w[1]); }
+function thPrefSave(){ try{ localStorage.setItem('wp_thpref',JSON.stringify(THP)); }catch(e){} }
+function thPrune(){ if(!THP.keepN) return 0; const cut=Date.now()-THP.keepN*THP.keepU*864e5; let k=0; for(let i=tradeHistory.length-1;i>=0;i--){ if(tradeHistory[i].time<cut){ tradeHistory.splice(i,1); k++; } } if(k) saveJ('wp_hist',tradeHistory); return k; }
+function thKeepInfoText(k){ return THP.keepN?('Keeping saved trades for '+thSpan(THP.keepN,THP.keepU)+(k?' \u00B7 removed '+k+' older':'')):'Keeping all saved trades (0 = forever)'; }
+function thCustom(){ const n=Math.max(1,Math.min(999,parseInt($('thN').value)||1)), u=parseInt($('thU').value)||1; $('thN').value=n; THP.n=n; THP.u=u; thPrefSave(); thRange(n*u,thSpan(n,u)); }
+function thKeepSave(){ THP.keepN=Math.max(0,Math.min(999,parseInt($('thKeepN').value)||0)); THP.keepU=parseInt($('thKeepU').value)||1; $('thKeepN').value=THP.keepN; thPrefSave(); const k=thPrune(); $('thKeepInfo').textContent=thKeepInfoText(k); try{ renderSidebarHistory(); }catch(e){} }
+try{ $('thN').value=THP.n; $('thU').value=String(THP.u); $('thKeepN').value=THP.keepN; $('thKeepU').value=String(THP.keepU); $('thKeepInfo').textContent=thKeepInfoText(0); thPrune(); }catch(e){}
+{ const _ph4=pushHistory; pushHistory=function(){ const r=_ph4.apply(this,arguments); try{ thPrune(); }catch(e){} return r; }; }
+
+/* ===== v4: Rise / Fall — entry point blinks yellow + vibrates, and the signal is held for 40 s ===== */
+function dtRfEntry(s,sym){
+  const c=(tickBuffers[sym]||[]).map(p=>p.q); if(c.length<45) return {ok:false,conf:0,dir:''};
+  const n=c.length-1, e3=emaSeriesArr(c,3), e8=emaSeriesArr(c,8), up=!!s.up, want=up?'CALL':'PUT';
+  const d1=c[n]-c[n-1], d2=c[n-1]-c[n-2], sg=computeSignal(sym); let tr=null; try{ tr=scTrendInfo(sym); }catch(e){}
+  const align=up?e3[n]>e8[n]:e3[n]<e8[n], resume=up?(d1>0&&d2<=0):(d1<0&&d2>=0);
+  const cross=align&&[1,2,3].some(k=>up?e3[n-k]<=e8[n-k]:e3[n-k]>=e8[n-k]);
+  const sigOk=!!(sg&&sg.ready&&sg.direction===want&&sg.confidence>=60);
+  const rsiOk=(sg&&sg.rsi14!=null)?(up?sg.rsi14<78:sg.rsi14>22):true;
+  const trendOk=!(tr&&tr.d&&tr.d!=='NEUTRAL'&&tr.d!==want);
+  return {ok:!!(align&&(resume||cross)&&sigOk&&rsiOk&&trendOk),conf:(sg&&sg.ready)?sg.confidence:0,dir:(sg&&sg.ready)?sg.direction:''};
+}
+{ const _det=dtEntryTest; dtEntryTest=function(){
+  const a=DTS.applied; if(a&&/^updown_/.test(a.bot||'')){ const o=dtRfEntry({up:a.bot==='updown_call'},$('dtSymbol').value); return o.ok?{ok:true}:null; }
+  return _det.apply(this,arguments); }; }
+{ const _dec=dtEntryCaption; dtEntryCaption=function(card,i,sym){
+  const s=card.sides[i]; if(s&&s.kind==='rf'){ const o=dtRfEntry(s,sym);
+    return o.ok?('\u26A1 ENTER NOW \u00B7 '+(s.up?'rise':'fall')+' resumes \u00B7 signal '+o.conf+'%'):('Wait \u00B7 needs '+(s.up?'dip then rise':'bounce then fall')+' + signal \u226560% (now '+(o.dir||'--')+' '+o.conf+'%)'); }
+  return _dec.apply(this,arguments); }; }
+DTE.rf=null;
+function dtVib(p){ try{ navigator.vibrate&&navigator.vibrate(p); }catch(e){} }
+dtEntryPaint=function(){
+  const a=DTS.applied; let on=false, act=null;
+  if(a){ on=Date.now()<DTE.hold; act=$(a.side==='btn2'?'dtBtn2':'dtBtn1'); }
+  else if(DTE.rf&&Date.now()<DTE.rf.until){ on=true; act=$(DTE.rf.id); }
+  ['dtBtn1','dtBtn2'].forEach(id=>{ const b=$(id); if(b) b.classList.toggle('entry-blink',!!(on&&act&&b===act)); });
+  if(on){ const sb=$('dtSigBtn'); if(sb&&!sb.classList.contains('off')) sb.textContent='\u26A1 ENTER NOW'; }
+};
+dtEntryCheck=function(){
+  if(!DTS.applied){
+    DTE.hold=0;
+    if($('dtTradeType').value==='updown'){
+      const sym=$('dtSymbol').value; let hit=null;
+      try{ TT.find(c=>c.id==='rf').sides.forEach((sd,i)=>{ if(hit==null&&dtRfEntry(sd,sym).ok) hit=i; }); }catch(e){}
+      if(hit!=null){ const fresh=!(DTE.rf&&Date.now()<DTE.rf.until); DTE.rf={id:hit===0?'dtBtn1':'dtBtn2',until:Date.now()+6000}; if(fresh) dtVib([150,80,150]); }
+    } else DTE.rf=null;
+    dtEntryPaint(); return;
+  }
+  const rf=/^updown_/.test(DTS.applied.bot||''); let ok=false; try{ ok=!!dtEntryTest(); }catch(e){}
+  if(ok){ const fresh=Date.now()>=DTE.hold; DTE.hold=Date.now()+(rf?6000:3000); if(fresh) dtVib(rf?[150,80,150]:150); }
+  dtEntryPaint();
+};
+{ const _hm4=handleMessage; handleMessage=function(m){
+  _hm4.apply(this,arguments);
+  try{ if(m&&m.msg_type==='tick'&&m.tick&&!DTS.applied&&m.tick.symbol===$('dtSymbol').value&&$('dtTradeType').value==='updown'){ const v=$('view-dtrader'); if(v&&v.classList.contains('active')) dtEntryCheck(); } }catch(e){}
+}; }
+{ const _pt4=placeTrade; placeTrade=function(){ DTE.rf=null; try{ dtEntryPaint(); }catch(e){} return _pt4.apply(this,arguments); }; }
+DTS.hold=null;
+{ const _dsa=dtSigAnalyze; dtSigAnalyze=function(){
+  const r=_dsa.apply(this,arguments);
+  try{ if(r&&r.ready){ const now=Date.now();
+    if(r.best){ DTS.hold={o:r.best,sym:r.sym,t:now}; }
+    else if(DTS.hold&&DTS.hold.o&&DTS.hold.sym===r.sym&&now-DTS.hold.t<40000){
+      r.best=DTS.hold.o; r.held=true; r.selOk=(r.cur===r.best.key); if(r.selOk){ r.selBest=r.best; r.analysed=true; } } } }catch(e){}
+  return r; }; }
+
 
 
 /* ===== CONTACT OWNER: live text chat between site users and the owner (Firebase Realtime Database, REST only) ===== */
