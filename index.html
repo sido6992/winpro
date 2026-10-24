@@ -550,7 +550,9 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 #view-dtrader .rec-chips{flex-wrap:wrap;max-width:100%}
 .th-range{display:flex;gap:4px;margin:0 0 6px}
 .th-range button{flex:1 1 0;min-width:0;padding:6px 2px;font:700 11px var(--font);border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:7px;cursor:pointer}
-.th-range button.on{background:var(--teal);color:#08101f;border-color:var(--teal)}
+.th-range button.on,.th-range select.on{background:var(--teal);color:#08101f;border-color:var(--teal)}
+.th-range select{flex:1 1 0;min-width:0;padding:6px 0;font:700 11px var(--font);border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:7px;cursor:pointer;text-align:center;text-align-last:center;-webkit-appearance:none;appearance:none}
+.th-range select option{background:#141733;color:#e8ecff}
 .alt-row{display:flex;gap:6px;align-items:center;margin-top:8px}
 .alt-btn{flex:0 0 auto;padding:7px 10px;font:800 11px var(--font);border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;white-space:nowrap}
 .alt-btn.on{background:#22c55e;color:#06210f;border-color:#22c55e}
@@ -972,9 +974,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 <div class="view" id="view-tradehistory">
   <div class="flat-pane">
     <h3 class="h-tools th-head">Trade History <span><button type="button" class="mini-btn ref" onclick="refreshHistory()">&#8635; Refresh</button> <button type="button" class="mini-btn del" onclick="clearTradeHistory()">&#128465; Delete</button></span></h3>
-    <div class="th-range" id="thRange"><button type="button" class="on" data-r="local" onclick="thRange('local')">Saved</button><button type="button" data-r="1" onclick="thRange(1)">1 Day</button><button type="button" data-r="7" onclick="thRange(7)">1 Week</button><button type="button" data-r="30" onclick="thRange(30)">1 Month</button><button type="button" data-r="365" onclick="thRange(365)">1 Year</button></div>
-    <div class="th-custom"><span>Show last</span><input id="thN" type="number" min="1" max="999" value="2" inputmode="numeric"><select id="thU"><option value="1">days</option><option value="7">weeks</option><option value="30">months</option><option value="365">years</option></select><button type="button" onclick="thCustom()">Show</button></div>
-    <div class="th-custom"><span>Keep saved</span><input id="thKeepN" type="number" min="0" max="999" value="0" inputmode="numeric"><select id="thKeepU"><option value="1">days</option><option value="7">weeks</option><option value="30">months</option><option value="365">years</option></select><button type="button" onclick="thKeepSave()">Set</button></div>
+    <div class="th-range" id="thRange"><button type="button" class="on" data-r="local" onclick="thRange('local')">Saved</button><select id="thSelD" data-u="1" onchange="thSelPick(this)"></select><select id="thSelW" data-u="7" onchange="thSelPick(this)"></select><select id="thSelM" data-u="30" onchange="thSelPick(this)"></select><select id="thSelY" data-u="365" onchange="thSelPick(this)"></select></div>
+        <div class="th-custom"><span>Keep saved</span><input id="thKeepN" type="number" min="0" max="999" value="0" inputmode="numeric"><select id="thKeepU"><option value="1">days</option><option value="7">weeks</option><option value="30">months</option><option value="365">years</option></select><button type="button" onclick="thKeepSave()">Set</button></div>
     <div class="tiny" id="thKeepInfo" style="margin:0 0 4px">Keeping all saved trades (0 = forever)</div>
     <div class="tiny" id="thRangeInfo" style="margin:0 0 4px"></div>
     <div class="field"><select id="histFilter" onchange="renderSidebarHistory()"><option value="all">All trades</option><option value="growth">Accumulating markets only (Buy/Sell, Accumulators, Reset, Asian)</option><option value="digits">Digits history (Even/Odd, Over/Under, Matches/Differs)</option></select></div>
@@ -6786,9 +6787,20 @@ function thSpan(n,u){ const w=TH_UNIT[u]||TH_UNIT[1]; return n+' '+(n===1?w[0]:w
 function thPrefSave(){ try{ localStorage.setItem('wp_thpref',JSON.stringify(THP)); }catch(e){} }
 function thPrune(){ if(!THP.keepN) return 0; const cut=Date.now()-THP.keepN*THP.keepU*864e5; let k=0; for(let i=tradeHistory.length-1;i>=0;i--){ if(tradeHistory[i].time<cut){ tradeHistory.splice(i,1); k++; } } if(k) saveJ('wp_hist',tradeHistory); return k; }
 function thKeepInfoText(k){ return THP.keepN?('Keeping saved trades for '+thSpan(THP.keepN,THP.keepU)+(k?' \u00B7 removed '+k+' older':'')):'Keeping all saved trades (0 = forever)'; }
-function thCustom(){ const n=Math.max(1,Math.min(999,parseInt($('thN').value)||1)), u=parseInt($('thU').value)||1; $('thN').value=n; THP.n=n; THP.u=u; thPrefSave(); thRange(n*u,thSpan(n,u)); }
 function thKeepSave(){ THP.keepN=Math.max(0,Math.min(999,parseInt($('thKeepN').value)||0)); THP.keepU=parseInt($('thKeepU').value)||1; $('thKeepN').value=THP.keepN; thPrefSave(); const k=thPrune(); $('thKeepInfo').textContent=thKeepInfoText(k); try{ renderSidebarHistory(); }catch(e){} }
-try{ $('thN').value=THP.n; $('thU').value=String(THP.u); $('thKeepN').value=THP.keepN; $('thKeepU').value=String(THP.keepU); $('thKeepInfo').textContent=thKeepInfoText(0); thPrune(); }catch(e){}
+try{ $('thKeepN').value=THP.keepN; $('thKeepU').value=String(THP.keepU); $('thKeepInfo').textContent=thKeepInfoText(0); thPrune(); }catch(e){}
+
+/* ===== v5: the period buttons themselves are the pickers (Days / Weeks / Months / Years) ===== */
+const TH_PICK={thSelD:['Days',[1,2,3,4,5,6]],thSelW:['Weeks',[1,2,3,4]],thSelM:['Months',[1,2,3,4,5,6,7,8,9,10,11]],thSelY:['Years',[1,2,3,4,5]]};
+function thPickReset(except){ Object.keys(TH_PICK).forEach(id=>{ const el=$(id); if(!el||el===except) return; el.value=''; el.classList.remove('on'); }); }
+function thSelPick(sel){
+  const n=parseInt(sel.value); if(!n) return; const u=parseInt(sel.dataset.u)||1;
+  thPickReset(sel); sel.classList.add('on'); document.querySelectorAll('#thRange button').forEach(b=>b.classList.remove('on'));
+  THP.n=n; THP.u=u; thPrefSave(); thRange(n*u,thSpan(n,u));
+}
+Object.keys(TH_PICK).forEach(id=>{ const el=$(id); if(!el) return; const d=TH_PICK[id], u=parseInt(el.dataset.u)||1;
+  el.innerHTML='<option value="">'+d[0]+'</option>'+d[1].map(n=>'<option value="'+n+'">'+thSpan(n,u)+'</option>').join(''); el.value=''; });
+{ const _thr=thRange; thRange=function(m,label){ if(m==='local') thPickReset(null); return _thr.apply(this,arguments); }; }
 { const _ph4=pushHistory; pushHistory=function(){ const r=_ph4.apply(this,arguments); try{ thPrune(); }catch(e){} return r; }; }
 
 /* ===== v4: Rise / Fall — entry point blinks yellow + vibrates, and the signal is held for 40 s ===== */
