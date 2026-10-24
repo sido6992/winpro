@@ -565,7 +565,7 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 .th-custom button{flex:0 0 auto;padding:6px 10px;font:800 11px var(--font);border:1px solid var(--teal);background:var(--teal);color:#08101f;border-radius:7px;cursor:pointer}
 
 /* ---- premium bots ---- */
-.pb-banner{border:1px solid var(--amber);border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:12px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.pb-banner{border:1px solid var(--amber);border-radius:10px;padding:6px 10px;margin:0 0 6px;font-size:12px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .pb-banner b{color:var(--amber)}
 .pb-chips{display:flex;gap:5px;margin:0 0 6px;flex-wrap:wrap}
 .pb-chips button{padding:4px 10px;font:700 11px var(--font);border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer}
@@ -573,12 +573,14 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 .pb-btn{padding:8px 12px;font:800 12px var(--font);border:0;background:var(--amber);color:#1b1300;border-radius:8px;cursor:pointer;white-space:nowrap}
 .pb-btn.alt{background:transparent;border:1px solid var(--teal);color:var(--teal)}
 .pb-btn.dn{background:#22c55e;color:#06210f}
-.pb-item{padding:8px 2px;border-bottom:1px solid var(--border)}
+.pb-search{width:100%;box-sizing:border-box;margin:0 0 6px;padding:6px 9px;font-size:12px}
+.pb-btn.sm{padding:5px 9px;font-size:11px;border-radius:7px}
+.pb-item{padding:5px 9px 6px;margin:0 0 6px;border:1.5px solid rgba(250,204,21,.55);border-radius:12px;background:rgba(255,255,255,.025)}
 .pb-item .pb-t{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.pb-item .pb-n{font-weight:800;font-size:13px;min-width:0;overflow-wrap:anywhere}
-.pb-badge{font-size:9px;font-weight:800;color:#1b1300;background:var(--amber);border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
-.pb-item .pb-d{font-size:11.5px;color:var(--muted);margin:3px 0;line-height:1.35}
-.pb-item .pb-s{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin:0 0 6px;overflow-wrap:anywhere}
+.pb-item .pb-n{font-weight:800;font-size:12.5px;min-width:0;overflow-wrap:anywhere}
+.pb-badge{font-size:8.5px;font-weight:800;color:#1b1300;background:var(--amber);border-radius:999px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.pb-item .pb-d{font-size:11px;color:var(--muted);margin:2px 0 1px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pb-item .pb-s{font-size:10px;color:var(--muted);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pb-row{display:flex;gap:6px;align-items:center}
 .pb-row input{flex:1 1 0;min-width:0}
 .pb-modal{position:fixed;inset:0;z-index:99999;background:rgba(3,5,14,.78);display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
@@ -1237,6 +1239,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   <div class="flat-pane">
     <h3 class="h-tools th-head">&#128142; Premium Bots <span><button type="button" class="mini-btn" id="pbAdminBtn" onclick="pbAdminOpen()">&#128274; Admin</button></span></h3>
     <div id="pbBanner" class="pb-banner"></div>
+    <input id="pbSearch" class="pb-search" placeholder="Search bots…" oninput="pbRender()" autocomplete="off">
     <div id="pbChips" class="pb-chips"></div>
     <div id="pbList"></div>
     <p class="tiny" style="margin:8px 2px">Bots are .xml files for Deriv Bot (Import &rarr; Local). Always test on a demo account first. No bot can guarantee profit.</p>
@@ -1247,9 +1250,12 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
     <div class="pb-sheet-h"><b>&#128142; Buy Premium Bots</b><span><a id="pbPayOpen" href="#" target="_blank" rel="noopener">Open in browser</a><button type="button" class="mini-btn" onclick="pbPayClose()">&#10005;</button></span></div>
     <iframe id="pbPayFrame" title="Payment" allow="payment *; clipboard-write *" referrerpolicy="no-referrer-when-downgrade"></iframe>
     <div class="pb-sheet-f">
-      <div class="tiny" style="margin-bottom:4px">Already paid? Enter the unlock code you received to download all premium bots.</div>
-      <div class="pb-row"><input id="pbCodeIn" placeholder="UNLOCK CODE" autocapitalize="characters" autocomplete="off"><button type="button" class="pb-btn" onclick="pbUnlock()">Unlock</button></div>
-      <div class="tiny" id="pbCodeMsg" style="margin-top:4px"></div>
+      <button type="button" class="pb-btn" id="pbPaidBtn" style="width:100%" onclick="pbShowCode()">✔ I\'ve completed payment — enter my code</button>
+      <div id="pbCodeBox" style="display:none">
+        <div class="tiny" style="margin-bottom:4px">Enter the unlock code you received after paying.</div>
+        <div class="pb-row"><input id="pbCodeIn" placeholder="UNLOCK CODE" autocapitalize="characters" autocomplete="off"><button type="button" class="pb-btn" onclick="pbUnlock()">Unlock</button></div>
+        <div class="tiny" id="pbCodeMsg" style="margin-top:4px"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -6928,7 +6934,7 @@ TH.deleted=false;
 
 /* ===== Premium Bots (XML bots, PalPluss checkout, owner admin) ===== */
 const PB_PIN='6992';
-const PB_PAY='https://link.palpluss.com/0e41399b-9b93-4f4b-8945-5af5c56a7088';
+const PB_PAY='https://link.palpluss.com/195b817b-7157-4f6b-9db0-e4c4bba642ae';
 const PB_SEED=[
  {id:'pb1',name:'Rise Martingale Pro',sym:'R_100',cat:'callput',tt:'risefall',ct:'CALL',dur:5,stake:1,loss:2.1,win:1,tp:10,sl:30,d:'Buys Rise on Volatility 100 every 5 ticks. Raises the stake after a loss to recover, resets after a win, stops at take-profit or stop-loss.'},
  {id:'pb2',name:'Fall Martingale Pro',sym:'R_75',cat:'callput',tt:'risefall',ct:'PUT',dur:5,stake:1,loss:2.1,win:1,tp:10,sl:30,d:'Buys Fall on Volatility 75 every 5 ticks with controlled loss recovery and a hard stop-loss.'},
@@ -6939,8 +6945,44 @@ const PB_SEED=[
  {id:'pb7',name:'Differs Steady',sym:'R_100',cat:'digits',tt:'matchesdiffers',ct:'DIGITDIFF',pred:5,dur:1,stake:2,loss:1,win:1,tp:3,sl:20,d:'Digit Differs 5 with a flat stake (no martingale). High hit rate, small payout; stops at take-profit or stop-loss.'},
  {id:'pb8',name:'Matches Sniper',sym:'R_75',cat:'digits',tt:'matchesdiffers',ct:'DIGITMATCH',pred:7,dur:1,stake:0.35,loss:1,win:1,tp:15,sl:3.5,d:'Digit Matches 7 with a tiny flat stake for the big payout. Low hit rate, so the stop-loss is tight.'},
  {id:'pb9',name:'Rise Streak Rider',sym:'R_50',cat:'callput',tt:'risefall',ct:'CALL',dur:5,stake:1,loss:1,win:2,tp:8,sl:10,d:'Anti-martingale: doubles the stake after each win (max 3 wins in a row) and drops back to base after a loss.'},
- {id:'pb10',name:'Fall Streak Rider',sym:'R_100',cat:'callput',tt:'risefall',ct:'PUT',dur:5,stake:1,loss:1,win:2,tp:8,sl:10,d:'Anti-martingale on Fall: presses winning streaks up to 3 wins, then resets. Stops at take-profit or stop-loss.'}
+ {id:'pb10',name:'Fall Streak Rider',sym:'R_100',cat:'callput',tt:'risefall',ct:'PUT',dur:5,stake:1,loss:1,win:2,tp:8,sl:10,d:'Anti-martingale on Fall: presses winning streaks up to 3 wins, then resets. Stops at take-profit or stop-loss.'},
+ {id:'pb11',name:'Rise Scalper V10',sym:'R_10',cat:'callput',tt:'risefall',ct:'CALL',dur:3,stake:0.5,loss:2,win:1,tp:5,sl:15},
+ {id:'pb12',name:'Fall Scalper V10',sym:'R_10',cat:'callput',tt:'risefall',ct:'PUT',dur:3,stake:0.5,loss:2,win:1,tp:5,sl:15},
+ {id:'pb13',name:'Rise Sprint 1s',sym:'1HZ100V',cat:'callput',tt:'risefall',ct:'CALL',dur:5,stake:1,loss:2.1,win:1,tp:10,sl:30},
+ {id:'pb14',name:'Fall Sprint 1s',sym:'1HZ100V',cat:'callput',tt:'risefall',ct:'PUT',dur:5,stake:1,loss:2.1,win:1,tp:10,sl:30},
+ {id:'pb15',name:'Rise Cautious',sym:'R_25',cat:'callput',tt:'risefall',ct:'CALL',dur:7,stake:0.5,loss:1.8,win:1,tp:6,sl:12},
+ {id:'pb16',name:'Fall Cautious',sym:'R_25',cat:'callput',tt:'risefall',ct:'PUT',dur:7,stake:0.5,loss:1.8,win:1,tp:6,sl:12},
+ {id:'pb17',name:'Rise Streak 1s',sym:'1HZ50V',cat:'callput',tt:'risefall',ct:'CALL',dur:5,stake:1,loss:1,win:2,tp:8,sl:10},
+ {id:'pb18',name:'Fall Streak 1s',sym:'1HZ75V',cat:'callput',tt:'risefall',ct:'PUT',dur:5,stake:1,loss:1,win:2,tp:8,sl:10},
+ {id:'pb19',name:'Rise Flat Steady',sym:'R_75',cat:'callput',tt:'risefall',ct:'CALL',dur:5,stake:1,loss:1,win:1,tp:5,sl:10},
+ {id:'pb20',name:'Fall Flat Steady',sym:'R_50',cat:'callput',tt:'risefall',ct:'PUT',dur:5,stake:1,loss:1,win:1,tp:5,sl:10},
+ {id:'pb21',name:'Even Sprint 1s',sym:'1HZ50V',cat:'digits',tt:'evenodd',ct:'DIGITEVEN',dur:1,stake:1,loss:2.2,win:1,tp:8,sl:25},
+ {id:'pb22',name:'Odd Sprint 1s',sym:'1HZ75V',cat:'digits',tt:'evenodd',ct:'DIGITODD',dur:1,stake:1,loss:2.2,win:1,tp:8,sl:25},
+ {id:'pb23',name:'Even Flat Guard',sym:'R_100',cat:'digits',tt:'evenodd',ct:'DIGITEVEN',dur:1,stake:1,loss:1,win:1,tp:4,sl:12},
+ {id:'pb24',name:'Odd Flat Guard',sym:'R_50',cat:'digits',tt:'evenodd',ct:'DIGITODD',dur:1,stake:1,loss:1,win:1,tp:4,sl:12},
+ {id:'pb25',name:'Even Streak Rider',sym:'R_75',cat:'digits',tt:'evenodd',ct:'DIGITEVEN',dur:1,stake:1,loss:1,win:2,tp:8,sl:10},
+ {id:'pb26',name:'Odd Streak Rider',sym:'R_100',cat:'digits',tt:'evenodd',ct:'DIGITODD',dur:1,stake:1,loss:1,win:2,tp:8,sl:10},
+ {id:'pb27',name:'Over 1 Guard',sym:'R_50',cat:'digits',tt:'overunder',ct:'DIGITOVER',pred:1,dur:1,stake:0.35,loss:4,win:1,tp:5,sl:15},
+ {id:'pb28',name:'Over 3 Balanced',sym:'R_75',cat:'digits',tt:'overunder',ct:'DIGITOVER',pred:3,dur:1,stake:0.5,loss:2.6,win:1,tp:6,sl:20},
+ {id:'pb29',name:'Over 4 Even-Money',sym:'R_100',cat:'digits',tt:'overunder',ct:'DIGITOVER',pred:4,dur:1,stake:0.5,loss:2.2,win:1,tp:6,sl:20},
+ {id:'pb30',name:'Over 5 Hunter',sym:'1HZ75V',cat:'digits',tt:'overunder',ct:'DIGITOVER',pred:5,dur:1,stake:0.5,loss:1.8,win:1,tp:6,sl:15},
+ {id:'pb31',name:'Under 8 Guard',sym:'R_25',cat:'digits',tt:'overunder',ct:'DIGITUNDER',pred:8,dur:1,stake:0.35,loss:4,win:1,tp:5,sl:15},
+ {id:'pb32',name:'Under 6 Balanced',sym:'R_50',cat:'digits',tt:'overunder',ct:'DIGITUNDER',pred:6,dur:1,stake:0.5,loss:2.6,win:1,tp:6,sl:20},
+ {id:'pb33',name:'Under 5 Even-Money',sym:'1HZ100V',cat:'digits',tt:'overunder',ct:'DIGITUNDER',pred:5,dur:1,stake:0.5,loss:2.2,win:1,tp:6,sl:20},
+ {id:'pb34',name:'Under 4 Hunter',sym:'R_75',cat:'digits',tt:'overunder',ct:'DIGITUNDER',pred:4,dur:1,stake:0.5,loss:1.8,win:1,tp:6,sl:15},
+ {id:'pb35',name:'Differs 3 Steady',sym:'R_50',cat:'digits',tt:'matchesdiffers',ct:'DIGITDIFF',pred:3,dur:1,stake:2,loss:1,win:1,tp:3,sl:20},
+ {id:'pb36',name:'Differs 8 Steady',sym:'R_75',cat:'digits',tt:'matchesdiffers',ct:'DIGITDIFF',pred:8,dur:1,stake:2,loss:1,win:1,tp:3,sl:20},
+ {id:'pb37',name:'Differs 0 Shield',sym:'1HZ100V',cat:'digits',tt:'matchesdiffers',ct:'DIGITDIFF',pred:0,dur:1,stake:2,loss:1,win:1,tp:3,sl:20},
+ {id:'pb38',name:'Matches 3 Sniper',sym:'R_100',cat:'digits',tt:'matchesdiffers',ct:'DIGITMATCH',pred:3,dur:1,stake:0.35,loss:1,win:1,tp:15,sl:3.5},
+ {id:'pb39',name:'Matches 5 Sniper',sym:'1HZ75V',cat:'digits',tt:'matchesdiffers',ct:'DIGITMATCH',pred:5,dur:1,stake:0.35,loss:1,win:1,tp:15,sl:3.5},
+ {id:'pb40',name:'Matches 9 Sniper',sym:'R_50',cat:'digits',tt:'matchesdiffers',ct:'DIGITMATCH',pred:9,dur:1,stake:0.35,loss:1,win:1,tp:15,sl:3.5}
 ];
+const PB_MK={R_10:'Volatility 10',R_25:'Volatility 25',R_50:'Volatility 50',R_75:'Volatility 75',R_100:'Volatility 100','1HZ50V':'Volatility 50 (1s)','1HZ75V':'Volatility 75 (1s)','1HZ100V':'Volatility 100 (1s)'};
+function pbDesc(c){
+  const m=PB_MK[c.sym]||c.sym, step=c.win>1?'Doubles the stake after each win (max 3 in a row) and resets after a loss.':(c.loss>1?'Raises the stake '+c.loss+'x after a loss and resets after a win, with a capped stake.':'Flat stake \u2014 no martingale.');
+  const what={DIGITEVEN:'Digit Even',DIGITODD:'Digit Odd',DIGITOVER:'Digit Over '+c.pred,DIGITUNDER:'Digit Under '+c.pred,DIGITDIFF:'Digit Differs '+c.pred,DIGITMATCH:'Digit Matches '+c.pred,CALL:'Rise',PUT:'Fall'}[c.ct]||c.ct;
+  return 'Trades '+what+' on '+m+' ('+c.dur+(c.dur===1?' tick':' ticks')+'). '+step+' Stops at take-profit or stop-loss.';
+}
 function pbXml(c){
   let k=0; const id=()=>'pb'+(++k)+Math.random().toString(36).slice(2,6);
   const vn=['Stake','Initial','MaxStake','TP','SL'], vid={}; vn.forEach(n=>vid[n]=id());
@@ -6975,7 +7017,7 @@ function pbUserSave(a){ try{ localStorage.setItem('wp_pb_user',JSON.stringify(a)
 function pbCodes(){ try{ return JSON.parse(localStorage.getItem('wp_pb_codes')||'[]'); }catch(e){ return []; } }
 function pbUnlocked(){ try{ return localStorage.getItem('wp_pb_unlock')==='1'; }catch(e){ return false; } }
 function pbAll(){
-  const seed=PB_SEED.map(c=>({id:c.id,name:c.name,cat:'Premium',desc:c.d,seed:c,meta:c.sym+' \u00B7 '+(c.tt==='risefall'?'Rise/Fall':c.tt==='evenodd'?'Even/Odd':c.tt==='overunder'?'Over/Under':'Matches/Differs')+' \u00B7 stake $'+c.stake+' \u00B7 TP $'+c.tp+' \u00B7 SL $'+c.sl}));
+  const seed=PB_SEED.map(c=>({id:c.id,name:c.name,cat:'Premium',desc:c.d||pbDesc(c),seed:c,meta:c.sym+' \u00B7 '+(c.tt==='risefall'?'Rise/Fall':c.tt==='evenodd'?'Even/Odd':c.tt==='overunder'?'Over/Under':'Matches/Differs')+' \u00B7 stake $'+c.stake+' \u00B7 TP $'+c.tp+' \u00B7 SL $'+c.sl}));
   const seen={}; const out=seed.slice(); out.forEach(b=>seen[b.id]=1);
   (PB.remote.bots||[]).concat(pbUser()).forEach(b=>{ if(b&&b.id&&b.xml&&!seen[b.id]){ seen[b.id]=1; out.push({id:b.id,name:b.name,cat:b.cat||'Premium',desc:b.desc||'',xml:b.xml,meta:'Uploaded by owner'}); } });
   return out;
@@ -6983,10 +7025,11 @@ function pbAll(){
 function pbXmlOf(b){ return b.xml||pbXml(b.seed); }
 function pbEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 function pbRender(){
-  const bots=pbAll(), cats=['All'].concat([...new Set(bots.map(b=>b.cat))]), un=pbUnlocked();
-  $('pbBanner').innerHTML=un?'<span><b>\u2705 Premium unlocked</b> \u2014 download any bot below.</span>':'<span><b>\uD83D\uDD12 Premium bots</b> \u2014 buy once to download all '+bots.length+' bots.</span><span class="pb-row"><button class="pb-btn" onclick="pbBuy()">Buy</button><button class="pb-btn alt" onclick="pbBuy(true)">I have a code</button></span>';
+  const bots=pbAll(), cats=['All'].concat([...new Set(bots.map(b=>b.cat))]), un=pbUnlocked(), q=(($('pbSearch')||{}).value||'').trim().toLowerCase();
+  $('pbBanner').innerHTML=un?'<span><b>\u2705 Unlocked</b> \u2014 download any bot below.</span>':'<span><b>\uD83D\uDD12 '+bots.length+' premium bots</b> \u2014 buy once, download all.</span><button class="pb-btn" onclick="pbBuy()">Buy</button>';
   $('pbChips').innerHTML=cats.map(c=>'<button class="'+(PB.cat===c?'on':'')+'" onclick="pbCat(this.dataset.c)" data-c="'+pbEsc(c)+'">'+pbEsc(c)+' ('+(c==='All'?bots.length:bots.filter(b=>b.cat===c).length)+')</button>').join('');
-  $('pbList').innerHTML=bots.filter(b=>PB.cat==='All'||b.cat===PB.cat).map(b=>'<div class="pb-item"><div class="pb-t"><span class="pb-n">'+pbEsc(b.name)+'<span class="pb-badge">'+pbEsc(b.cat)+'</span></span><button class="pb-btn '+(un?'dn':'')+'" onclick="pbDownload(this.dataset.id)" data-id="'+pbEsc(b.id)+'">'+(un?'\u2B07 Download':'\uD83D\uDD12 Buy')+'</button></div><div class="pb-d">'+pbEsc(b.desc)+'</div><div class="pb-s">'+pbEsc(b.meta)+' \u00B7 .xml</div></div>').join('');
+  const list=bots.filter(b=>(PB.cat==='All'||b.cat===PB.cat)&&(!q||(b.name+' '+b.meta).toLowerCase().indexOf(q)>=0));
+  $('pbList').innerHTML=list.length?list.map(b=>'<div class="pb-item"><div class="pb-t"><span class="pb-n">'+pbEsc(b.name)+'<span class="pb-badge">'+pbEsc(b.cat)+'</span></span><button class="pb-btn sm '+(un?'dn':'')+'" onclick="pbDownload(this.dataset.id)" data-id="'+pbEsc(b.id)+'">'+(un?'\u2B07 .xml':'\uD83D\uDD12 Buy')+'</button></div><div class="pb-d">'+pbEsc(b.desc)+'</div><div class="pb-s">'+pbEsc(b.meta)+'</div></div>').join(''):'<div class="tiny" style="padding:8px">No bots match.</div>';
 }
 function pbCat(c){ PB.cat=c; pbRender(); }
 function pbDownload(id){
@@ -6996,11 +7039,11 @@ function pbDownload(id){
   a.href=URL.createObjectURL(blob); a.download=b.name.replace(/[^\w\-]+/g,'_')+'.xml'; document.body.appendChild(a); a.click();
   setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
 }
-function pbBuy(codeOnly){
-  $('pbPayModal').style.display='flex'; $('pbCodeMsg').textContent='';
-  const f=$('pbPayFrame'); if(!codeOnly&&f.getAttribute('src')!==PB_PAY) f.src=PB_PAY; $('pbPayOpen').href=PB_PAY;
-  if(codeOnly){ setTimeout(()=>{ try{ $('pbCodeIn').focus(); }catch(e){} },100); }
+function pbBuy(){
+  $('pbPayModal').style.display='flex'; $('pbCodeMsg').textContent=''; $('pbCodeBox').style.display='none'; $('pbPaidBtn').style.display=''; $('pbCodeIn').value='';
+  const f=$('pbPayFrame'); if(f.getAttribute('src')!==PB_PAY) f.src=PB_PAY; $('pbPayOpen').href=PB_PAY;
 }
+function pbShowCode(){ $('pbPaidBtn').style.display='none'; $('pbCodeBox').style.display=''; setTimeout(()=>{ try{ $('pbCodeIn').focus(); }catch(e){} },100); }
 function pbPayClose(){ $('pbPayModal').style.display='none'; }
 async function pbHash(t){
   t=String(t).trim().toUpperCase();
