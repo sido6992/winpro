@@ -563,6 +563,34 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 .th-custom input{flex:0 0 54px;width:54px;min-width:0;padding:5px 6px;font-size:12px;text-align:center}
 .th-custom select{flex:1 1 0;min-width:0;padding:5px 6px;font-size:12px}
 .th-custom button{flex:0 0 auto;padding:6px 10px;font:800 11px var(--font);border:1px solid var(--teal);background:var(--teal);color:#08101f;border-radius:7px;cursor:pointer}
+
+/* ---- premium bots ---- */
+.pb-banner{border:1px solid var(--amber);border-radius:10px;padding:8px 10px;margin:0 0 8px;font-size:12px;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.pb-banner b{color:var(--amber)}
+.pb-chips{display:flex;gap:5px;margin:0 0 6px;flex-wrap:wrap}
+.pb-chips button{padding:4px 10px;font:700 11px var(--font);border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:999px;cursor:pointer}
+.pb-chips button.on{background:var(--amber);color:#1b1300;border-color:var(--amber)}
+.pb-btn{padding:8px 12px;font:800 12px var(--font);border:0;background:var(--amber);color:#1b1300;border-radius:8px;cursor:pointer;white-space:nowrap}
+.pb-btn.alt{background:transparent;border:1px solid var(--teal);color:var(--teal)}
+.pb-btn.dn{background:#22c55e;color:#06210f}
+.pb-item{padding:8px 2px;border-bottom:1px solid var(--border)}
+.pb-item .pb-t{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pb-item .pb-n{font-weight:800;font-size:13px;min-width:0;overflow-wrap:anywhere}
+.pb-badge{font-size:9px;font-weight:800;color:#1b1300;background:var(--amber);border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle}
+.pb-item .pb-d{font-size:11.5px;color:var(--muted);margin:3px 0;line-height:1.35}
+.pb-item .pb-s{font-size:10.5px;color:var(--muted);font-family:var(--mono);margin:0 0 6px;overflow-wrap:anywhere}
+.pb-row{display:flex;gap:6px;align-items:center}
+.pb-row input{flex:1 1 0;min-width:0}
+.pb-modal{position:fixed;inset:0;z-index:99999;background:rgba(3,5,14,.78);display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.pb-sheet{width:100%;max-width:520px;height:100%;max-height:100dvh;background:var(--bg,#07081a);display:flex;flex-direction:column;border:1px solid var(--border)}
+.pb-sheet-h{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border)}
+.pb-sheet-h span{display:flex;gap:10px;align-items:center}
+.pb-sheet-h a{font-size:11px;color:var(--teal)}
+#pbPayFrame{flex:1 1 auto;width:100%;border:0;background:#fff;min-height:0}
+.pb-sheet-f{padding:8px 10px;border-top:1px solid var(--border)}
+.pb-admin-body{padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch}
+.pb-admin-body input,.pb-admin-body textarea{width:100%;box-sizing:border-box}
+.pb-sec{font-weight:800;font-size:12px;color:var(--amber);margin-top:8px}
 /* ---- additions: token login, goal tracker, live trades tab, history tools, account colours ---- */
 .or-sep{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;margin:14px 0 10px}
 .or-sep:before,.or-sep:after{content:"";flex:1;height:1px;background:var(--border)}
@@ -793,6 +821,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   <div class="side-link" style="border-color:var(--teal);color:var(--teal)" onclick="goToTab('copytrading');toggleSidebar(false)"><span class="ti">&#128257;</span><span>Copy Trading</span></div>
   <div class="side-link" style="border-color:var(--blue);color:var(--blue)" onclick="goToTab('tradehistory');toggleSidebar(false)"><span class="ti">&#128337;</span><span>Trade History</span></div>
   <div class="side-link" style="border-color:var(--violet);color:var(--violet)" onclick="goToTab('freebots');toggleSidebar(false)"><span class="ti">&#129302;</span><span>Bots</span></div>
+  <div class="side-link" style="border-color:var(--amber);color:var(--amber);font-weight:900" onclick="goToTab('premiumbots');toggleSidebar(false)"><span class="ti">&#128142;</span><span>Premium Bots</span></div>
   <div class="side-link" style="border-color:var(--amber);color:var(--amber);font-weight:900" onclick="goToTab('goal');toggleSidebar(false)"><span class="ti">&#127919;</span><span>GOAL</span></div>
   <div class="side-link" id="sideComm" style="border-color:var(--orange);color:var(--orange)" onclick="goToTab('commission');toggleSidebar(false)"><span class="ti">&#128176;</span><span>Commission</span></div>
   <div class="side-link" style="border-color:var(--teal);color:var(--teal)" onclick="goToTab('cashier');toggleSidebar(false)"><span class="ti">&#127974;</span><span>Cashier</span></div>
@@ -976,8 +1005,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
     <h3 class="h-tools th-head">Trade History <span><button type="button" class="mini-btn ref" onclick="refreshHistory()">&#8635; Refresh</button> <button type="button" class="mini-btn del" onclick="clearTradeHistory()">&#128465; Delete</button></span></h3>
     <div class="th-range" id="thRange"><button type="button" class="on" data-r="local" onclick="thRange('local')">All</button><select id="thSelD" data-u="1" onchange="thSelPick(this)"></select><select id="thSelW" data-u="7" onchange="thSelPick(this)"></select><select id="thSelM" data-u="30" onchange="thSelPick(this)"></select><select id="thSelY" data-u="365" onchange="thSelPick(this)"></select></div>
                 <div class="tiny" id="thRangeInfo" style="margin:0 0 4px"></div>
-    <div class="field"><select id="histFilter" onchange="renderSidebarHistory()"><option value="all">All trades</option><option value="growth">Accumulating markets only (Buy/Sell, Accumulators, Reset, Asian)</option><option value="digits">Digits history (Even/Odd, Over/Under, Matches/Differs)</option></select></div>
-    <div id="sidebarHistory" class="th-list"></div>
+        <div id="sidebarHistory" class="th-list"></div>
   </div>
 </div>
 
@@ -1204,6 +1232,57 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 <div class="trade-result-popup" id="tradeResultPopup" onclick="this.classList.remove('show')"></div>
 
 <!-- BOT BUILDER -->
+
+<div class="view" id="view-premiumbots">
+  <div class="flat-pane">
+    <h3 class="h-tools th-head">&#128142; Premium Bots <span><button type="button" class="mini-btn" id="pbAdminBtn" onclick="pbAdminOpen()">&#128274; Admin</button></span></h3>
+    <div id="pbBanner" class="pb-banner"></div>
+    <div id="pbChips" class="pb-chips"></div>
+    <div id="pbList"></div>
+    <p class="tiny" style="margin:8px 2px">Bots are .xml files for Deriv Bot (Import &rarr; Local). Always test on a demo account first. No bot can guarantee profit.</p>
+  </div>
+</div>
+<div class="pb-modal" id="pbPayModal" style="display:none">
+  <div class="pb-sheet">
+    <div class="pb-sheet-h"><b>&#128142; Buy Premium Bots</b><span><a id="pbPayOpen" href="#" target="_blank" rel="noopener">Open in browser</a><button type="button" class="mini-btn" onclick="pbPayClose()">&#10005;</button></span></div>
+    <iframe id="pbPayFrame" title="Payment" allow="payment *; clipboard-write *" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div class="pb-sheet-f">
+      <div class="tiny" style="margin-bottom:4px">Already paid? Enter the unlock code you received to download all premium bots.</div>
+      <div class="pb-row"><input id="pbCodeIn" placeholder="UNLOCK CODE" autocapitalize="characters" autocomplete="off"><button type="button" class="pb-btn" onclick="pbUnlock()">Unlock</button></div>
+      <div class="tiny" id="pbCodeMsg" style="margin-top:4px"></div>
+    </div>
+  </div>
+</div>
+<div class="pb-modal" id="pbPinModal" style="display:none">
+  <div class="pb-sheet" style="max-width:320px;height:auto">
+    <div class="pb-sheet-h"><b>&#128274; Admin PIN</b><button type="button" class="mini-btn" onclick="pbPinClose()">&#10005;</button></div>
+    <div style="padding:12px"><input id="pbPinIn" type="password" inputmode="numeric" maxlength="12" placeholder="Enter PIN" autocomplete="off" style="width:100%;text-align:center;font-size:20px;letter-spacing:6px">
+    <div class="tiny" id="pbPinMsg" style="margin:6px 0;min-height:14px"></div>
+    <button type="button" class="pb-btn" style="width:100%" onclick="pbPinCheck()">Open admin</button></div>
+  </div>
+</div>
+<div class="pb-modal" id="pbAdminModal" style="display:none">
+  <div class="pb-sheet">
+    <div class="pb-sheet-h"><b>&#128274; Premium Bots Admin</b><button type="button" class="mini-btn" onclick="pbAdminClose()">&#10005;</button></div>
+    <div class="pb-admin-body">
+      <div class="pb-sec">Upload a bot (.xml)</div>
+      <input id="pbUpFile" type="file" accept=".xml,text/xml,application/xml" onchange="pbUpPick(this)">
+      <input id="pbUpName" placeholder="Bot name">
+      <input id="pbUpCat" placeholder="Category" value="Premium">
+      <input id="pbUpDesc" placeholder="Short description">
+      <button type="button" class="pb-btn" onclick="pbUpAdd()">Add bot</button>
+      <div class="tiny" id="pbUpMsg"></div>
+      <div class="pb-sec">Your uploaded bots</div>
+      <div id="pbUpList"></div>
+      <div class="pb-sec">Unlock codes (give one to each buyer after they pay)</div>
+      <div class="pb-row"><input id="pbCodeN" type="number" min="1" max="100" value="10"><button type="button" class="pb-btn" onclick="pbGenCodes()">Generate codes</button></div>
+      <textarea id="pbCodesOut" rows="4" readonly placeholder="New codes appear here. Copy them now \u2014 only their fingerprints are stored."></textarea>
+      <div class="pb-sec">Publish to all users</div>
+      <button type="button" class="pb-btn" onclick="pbExport()">Export premium-bots.json</button>
+      <div class="tiny">Upload that file to the same folder as index.html on GitHub. Everyone then sees your uploaded bots and the unlock codes work on every device.</div>
+    </div>
+  </div>
+</div>
 <div class="view" id="view-bot">
   <div class="grid">
     <div class="card a-violet">
@@ -6846,6 +6925,126 @@ TH.deleted=false;
     keys.forEach(k=>{ const d=+k.slice(7), c=thcLoad(d); if(c&&!c.deleted){ c.rows.unshift(h); thcSave(d,c.rows,false); } });
     if(TH.mode==='range'&&!TH.deleted&&TH.fresh){ const c=thcLoad(TH.days); if(c){ TH.rows=c.rows; renderSidebarHistory(); } } } }catch(e){}
   return r; }; }
+
+/* ===== Premium Bots (XML bots, PalPluss checkout, owner admin) ===== */
+const PB_PIN='6992';
+const PB_PAY='https://link.palpluss.com/0e41399b-9b93-4f4b-8945-5af5c56a7088';
+const PB_SEED=[
+ {id:'pb1',name:'Rise Martingale Pro',sym:'R_100',cat:'callput',tt:'risefall',ct:'CALL',dur:5,stake:1,loss:2.1,win:1,tp:10,sl:30,d:'Buys Rise on Volatility 100 every 5 ticks. Raises the stake after a loss to recover, resets after a win, stops at take-profit or stop-loss.'},
+ {id:'pb2',name:'Fall Martingale Pro',sym:'R_75',cat:'callput',tt:'risefall',ct:'PUT',dur:5,stake:1,loss:2.1,win:1,tp:10,sl:30,d:'Buys Fall on Volatility 75 every 5 ticks with controlled loss recovery and a hard stop-loss.'},
+ {id:'pb3',name:'Even Recovery',sym:'R_50',cat:'digits',tt:'evenodd',ct:'DIGITEVEN',dur:1,stake:1,loss:2.2,win:1,tp:8,sl:25,d:'Trades Digit Even on Volatility 50 one tick at a time. Recovers losses with a 2.2x step and a capped stake.'},
+ {id:'pb4',name:'Odd Recovery',sym:'R_25',cat:'digits',tt:'evenodd',ct:'DIGITODD',dur:1,stake:1,loss:2.2,win:1,tp:8,sl:25,d:'Trades Digit Odd on Volatility 25 one tick at a time with the same capped recovery steps.'},
+ {id:'pb5',name:'Over 2 Climber',sym:'R_100',cat:'digits',tt:'overunder',ct:'DIGITOVER',pred:2,dur:1,stake:0.5,loss:3,win:1,tp:6,sl:20,d:'Digits Over 2 on Volatility 100 (about 70% of digits win). Steps the stake 3x after a loss, resets on a win.'},
+ {id:'pb6',name:'Under 7 Climber',sym:'1HZ100V',cat:'digits',tt:'overunder',ct:'DIGITUNDER',pred:7,dur:1,stake:0.5,loss:3,win:1,tp:6,sl:20,d:'Digits Under 7 on Volatility 100 (1s). Same stepped recovery and capped stake as Over 2 Climber.'},
+ {id:'pb7',name:'Differs Steady',sym:'R_100',cat:'digits',tt:'matchesdiffers',ct:'DIGITDIFF',pred:5,dur:1,stake:2,loss:1,win:1,tp:3,sl:20,d:'Digit Differs 5 with a flat stake (no martingale). High hit rate, small payout; stops at take-profit or stop-loss.'},
+ {id:'pb8',name:'Matches Sniper',sym:'R_75',cat:'digits',tt:'matchesdiffers',ct:'DIGITMATCH',pred:7,dur:1,stake:0.35,loss:1,win:1,tp:15,sl:3.5,d:'Digit Matches 7 with a tiny flat stake for the big payout. Low hit rate, so the stop-loss is tight.'},
+ {id:'pb9',name:'Rise Streak Rider',sym:'R_50',cat:'callput',tt:'risefall',ct:'CALL',dur:5,stake:1,loss:1,win:2,tp:8,sl:10,d:'Anti-martingale: doubles the stake after each win (max 3 wins in a row) and drops back to base after a loss.'},
+ {id:'pb10',name:'Fall Streak Rider',sym:'R_100',cat:'callput',tt:'risefall',ct:'PUT',dur:5,stake:1,loss:1,win:2,tp:8,sl:10,d:'Anti-martingale on Fall: presses winning streaks up to 3 wins, then resets. Stops at take-profit or stop-loss.'}
+];
+function pbXml(c){
+  let k=0; const id=()=>'pb'+(++k)+Math.random().toString(36).slice(2,6);
+  const vn=['Stake','Initial','MaxStake','TP','SL'], vid={}; vn.forEach(n=>vid[n]=id());
+  const fv=n=>'<field name="VAR" id="'+vid[n]+'">'+n+'</field>';
+  const get=n=>'<block type="variables_get" id="'+id()+'">'+fv(n)+'</block>';
+  const num=x=>'<block type="math_number" id="'+id()+'"><field name="NUM">'+x+'</field></block>';
+  const set=(n,val)=>nx=>'<block type="variables_set" id="'+id()+'">'+fv(n)+'<value name="VALUE">'+val+'</value>'+(nx?'<next>'+nx+'</next>':'')+'</block>';
+  const chain=a=>a.reduceRight((nx,f)=>f(nx),'');
+  const arith=(op,A,B)=>'<block type="math_arithmetic" id="'+id()+'"><field name="OP">'+op+'</field><value name="A"><shadow type="math_number" id="'+id()+'"><field name="NUM">1</field></shadow>'+A+'</value><value name="B"><shadow type="math_number" id="'+id()+'"><field name="NUM">1</field></shadow>'+B+'</value></block>';
+  const cmp=(op,A,B)=>'<block type="logic_compare" id="'+id()+'"><field name="OP">'+op+'</field><value name="A">'+A+'</value><value name="B">'+B+'</value></block>';
+  const ifb=(cond,doS,elseS)=>nx=>'<block type="controls_if" id="'+id()+'">'+(elseS!=null?'<mutation else="1"></mutation>':'')+'<value name="IF0">'+cond+'</value>'+(doS?'<statement name="DO0">'+doS+'</statement>':'')+(elseS?'<statement name="ELSE">'+elseS+'</statement>':'')+(nx?'<next>'+nx+'</next>':'')+'</block>';
+  const dig=c.cat==='digits', pred=c.pred!=null&&c.tt!=='evenodd';
+  const maxS=c.win>1?+(c.stake*Math.pow(c.win,3)).toFixed(2):(c.loss>1?+(c.stake*Math.pow(c.loss,4)).toFixed(2):c.stake);
+  const init=chain([set('Stake',num(c.stake)),set('Initial',num(c.stake)),set('MaxStake',num(maxS)),set('TP',num(c.tp)),set('SL',num(c.sl))]);
+  const winS=c.win>1?chain([set('Stake',arith('MULTIPLY',get('Stake'),num(c.win)))]):chain([set('Stake',get('Initial'))]);
+  const lossS=c.loss>1?chain([set('Stake',arith('MULTIPLY',get('Stake'),num(c.loss)))]):chain([set('Stake',get('Initial'))]);
+  const after=chain([
+    ifb('<block type="contract_check_result" id="'+id()+'"><field name="CHECK_RESULT">win</field></block>',winS,lossS),
+    ifb(cmp('GT',get('Stake'),get('MaxStake')),chain([set('Stake',get('Initial'))])),
+    ifb('<block type="logic_operation" id="'+id()+'"><field name="OP">OR</field><value name="A">'+cmp('GTE','<block type="total_profit" id="'+id()+'"></block>',get('TP'))+'</value><value name="B">'+cmp('LTE','<block type="total_profit" id="'+id()+'"></block>',arith('MINUS',num(0),get('SL')))+'</value></block>','','<block type="trade_again" id="'+id()+'"></block>')
+  ]);
+  const opts='<block type="trade_definition_tradeoptions" id="'+id()+'"><mutation xmlns="http://www.w3.org/1999/xhtml" has_first_barrier="false" has_second_barrier="false" has_prediction="'+pred+'"></mutation><field name="DURATIONTYPE_LIST">t</field><value name="DURATION"><shadow type="math_number_positive" id="'+id()+'"><field name="NUM">'+c.dur+'</field></shadow></value><value name="AMOUNT"><shadow type="math_number_positive" id="'+id()+'"><field name="NUM">1</field></shadow>'+get('Stake')+'</value>'+(pred?'<value name="PREDICTION"><shadow type="math_number_positive" id="'+id()+'"><field name="NUM">'+c.pred+'</field></shadow></value>':'')+'</block>';
+  const tdef='<block type="trade_definition" id="'+id()+'" deletable="false" x="0" y="0"><statement name="TRADE_OPTIONS"><block type="trade_definition_market" id="'+id()+'" deletable="false" movable="false"><field name="MARKET_LIST">synthetic_index</field><field name="SUBMARKET_LIST">random_index</field><field name="SYMBOL_LIST">'+c.sym+'</field><next><block type="trade_definition_tradetype" id="'+id()+'" deletable="false" movable="false"><field name="TRADETYPECAT_LIST">'+(dig?'digits':'callput')+'</field><field name="TRADETYPE_LIST">'+c.tt+'</field><next><block type="trade_definition_contracttype" id="'+id()+'" deletable="false" movable="false"><field name="TYPE_LIST">'+c.ct+'</field><next><block type="trade_definition_candleinterval" id="'+id()+'" deletable="false" movable="false"><field name="CANDLEINTERVAL_LIST">60</field><next><block type="trade_definition_restartbuysell" id="'+id()+'" deletable="false" movable="false"><field name="TIME_MACHINE_ENABLED">FALSE</field><next><block type="trade_definition_restartonerror" id="'+id()+'" deletable="false" movable="false"><field name="RESTARTONERROR">TRUE</field></block></next></block></next></block></next></block></next></block></next></block></statement><statement name="INITIALIZATION">'+init+'</statement><statement name="SUBMARKET">'+opts+'</statement></block>';
+  const buy='<block type="before_purchase" id="'+id()+'" deletable="false" x="0" y="420"><statement name="BEFOREPURCHASE_STACK"><block type="purchase" id="'+id()+'"><field name="PURCHASE_LIST">'+c.ct+'</field></block></statement></block>';
+  const during='<block type="during_purchase" id="'+id()+'" deletable="false" x="0" y="620"><statement name="DURING_PURCHASE_STACK"></statement></block>';
+  const aft='<block type="after_purchase" id="'+id()+'" deletable="false" x="0" y="760"><statement name="AFTERPURCHASE_STACK">'+after+'</statement></block>';
+  return '<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false"><variables>'+vn.map(n=>'<variable id="'+vid[n]+'">'+n+'</variable>').join('')+'</variables>'+tdef+buy+during+aft+'</xml>';
+}
+const PB={cat:'All',admin:false,remote:{bots:[],codes:[]},loaded:false};
+function pbUser(){ try{ return JSON.parse(localStorage.getItem('wp_pb_user')||'[]'); }catch(e){ return []; } }
+function pbUserSave(a){ try{ localStorage.setItem('wp_pb_user',JSON.stringify(a)); return true; }catch(e){ return false; } }
+function pbCodes(){ try{ return JSON.parse(localStorage.getItem('wp_pb_codes')||'[]'); }catch(e){ return []; } }
+function pbUnlocked(){ try{ return localStorage.getItem('wp_pb_unlock')==='1'; }catch(e){ return false; } }
+function pbAll(){
+  const seed=PB_SEED.map(c=>({id:c.id,name:c.name,cat:'Premium',desc:c.d,seed:c,meta:c.sym+' \u00B7 '+(c.tt==='risefall'?'Rise/Fall':c.tt==='evenodd'?'Even/Odd':c.tt==='overunder'?'Over/Under':'Matches/Differs')+' \u00B7 stake $'+c.stake+' \u00B7 TP $'+c.tp+' \u00B7 SL $'+c.sl}));
+  const seen={}; const out=seed.slice(); out.forEach(b=>seen[b.id]=1);
+  (PB.remote.bots||[]).concat(pbUser()).forEach(b=>{ if(b&&b.id&&b.xml&&!seen[b.id]){ seen[b.id]=1; out.push({id:b.id,name:b.name,cat:b.cat||'Premium',desc:b.desc||'',xml:b.xml,meta:'Uploaded by owner'}); } });
+  return out;
+}
+function pbXmlOf(b){ return b.xml||pbXml(b.seed); }
+function pbEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function pbRender(){
+  const bots=pbAll(), cats=['All'].concat([...new Set(bots.map(b=>b.cat))]), un=pbUnlocked();
+  $('pbBanner').innerHTML=un?'<span><b>\u2705 Premium unlocked</b> \u2014 download any bot below.</span>':'<span><b>\uD83D\uDD12 Premium bots</b> \u2014 buy once to download all '+bots.length+' bots.</span><span class="pb-row"><button class="pb-btn" onclick="pbBuy()">Buy</button><button class="pb-btn alt" onclick="pbBuy(true)">I have a code</button></span>';
+  $('pbChips').innerHTML=cats.map(c=>'<button class="'+(PB.cat===c?'on':'')+'" onclick="pbCat(this.dataset.c)" data-c="'+pbEsc(c)+'">'+pbEsc(c)+' ('+(c==='All'?bots.length:bots.filter(b=>b.cat===c).length)+')</button>').join('');
+  $('pbList').innerHTML=bots.filter(b=>PB.cat==='All'||b.cat===PB.cat).map(b=>'<div class="pb-item"><div class="pb-t"><span class="pb-n">'+pbEsc(b.name)+'<span class="pb-badge">'+pbEsc(b.cat)+'</span></span><button class="pb-btn '+(un?'dn':'')+'" onclick="pbDownload(this.dataset.id)" data-id="'+pbEsc(b.id)+'">'+(un?'\u2B07 Download':'\uD83D\uDD12 Buy')+'</button></div><div class="pb-d">'+pbEsc(b.desc)+'</div><div class="pb-s">'+pbEsc(b.meta)+' \u00B7 .xml</div></div>').join('');
+}
+function pbCat(c){ PB.cat=c; pbRender(); }
+function pbDownload(id){
+  const b=pbAll().find(x=>x.id===id); if(!b) return;
+  if(!pbUnlocked()){ pbBuy(); return; }
+  const blob=new Blob([pbXmlOf(b)],{type:'application/xml'}), a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=b.name.replace(/[^\w\-]+/g,'_')+'.xml'; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+}
+function pbBuy(codeOnly){
+  $('pbPayModal').style.display='flex'; $('pbCodeMsg').textContent='';
+  const f=$('pbPayFrame'); if(!codeOnly&&f.getAttribute('src')!==PB_PAY) f.src=PB_PAY; $('pbPayOpen').href=PB_PAY;
+  if(codeOnly){ setTimeout(()=>{ try{ $('pbCodeIn').focus(); }catch(e){} },100); }
+}
+function pbPayClose(){ $('pbPayModal').style.display='none'; }
+async function pbHash(t){
+  t=String(t).trim().toUpperCase();
+  try{ if(window.crypto&&crypto.subtle){ const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('pb|'+t)); return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join(''); } }catch(e){}
+  let h=2166136261; const q='pb|'+t; for(let i=0;i<q.length;i++){ h^=q.charCodeAt(i); h=Math.imul(h,16777619); } return 'f'+(h>>>0).toString(16);
+}
+async function pbUnlock(){
+  const v=$('pbCodeIn').value; if(!v.trim()){ $('pbCodeMsg').textContent='Enter your unlock code.'; return; }
+  const h=await pbHash(v), ok=(PB.remote.codes||[]).concat(pbCodes()).indexOf(h)>=0;
+  if(ok){ try{ localStorage.setItem('wp_pb_unlock','1'); }catch(e){} $('pbCodeMsg').textContent='\u2705 Unlocked.'; pbRender(); setTimeout(pbPayClose,700); }
+  else $('pbCodeMsg').textContent='Code not recognised. Check it and try again.';
+}
+async function pbLoadRemote(){
+  if(PB.loaded) return; PB.loaded=true;
+  try{ const r=await fetch('premium-bots.json?'+Date.now(),{cache:'no-store'}); if(r.ok){ const j=await r.json(); PB.remote={bots:Array.isArray(j.bots)?j.bots:[],codes:Array.isArray(j.codes)?j.codes:[]}; pbRender(); } }catch(e){}
+}
+function pbAdminOpen(){ if(PB.admin){ pbAdminShow(); return; } $('pbPinIn').value=''; $('pbPinMsg').textContent=''; $('pbPinModal').style.display='flex'; setTimeout(()=>{ try{ $('pbPinIn').focus(); }catch(e){} },100); }
+function pbPinClose(){ $('pbPinModal').style.display='none'; }
+function pbPinCheck(){ if($('pbPinIn').value===PB_PIN){ PB.admin=true; pbPinClose(); pbAdminShow(); } else { $('pbPinMsg').textContent='Wrong PIN.'; $('pbPinIn').value=''; } }
+function pbAdminShow(){ $('pbAdminModal').style.display='flex'; pbUpList(); }
+function pbAdminClose(){ $('pbAdminModal').style.display='none'; }
+function pbUpPick(inp){ const f=inp.files&&inp.files[0]; if(!f) return; if(!$('pbUpName').value) $('pbUpName').value=f.name.replace(/\.xml$/i,'').replace(/[_\-]+/g,' '); }
+function pbUpAdd(){
+  const f=$('pbUpFile').files&&$('pbUpFile').files[0], m=$('pbUpMsg'); if(!f){ m.textContent='Choose an .xml file first.'; return; }
+  const rd=new FileReader(); rd.onload=()=>{
+    const xml=String(rd.result||''); const doc=new DOMParser().parseFromString(xml,'application/xml');
+    if(doc.querySelector('parsererror')||!doc.documentElement||doc.documentElement.nodeName.toLowerCase()!=='xml'){ m.textContent='That file is not a valid bot .xml (root must be <xml>).'; return; }
+    const a=pbUser(); a.push({id:'u'+Date.now().toString(36),name:($('pbUpName').value||f.name).trim(),cat:($('pbUpCat').value||'Premium').trim(),desc:$('pbUpDesc').value.trim(),xml,ts:Date.now()});
+    if(!pbUserSave(a)){ m.textContent='Storage is full \u2014 delete an old upload first.'; return; }
+    m.textContent='\u2705 Added. Export premium-bots.json to publish it to everyone.'; $('pbUpFile').value=''; $('pbUpName').value=''; $('pbUpDesc').value=''; pbUpList(); pbRender();
+  }; rd.readAsText(f);
+}
+function pbUpList(){ const a=pbUser(); $('pbUpList').innerHTML=a.length?a.map(b=>'<div class="pb-row" style="margin:3px 0"><span class="tiny" style="flex:1;min-width:0;overflow-wrap:anywhere">'+pbEsc(b.name)+' \u00B7 '+pbEsc(b.cat)+'</span><button class="pb-btn alt" data-id="'+pbEsc(b.id)+'" onclick="pbUpDel(this.dataset.id)">Delete</button></div>').join(''):'<div class="tiny">No uploads yet.</div>'; }
+function pbUpDel(id){ if(!confirm('Delete this uploaded bot?')) return; pbUserSave(pbUser().filter(b=>b.id!==id)); pbUpList(); pbRender(); }
+async function pbGenCodes(){
+  const n=Math.max(1,Math.min(100,parseInt($('pbCodeN').value)||10)), A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', out=[], hs=pbCodes();
+  for(let i=0;i<n;i++){ const b=new Uint8Array(8); crypto.getRandomValues(b); const c=[...b].map(x=>A[x%A.length]).join(''); out.push(c.slice(0,4)+'-'+c.slice(4)); hs.push(await pbHash(out[i])); }
+  try{ localStorage.setItem('wp_pb_codes',JSON.stringify(hs)); }catch(e){} $('pbCodesOut').value=out.join('\n');
+}
+function pbExport(){
+  const blob=new Blob([JSON.stringify({bots:pbUser().map(b=>({id:b.id,name:b.name,cat:b.cat,desc:b.desc,xml:b.xml})),codes:(pbCodes()).concat(PB.remote.codes||[]).filter((v,i,a)=>a.indexOf(v)===i)},null,1)],{type:'application/json'}), a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='premium-bots.json'; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+}
+{ const _g7=goToTab; goToTab=function(n){ _g7.apply(this,arguments); if(n==='premiumbots'){ try{ pbRender(); pbLoadRemote(); }catch(e){} } }; }
 { const _ph4=pushHistory; pushHistory=function(){ const r=_ph4.apply(this,arguments); try{ thPrune(); }catch(e){} return r; }; }
 
 /* ===== v4: Rise / Fall — entry point blinks yellow + vibrates, and the signal is held for 40 s ===== */
