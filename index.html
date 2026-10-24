@@ -974,10 +974,8 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
 <div class="view" id="view-tradehistory">
   <div class="flat-pane">
     <h3 class="h-tools th-head">Trade History <span><button type="button" class="mini-btn ref" onclick="refreshHistory()">&#8635; Refresh</button> <button type="button" class="mini-btn del" onclick="clearTradeHistory()">&#128465; Delete</button></span></h3>
-    <div class="th-range" id="thRange"><button type="button" class="on" data-r="local" onclick="thRange('local')">Saved</button><select id="thSelD" data-u="1" onchange="thSelPick(this)"></select><select id="thSelW" data-u="7" onchange="thSelPick(this)"></select><select id="thSelM" data-u="30" onchange="thSelPick(this)"></select><select id="thSelY" data-u="365" onchange="thSelPick(this)"></select></div>
-        <div class="th-custom"><span>Keep saved</span><input id="thKeepN" type="number" min="0" max="999" value="0" inputmode="numeric"><select id="thKeepU"><option value="1">days</option><option value="7">weeks</option><option value="30">months</option><option value="365">years</option></select><button type="button" onclick="thKeepSave()">Set</button></div>
-    <div class="tiny" id="thKeepInfo" style="margin:0 0 4px">Keeping all saved trades (0 = forever)</div>
-    <div class="tiny" id="thRangeInfo" style="margin:0 0 4px"></div>
+    <div class="th-range" id="thRange"><button type="button" class="on" data-r="local" onclick="thRange('local')">All</button><select id="thSelD" data-u="1" onchange="thSelPick(this)"></select><select id="thSelW" data-u="7" onchange="thSelPick(this)"></select><select id="thSelM" data-u="30" onchange="thSelPick(this)"></select><select id="thSelY" data-u="365" onchange="thSelPick(this)"></select></div>
+                <div class="tiny" id="thRangeInfo" style="margin:0 0 4px"></div>
     <div class="field"><select id="histFilter" onchange="renderSidebarHistory()"><option value="all">All trades</option><option value="growth">Accumulating markets only (Buy/Sell, Accumulators, Reset, Asian)</option><option value="digits">Digits history (Even/Odd, Over/Under, Matches/Differs)</option></select></div>
     <div id="sidebarHistory" class="th-list"></div>
   </div>
@@ -6628,13 +6626,33 @@ function thConv(t){
   let nm=sym; try{ if(sym) nm=marketName(sym)||sym; }catch(e){}
   return {time:(t.purchase_time||0)*1000,type:TH_LABEL[code]||code,symbolLabel:nm||String(t.longcode||'').slice(0,28),stake:t.buy_price||0,profit,result:profit>0?'won':(profit<0?'lost':'even')};
 }
+function thcKey(d){ return 'wp_thc_'+d; }
+function thcLoad(d){ try{ const c=JSON.parse(localStorage.getItem(thcKey(d))||'null'); if(!c) return null; return {deleted:!!c.deleted,ts:c.ts||0,rows:(c.rows||[]).map(r=>({time:r[0],type:r[1],symbolLabel:r[2],stake:r[3],profit:r[4],result:r[4]>0?'won':(r[4]<0?'lost':'even')}))}; }catch(e){ return null; } }
+function thcSave(d,rows,deleted){
+  const val=JSON.stringify({ts:Date.now(),deleted:!!deleted,rows:deleted?[]:rows.slice(0,1000).map(h=>[h.time,h.type,h.symbolLabel,h.stake,+(+h.profit).toFixed(2)])});
+  for(let tries=0;tries<6;tries++){
+    try{ localStorage.setItem(thcKey(d),val); return true; }catch(e){
+      let oldest=null,ot=1e18; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.indexOf('wp_thc_')===0&&k!==thcKey(d)){ try{ const t=(JSON.parse(localStorage.getItem(k))||{}).ts||0; if(t<ot){ ot=t; oldest=k; } }catch(x){ oldest=k; ot=0; } } }
+      if(!oldest) return false; try{ localStorage.removeItem(oldest); }catch(x){ return false; }
+    }
+  }
+  return false;
+}
 function thRange(m,label){
   document.querySelectorAll('#thRange button').forEach(b=>b.classList.toggle('on',String(b.dataset.r)===String(m)));
-  if(m==='local'){ TH.mode='local'; $('thRangeInfo').textContent=''; renderSidebarHistory(); return; }
+  if(m==='local'){ TH.mode='local'; TH.deleted=false; $('thRangeInfo').textContent='All saved trades'; renderSidebarHistory(); return; }
   TH.days=+m; TH.label=label||({1:'24 hours',7:'7 days',30:'30 days',365:'12 months'}[m]||(m+' days'));
-  if(!authorized||!ws||ws.readyState!==1){ TH.mode='localrange'; $('thRangeInfo').textContent='Saved trades from the last '+TH.label+' (sign in to load your full account history)'; renderSidebarHistory(); return; }
-  let cached=[]; try{ const c=JSON.parse(localStorage.getItem('wp_thcache')||'null'); if(c&&c.days===TH.days&&Array.isArray(c.rows)) cached=c.rows; }catch(e){}
-  TH.mode='range'; TH.rows=cached; TH.fresh=false; TH.off=0; TH.done=false; TH.err=''; renderSidebarHistory(); thFetch();
+  const c=thcLoad(TH.days), live=!!(authorized&&ws&&ws.readyState===1), info=$('thRangeInfo');
+  if(c&&c.deleted){ TH.mode=live?'range':'localrange'; TH.rows=[]; TH.deleted=true; TH.done=true; TH.err=''; info.textContent='Deleted \u2014 tap Refresh to bring '+TH.label+' back'; renderSidebarHistory(); return; }
+  TH.deleted=false;
+  if(!live){
+    if(c&&c.rows.length){ TH.mode='range'; TH.rows=c.rows; TH.done=true; info.textContent='Saved \u00B7 last '+TH.label+' \u00B7 '+c.rows.length+' trades (offline)'; }
+    else { TH.mode='localrange'; info.textContent='Saved trades from the last '+TH.label+' (sign in to load your full account history)'; }
+    renderSidebarHistory(); return;
+  }
+  TH.mode='range'; TH.rows=c?c.rows:[]; TH.fresh=false; TH.off=0; TH.done=false; TH.err='';
+  if(c&&c.rows.length) info.textContent='Saved \u00B7 last '+TH.label+' \u00B7 '+c.rows.length+' trades \u00B7 updating\u2026';
+  renderSidebarHistory(); thFetch();
 }
 function thFetch(){
   if(TH.busy||TH.done||TH.mode!=='range') return;
@@ -6651,7 +6669,7 @@ function thFetch(){
     const tr=(m.profit_table&&m.profit_table.transactions)||[];
     if(!TH.fresh){ TH.rows=[]; TH.fresh=true; }
     TH.rows=TH.rows.concat(tr.map(thConv)); TH.off+=tr.length; if(tr.length<200) TH.done=true;
-    try{ localStorage.setItem('wp_thcache',JSON.stringify({days:TH.days,ts:Date.now(),rows:TH.rows.slice(0,1500)})); }catch(e){}
+    thcSave(TH.days,TH.rows,false);
     $('thRangeInfo').textContent='Last '+(TH.label||TH.days+' days')+' \u00B7 '+TH.rows.length+' trades'+(TH.done?'':' (scroll for more)');
     renderSidebarHistory(); }catch(e){ TH.busy=false; } return;
   }
@@ -6660,11 +6678,11 @@ function thFetch(){
 { const _rsh=renderSidebarHistory; renderSidebarHistory=function(){
   if(TH.mode!=='range'&&TH.mode!=='localrange') return _rsh.apply(this,arguments);
   try{
-  const src=TH.mode==='localrange'?tradeHistory.filter(h=>h.time>=Date.now()-TH.days*864e5):TH.rows;
+  const src=TH.mode==='localrange'?(TH.deleted?[]:tradeHistory.filter(h=>h.time>=Date.now()-TH.days*864e5)):TH.rows;
   const el=$('sidebarHistory'); if(!el) return;
   const filt=($('histFilter')||{}).value||'all';
   const rows=filt==='digits'?src.filter(h=>/even|odd|over|under|match|differ/i.test(h.type||'')):src;
-  if(!rows.length){ el.innerHTML='<div class="tiny">'+(TH.busy?'Loading\u2026':(TH.err||'No trades in this period.'))+'</div>'; return; }
+  if(!rows.length){ el.innerHTML='<div class="tiny">'+(TH.busy?'Loading\u2026':(TH.deleted?'Deleted \u2014 tap Refresh to bring this period back.':(TH.err||'No trades in this period.')))+'</div>'; return; }
   const total=rows.reduce((a,h)=>a+h.profit,0), cl=total>0?'up':(total<0?'down':'');
   el.innerHTML='<div class="th-total"><span>Total P/L ('+rows.length+')</span><span class="'+cl+'">'+(total>=0?'+':'-')+'$'+Math.abs(total).toFixed(2)+'</span></div>'+rows.map(h=>thRow(h,true)).join('')+(TH.busy?'<div class="tiny" style="padding:6px">Loading more\u2026</div>':'');
   }catch(e){ return _rsh.apply(this,arguments); }
@@ -6785,10 +6803,8 @@ const THP={n:2,u:1,keepN:0,keepU:1}; try{ Object.assign(THP,JSON.parse(localStor
 const TH_UNIT={1:['day','days'],7:['week','weeks'],30:['month','months'],365:['year','years']};
 function thSpan(n,u){ const w=TH_UNIT[u]||TH_UNIT[1]; return n+' '+(n===1?w[0]:w[1]); }
 function thPrefSave(){ try{ localStorage.setItem('wp_thpref',JSON.stringify(THP)); }catch(e){} }
-function thPrune(){ if(!THP.keepN) return 0; const cut=Date.now()-THP.keepN*THP.keepU*864e5; let k=0; for(let i=tradeHistory.length-1;i>=0;i--){ if(tradeHistory[i].time<cut){ tradeHistory.splice(i,1); k++; } } if(k) saveJ('wp_hist',tradeHistory); return k; }
-function thKeepInfoText(k){ return THP.keepN?('Keeping saved trades for '+thSpan(THP.keepN,THP.keepU)+(k?' \u00B7 removed '+k+' older':'')):'Keeping all saved trades (0 = forever)'; }
-function thKeepSave(){ THP.keepN=Math.max(0,Math.min(999,parseInt($('thKeepN').value)||0)); THP.keepU=parseInt($('thKeepU').value)||1; $('thKeepN').value=THP.keepN; thPrefSave(); const k=thPrune(); $('thKeepInfo').textContent=thKeepInfoText(k); try{ renderSidebarHistory(); }catch(e){} }
-try{ $('thKeepN').value=THP.keepN; $('thKeepU').value=String(THP.keepU); $('thKeepInfo').textContent=thKeepInfoText(0); thPrune(); }catch(e){}
+function thPrune(){ const cut=Date.now()-1825*864e5; let k=0; for(let i=tradeHistory.length-1;i>=0;i--){ if(tradeHistory[i].time<cut){ tradeHistory.splice(i,1); k++; } } if(k) saveJ('wp_hist',tradeHistory); return k; }
+try{ thPrune(); }catch(e){}
 
 /* ===== v5: the period buttons themselves are the pickers (Days / Weeks / Months / Years) ===== */
 const TH_PICK={thSelD:['Days',[1,2,3,4,5,6]],thSelW:['Weeks',[1,2,3,4]],thSelM:['Months',[1,2,3,4,5,6,7,8,9,10,11]],thSelY:['Years',[1,2,3,4,5]]};
@@ -6801,6 +6817,35 @@ function thSelPick(sel){
 Object.keys(TH_PICK).forEach(id=>{ const el=$(id); if(!el) return; const d=TH_PICK[id], u=parseInt(el.dataset.u)||1;
   el.innerHTML='<option value="">'+d[0]+'</option>'+d[1].map(n=>'<option value="'+n+'">'+thSpan(n,u)+'</option>').join(''); el.value=''; });
 { const _thr=thRange; thRange=function(m,label){ if(m==='local') thPickReset(null); return _thr.apply(this,arguments); }; }
+
+/* ===== v6: every period keeps its own saved history; Delete / Refresh act on the selected period only ===== */
+TH.deleted=false;
+{ const _ct=clearTradeHistory; clearTradeHistory=function(){
+  if(TH.mode==='range'||TH.mode==='localrange'){
+    if(!confirm('Delete the saved history for the last '+TH.label+'?\nOnly this period is cleared \u2014 other periods are not touched. Tap Refresh to bring it back.')) return;
+    thcSave(TH.days,[],true); TH.rows=[]; TH.deleted=true; TH.done=true; TH.err='';
+    $('thRangeInfo').textContent='Deleted \u2014 tap Refresh to bring '+TH.label+' back'; renderSidebarHistory(); return;
+  }
+  if(!confirm('Delete all trade history saved in this app?\n(Tap Refresh afterwards to bring it back. Your Deriv statement is not affected.)')) return;
+  try{ localStorage.setItem('wp_hist_bak',JSON.stringify(tradeHistory)); }catch(e){}
+  tradeHistory.length=0; saveJ('wp_hist',tradeHistory); refreshHistoryViews();
+}; }
+{ const _rf6=refreshHistory; refreshHistory=function(){
+  if(TH.mode==='range'||TH.mode==='localrange'){
+    TH.deleted=false; try{ localStorage.removeItem(thcKey(TH.days)); }catch(e){}
+    if(!(authorized&&ws&&ws.readyState===1)){ thRange(TH.days,TH.label); return; }
+    TH.mode='range'; TH.rows=[]; TH.fresh=false; TH.off=0; TH.done=false; TH.err=''; TH.busy=false;
+    $('thRangeInfo').textContent='Refreshing '+TH.label+'\u2026'; renderSidebarHistory(); thFetch(); return;
+  }
+  try{ if(!tradeHistory.length){ const bak=JSON.parse(localStorage.getItem('wp_hist_bak')||'null'); if(Array.isArray(bak)&&bak.length){ bak.forEach(x=>tradeHistory.push(x)); saveJ('wp_hist',tradeHistory); localStorage.removeItem('wp_hist_bak'); } } }catch(e){}
+  return _rf6.apply(this,arguments);
+}; }
+{ const _ph6=pushHistory; pushHistory=function(){
+  const r=_ph6.apply(this,arguments);
+  try{ const h=tradeHistory[0]; if(h){ const keys=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k&&k.indexOf('wp_thc_')===0) keys.push(k); }
+    keys.forEach(k=>{ const d=+k.slice(7), c=thcLoad(d); if(c&&!c.deleted){ c.rows.unshift(h); thcSave(d,c.rows,false); } });
+    if(TH.mode==='range'&&!TH.deleted&&TH.fresh){ const c=thcLoad(TH.days); if(c){ TH.rows=c.rows; renderSidebarHistory(); } } } }catch(e){}
+  return r; }; }
 { const _ph4=pushHistory; pushHistory=function(){ const r=_ph4.apply(this,arguments); try{ thPrune(); }catch(e){} return r; }; }
 
 /* ===== v4: Rise / Fall — entry point blinks yellow + vibrates, and the signal is held for 40 s ===== */
