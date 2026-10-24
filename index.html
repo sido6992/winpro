@@ -1252,9 +1252,12 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
     <div class="pb-sheet-f">
       <button type="button" class="pb-btn" id="pbPaidBtn" style="width:100%" onclick="pbShowCode()">✔ I\'ve completed payment — enter my code</button>
       <div id="pbCodeBox" style="display:none">
-        <div class="tiny" style="margin-bottom:4px">Enter the unlock code you received after paying.</div>
-        <div class="pb-row"><input id="pbCodeIn" placeholder="UNLOCK CODE" autocapitalize="characters" autocomplete="off"><button type="button" class="pb-btn" onclick="pbUnlock()">Unlock</button></div>
+        <div class="tiny" style="margin-bottom:4px">Enter the <b>M-Pesa confirmation code</b> from your payment SMS (or the phone number you paid with, within 2 hours) to get your unlock code instantly.</div>
+        <div class="pb-row"><input id="pbClaimIn" placeholder="M-Pesa code or phone" autocapitalize="characters" autocomplete="off"><button type="button" class="pb-btn" onclick="pbClaim()">Get code</button></div>
+        <div class="tiny" style="margin-top:6px"><a href="#" onclick="pbToggleManual();return false" style="color:var(--teal)">I already have an unlock code</a></div>
+        <div class="pb-row" id="pbManual" style="display:none;margin-top:4px"><input id="pbCodeIn" placeholder="UNLOCK CODE" autocapitalize="characters" autocomplete="off"><button type="button" class="pb-btn" onclick="pbUnlock()">Unlock</button></div>
         <div class="tiny" id="pbCodeMsg" style="margin-top:4px"></div>
+      </div>
       </div>
     </div>
   </div>
@@ -7040,21 +7043,37 @@ function pbDownload(id){
   setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
 }
 function pbBuy(){
-  $('pbPayModal').style.display='flex'; $('pbCodeMsg').textContent=''; $('pbCodeBox').style.display='none'; $('pbPaidBtn').style.display=''; $('pbCodeIn').value='';
+  $('pbPayModal').style.display='flex'; $('pbCodeMsg').textContent=''; $('pbCodeBox').style.display='none'; $('pbPaidBtn').style.display=''; $('pbCodeIn').value=''; $('pbClaimIn').value=''; $('pbManual').style.display='none';
   const f=$('pbPayFrame'); if(f.getAttribute('src')!==PB_PAY) f.src=PB_PAY; $('pbPayOpen').href=PB_PAY;
 }
-function pbShowCode(){ $('pbPaidBtn').style.display='none'; $('pbCodeBox').style.display=''; setTimeout(()=>{ try{ $('pbCodeIn').focus(); }catch(e){} },100); }
+function pbShowCode(){ $('pbPaidBtn').style.display='none'; $('pbCodeBox').style.display=''; setTimeout(()=>{ try{ $('pbClaimIn').focus(); }catch(e){} },100); }
 function pbPayClose(){ $('pbPayModal').style.display='none'; }
 async function pbHash(t){
   t=String(t).trim().toUpperCase();
   try{ if(window.crypto&&crypto.subtle){ const d=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('pb|'+t)); return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join(''); } }catch(e){}
   let h=2166136261; const q='pb|'+t; for(let i=0;i<q.length;i++){ h^=q.charCodeAt(i); h=Math.imul(h,16777619); } return 'f'+(h>>>0).toString(16);
 }
+const PB_API='https://dqssynmyblualkgczvyq.supabase.co/functions/v1/pb-claim';
+function pbDev(){ let d=''; try{ d=localStorage.getItem('wp_pb_dev')||''; if(!d){ d=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(String(Math.random()).slice(2)+Date.now()); localStorage.setItem('wp_pb_dev',d); } }catch(e){ d='nodev'; } return d; }
+async function pbCall(body){ const r=await fetch(PB_API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(Object.assign({device:pbDev()},body))}); return r.json(); }
+function pbToggleManual(){ const m=$('pbManual'); m.style.display=m.style.display==='none'?'flex':'none'; }
+function pbDone(code){
+  try{ localStorage.setItem('wp_pb_unlock','1'); if(code) localStorage.setItem('wp_pb_code',code); }catch(e){}
+  $('pbCodeMsg').innerHTML='\u2705 Unlocked.'+(code?' Your unlock code: <b>'+pbEsc(code)+'</b> \u2014 keep it to unlock on another device.':''); pbRender(); setTimeout(pbPayClose,code?4500:900);
+}
+const PB_ERR={not_found:'Payment not found yet. Wait a minute after paying and try again. Use the M-Pesa code from your SMS.',device_limit:'This code is already used on 3 devices.',too_many:'Too many tries. Please try again in an hour.',bad_code:'Code not recognised. Check it and try again.',need_receipt_or_phone:'Enter your M-Pesa code or phone number.',try_again:'Please try again.'};
+async function pbClaim(){
+  const v=$('pbClaimIn').value.trim(), m=$('pbCodeMsg'); if(!v){ m.textContent=PB_ERR.need_receipt_or_phone; return; }
+  const phone=/^\+?[\d\s\-]+$/.test(v)&&v.replace(/\D/g,'').length>=9;
+  m.textContent='Checking your payment\u2026';
+  try{ const j=await pbCall(phone?{action:'claim',phone:v.replace(/\D/g,'')}:{action:'claim',receipt:v.toUpperCase().replace(/\s+/g,'')}); if(j.ok) pbDone(j.code); else m.textContent=PB_ERR[j.error]||'Could not verify. Try again.'; }
+  catch(e){ m.textContent='Could not reach the server. Check your connection and try again.'; }
+}
 async function pbUnlock(){
-  const v=$('pbCodeIn').value; if(!v.trim()){ $('pbCodeMsg').textContent='Enter your unlock code.'; return; }
+  const v=$('pbCodeIn').value, m=$('pbCodeMsg'); if(!v.trim()){ m.textContent='Enter your unlock code.'; return; }
+  try{ const j=await pbCall({action:'redeem',code:v}); if(j.ok){ pbDone(j.code); return; } if(j.error==='device_limit'||j.error==='too_many'){ m.textContent=PB_ERR[j.error]; return; } }catch(e){}
   const h=await pbHash(v), ok=(PB.remote.codes||[]).concat(pbCodes()).indexOf(h)>=0;
-  if(ok){ try{ localStorage.setItem('wp_pb_unlock','1'); }catch(e){} $('pbCodeMsg').textContent='\u2705 Unlocked.'; pbRender(); setTimeout(pbPayClose,700); }
-  else $('pbCodeMsg').textContent='Code not recognised. Check it and try again.';
+  if(ok) pbDone(''); else m.textContent=PB_ERR.bad_code;
 }
 async function pbLoadRemote(){
   if(PB.loaded) return; PB.loaded=true;
