@@ -720,8 +720,10 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 #view-sniper .field{min-width:68px}
 #view-sniper .field label{font-size:10px;margin-bottom:2px}
 #view-sniper input:not([type=checkbox]),#view-sniper select{padding:6px 8px;font-size:12px}
-#view-sniper .sn-stats{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;margin-bottom:4px}
-#view-sniper .sn-stats .stat{padding:3px 0;font-size:11px}
+#view-sniper .sn-stats{display:flex;flex-direction:column;gap:0;margin:6px 0 8px;border:1px solid var(--border);border-radius:10px;padding:2px 12px;background:rgba(255,255,255,.02)}
+#view-sniper .sn-stats .stat{padding:8px 0;font-size:13px;align-items:center}
+#view-sniper .sn-stats .stat span:first-child{color:var(--muted);font-weight:600}
+#view-sniper .sn-stats .stat span:last-child{font-weight:800}
 #view-sniper .tiny{font-size:10px;margin:4px 0}
 #view-sniper .log{max-height:90px}
 #view-sniper .sn-act{display:flex;gap:6px;align-items:center;margin-top:4px}
@@ -737,7 +739,11 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 .tp-sum{padding:4px 8px;font-size:10px;font-family:var(--mono);color:var(--muted);flex:0 0 auto}
 .tp-sum .g{color:#16c784}.tp-sum .r{color:#ff4d6d}
 .tp-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:4px 6px 16px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:3px}
-.tpb{width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-size:11px;font-weight:800}
+.tpb{width:calc(20px*var(--tpz,1));height:calc(20px*var(--tpz,1));display:inline-flex;align-items:center;justify-content:center;border-radius:5px;font-size:calc(11px*var(--tpz,1));font-weight:800}
+.tp-ctl{display:flex;align-items:center;gap:6px;padding:4px 8px;flex:0 0 auto;font-size:10px;color:var(--muted);border-bottom:1px solid var(--border)}
+.tp-ctl button{width:26px;height:24px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:inherit;font-weight:800;font-size:14px;line-height:1;padding:0}
+.tp-ctl input{width:56px;height:24px;border-radius:6px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:inherit;text-align:center;font-size:12px;padding:0}
+.tp-ctl .zl{min-width:34px;text-align:center;font-family:var(--mono)}
 .tp-g{background:#16c784;color:#06241a}.tp-r{background:#ff4d6d;color:#fff}.tp-n{background:rgba(124,138,168,.35);color:var(--text)}
 .tpb.last{outline:2px solid #fff;outline-offset:1px}
 .tp-na{font-size:11px;color:var(--muted);padding:6px}
@@ -7184,11 +7190,16 @@ dtEntryPaint=function(){
 dtEntryCheck=function(){
   if(!DTS.applied){
     DTE.hold=0;
-    if($('dtTradeType').value==='updown'){
-      const sym=$('dtSymbol').value; let hit=null;
-      try{ TT.find(c=>c.id==='rf').sides.forEach((sd,i)=>{ if(hit==null&&dtRfEntry(sd,sym).ok) hit=i; }); }catch(e){}
-      if(hit!=null){ const fresh=!(DTE.rf&&Date.now()<DTE.rf.until); DTE.rf={id:hit===0?'dtBtn1':'dtBtn2',until:Date.now()+6000}; if(fresh) dtVib([150,80,150]); }
-    } else DTE.rf=null;
+    {
+      const sym=$('dtSymbol').value, card=TT.find(c=>c.id===DT_TT_MAP[$('dtTradeType').value]); let hit=null;
+      try{ if(card) card.sides.forEach((sd,i)=>{ if(hit!=null) return; let ok=false;
+        if(sd.kind==='rf') ok=dtRfEntry(sd,sym).ok;
+        else if(sd.kind==='eo'||sd.kind==='ou'||sd.kind==='md') ok=dtOneEntry(sd,sym).ok;
+        else ok=!!dtDeep(sd,sym).ok;
+        if(ok) hit=i; }); }catch(e){}
+      if(hit!=null){ const fresh=!(DTE.rf&&Date.now()<DTE.rf.until); DTE.rf={id:hit===0?'dtBtn1':'dtBtn2',until:Date.now()+6000}; if(fresh) dtVib([200,100,200,100,200]); }
+      else if(DTE.rf&&Date.now()>=DTE.rf.until) DTE.rf=null;
+    }
     dtEntryPaint(); return;
   }
   const rf=/^updown_/.test(DTS.applied.bot||''); let ok=false; try{ ok=!!dtEntryTest(); }catch(e){}
@@ -7197,7 +7208,7 @@ dtEntryCheck=function(){
 };
 { const _hm4=handleMessage; handleMessage=function(m){
   _hm4.apply(this,arguments);
-  try{ if(m&&m.msg_type==='tick'&&m.tick&&!DTS.applied&&m.tick.symbol===$('dtSymbol').value&&$('dtTradeType').value==='updown'){ const v=$('view-dtrader'); if(v&&v.classList.contains('active')) dtEntryCheck(); } }catch(e){}
+  try{ if(m&&m.msg_type==='tick'&&m.tick&&!DTS.applied&&m.tick.symbol===$('dtSymbol').value){ const v=$('view-dtrader'); if(v&&v.classList.contains('active')) dtEntryCheck(); } }catch(e){}
 }; }
 { const _pt4=placeTrade; placeTrade=function(){ DTE.rf=null; try{ dtEntryPaint(); }catch(e){} return _pt4.apply(this,arguments); }; }
 DTS.hold=null;
@@ -7715,7 +7726,11 @@ function adRun(key,sym){
   if(key==='dg_consensus'){ let best=null; AD_S.forEach(q=>{ if(!q.f) return; let r=null; try{ r=q.f(dg); }catch(e){} if(r&&(!best||r.conf>best.conf)) best=r; }); if(best) best=Object.assign({},best,{why:['AI consensus → best of all digit strategies'].concat(best.why)}); return best; }
   const q=AD_S.find(x=>x.k===key); if(!q||!q.f) return null; try{ return q.f(dg); }catch(e){ return null; }
 }
+const AD_U={user:true,busy:false};
 function adApply(r,quiet){
+  AD_U.busy=true; try{ adApply0(r,quiet); }finally{ AD_U.busy=false; }
+}
+function adApply0(r,quiet){
   try{ syncTradeType(r.fam,'alt'); }catch(e){}
   const one=(id,v)=>{ const e=$(id); if(!e) return; e.value=String(v); ['input','change'].forEach(t=>e.dispatchEvent(new Event(t,{bubbles:true}))); };
   if(r.digit!=null) ['dtDigit','botDigit','snDigit','spDigit'].forEach(id=>one(id,r.digit));
@@ -7735,14 +7750,16 @@ function adNow(){
 { const _u=altUI; altUI=function(){ _u();
     try{ if(ALT.on&&ADK.has(ALT.key)){ const st=$('altStat'), r=adRun(ALT.key,$('anSymbol').value);
       st.textContent=r?(r.action+(r.digit!=null?' '+r.digit:'')+' · '+r.conf+'% — '+r.why.join(' · ')+' · loaded in Chart, DTrader, Bot, Armed, Speed Bot'):'No digit setup right now — waiting for the pattern…'; } }catch(e){} }; }
-{ const _p=altPick; altPick=function(v){ _p.apply(this,arguments); try{ if(ADK.has(v)){ AD.last=''; adNow(); } }catch(e){} }; }
-{ const _t=altToggle; altToggle=function(){ _t.apply(this,arguments); try{ if(ALT.on&&ADK.has(ALT.key)){ AD.last=''; adNow(); } }catch(e){} }; }
+{ const _p=altPick; altPick=function(v){ AD_U.user=false; _p.apply(this,arguments); try{ if(ADK.has(v)){ AD.last=''; adNow(); } }catch(e){} }; }
+{ const _t=altToggle; altToggle=function(){ AD_U.user=false; _t.apply(this,arguments); try{ if(ALT.on&&ADK.has(ALT.key)){ AD.last=''; adNow(); } }catch(e){} }; }
 // keep the chosen digit strategy live: when its recommendation changes (and nothing is trading) it is re-loaded everywhere
 setInterval(function(){ try{
-  if(!ALT.on||!ADK.has(ALT.key)||botRunning||speedOn||sniperArmed||(watcherAutoRun&&watcherAutoRun.active)) return;
+  if(AD_U.user||!ALT.on||!ADK.has(ALT.key)||botRunning||speedOn||sniperArmed||(watcherAutoRun&&watcherAutoRun.active)) return;
   const r=adRun(ALT.key,$('anSymbol').value); if(!r) return;
   const sig=r.fam+'|'+r.side+'|'+r.digit; if(sig!==AD.last){ AD.last=sig; adApply(r,true); }
 }catch(e){} },2500);
+['syncTradeType','syncSymbol','dtTradeTypeChange'].forEach(n=>{ try{ const f=eval(n); if(typeof f!=='function') return; const w=function(){ if(!AD_U.busy) AD_U.user=true; return f.apply(this,arguments); }; eval(n+'=w'); }catch(e){} });
+['dtTradeType','dtSymbol','botTradeType','spType','snTradeType','snSymbol'].forEach(id=>{ const e=$(id); if(e) e.addEventListener('change',ev=>{ if(ev.isTrusted) AD_U.user=true; },true); });
 altUI();
 
 // ---------- DTrader: dominating side gets a thin pale-green rounded box + its % vs the opposite % ----------
@@ -7790,10 +7807,12 @@ function tpRender(){
   const sym=$('snSymbol').value, sp=tpSpec(), sum=$('tpSum'), body=$('tpBody');
   $('tpTitle').textContent='Tick Progress · '+(sp?sp.name:'—')+' · '+marketName(sym);
   if(!sp){ sum.textContent=''; body.innerHTML='<div class="tp-na">Not available for this trade type. Pick Even/Odd, Over/Under, Matches/Differs, Rise/Fall, Higher/Lower, Up/Down…</div>'; return; }
+  const N=(window.TPG_G&&TPG_G.n)||150;
   const buf=tickBuffers[sym]||[]; if(buf.length<5){ sum.textContent=''; body.innerHTML='<div class="tp-na">Waiting for ticks…</div>'; return; }
+  if(buf.length<N+1&&(!TPG.rq||Date.now()-TPG.rq>15000)){ TPG.rq=Date.now(); try{ send({ticks_history:sym,adjust_start_time:1,count:300,end:'latest',style:'ticks'}); }catch(e){} }
   let items=[];
-  if(sp.dig) items=sigDigits(sym).slice(-150).map(sp.f);
-  else { const q=buf.slice(-151).map(p=>p.q); for(let i=1;i<q.length;i++) items.push(q[i]>q[i-1]?sp.u:(q[i]<q[i-1]?sp.d:['–','n'])); }
+  if(sp.dig) items=sigDigits(sym).slice(-N).map(sp.f);
+  else { const q=buf.slice(-(N+1)).map(p=>p.q); for(let i=1;i<q.length;i++) items.push(q[i]>q[i-1]?sp.u:(q[i]<q[i-1]?sp.d:['–','n'])); }
   const cl={g:'tp-g',r:'tp-r',n:'tp-n'};
   body.innerHTML=items.map((it,i)=>'<span class="tpb '+cl[it[1]]+(i===items.length-1?' last':'')+'">'+it[0]+'</span>').join('');
   body.scrollTop=body.scrollHeight;
@@ -7807,14 +7826,16 @@ function tpOff(){ TPG.on=false; $('tpCard').style.display='none'; const b=$('tpT
 function tpToggle(){ TPG.on?tpOff():tpOn(); }
 (function(){
   const card=document.createElement('div'); card.id='tpCard'; card.className='tp-card';
-  card.innerHTML='<div class="tp-head" id="tpHead"><span id="tpTitle">Tick Progress</span><span class="tp-x" id="tpX" title="Close">&#10005;</span></div><div class="tp-sum" id="tpSum"></div><div class="tp-body" id="tpBody"></div><div class="tp-rs" id="tpRs"></div>';
+  card.innerHTML='<div class="tp-head" id="tpHead"><span id="tpTitle">Tick Progress</span><span class="tp-x" id="tpX" title="Close">&#10005;</span></div><div class="tp-ctl" id="tpCtl"><button id="tpZm" type="button" title="Zoom out">&minus;</button><span class="zl" id="tpZl">100%</span><button id="tpZp" type="button" title="Zoom in">+</button><span style="margin-left:auto">Ticks</span><input id="tpN" type="number" inputmode="numeric" min="5" max="290" step="5"></div><div class="tp-sum" id="tpSum"></div><div class="tp-body" id="tpBody"></div><div class="tp-rs" id="tpRs"></div>';
   document.body.appendChild(card);
-  const G={w:250,h:200,x:null,y:null}; try{ Object.assign(G,JSON.parse(localStorage.getItem('wp_tpcard')||'{}')); }catch(e){}
+  const G={w:250,h:200,x:null,y:null,z:1,n:150}; window.TPG_G=G; try{ Object.assign(G,JSON.parse(localStorage.getItem('wp_tpcard')||'{}')); }catch(e){}
   const save=()=>{ try{ localStorage.setItem('wp_tpcard',JSON.stringify(G)); }catch(e){} };
   window.tpPlace=function(){
     G.w=Math.max(130,Math.min(innerWidth-8,G.w)); G.h=Math.max(90,Math.min(innerHeight-60,G.h));
     if(G.x==null) G.x=Math.max(4,innerWidth-G.w-8); if(G.y==null) G.y=110;
     G.x=Math.max(0,Math.min(innerWidth-G.w,G.x)); G.y=Math.max(0,Math.min(innerHeight-40,G.y));
+    G.z=Math.max(.6,Math.min(3,+G.z||1)); G.n=Math.max(5,Math.min(290,Math.round(+G.n||150)));
+    card.style.setProperty('--tpz',G.z); const zl=$('tpZl'); if(zl) zl.textContent=Math.round(G.z*100)+'%'; const ni=$('tpN'); if(ni&&document.activeElement!==ni) ni.value=G.n;
     card.style.width=G.w+'px'; card.style.height=G.h+'px'; card.style.left=G.x+'px'; card.style.top=G.y+'px';
   };
   const head=$('tpHead'); let d=null;
@@ -7826,6 +7847,17 @@ function tpToggle(){ TPG.on?tpOff():tpOn(); }
   rs.addEventListener('pointermove',e=>{ if(!r) return; G.w=r.w+(e.clientX-r.sx); G.h=r.h+(e.clientY-r.sy); tpPlace(); });
   const rend=()=>{ if(r){ r=null; save(); } }; rs.addEventListener('pointerup',rend); rs.addEventListener('pointercancel',rend);
   $('tpX').addEventListener('click',()=>tpOff());
+  const zoom=dz=>{ G.z=Math.round((G.z+dz)*100)/100; tpPlace(); save(); tpSched(); };
+  $('tpZm').addEventListener('click',()=>zoom(-.2)); $('tpZp').addEventListener('click',()=>zoom(.2));
+  $('tpN').addEventListener('input',()=>{ const v=parseInt($('tpN').value); if(isNaN(v)||v<5) return; G.n=Math.min(290,v); save(); tpSched(); });
+  $('tpN').addEventListener('change',()=>{ tpPlace(); save(); tpSched(); });
+  let pz=null; const pts={};
+  const body0=$('tpBody');
+  body0.addEventListener('pointerdown',e=>{ pts[e.pointerId]=e; });
+  body0.addEventListener('pointermove',e=>{ if(!pts[e.pointerId]) return; pts[e.pointerId]=e; const k=Object.keys(pts); if(k.length===2){ const a=pts[k[0]],b=pts[k[1]], dd=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY); if(pz==null) pz={d:dd,z:G.z}; else{ G.z=Math.round(pz.z*dd/pz.d*100)/100; tpPlace(); tpSched(); } } });
+  const pe=e=>{ delete pts[e.pointerId]; if(Object.keys(pts).length<2){ if(pz){ save(); } pz=null; } };
+  body0.addEventListener('pointerup',pe); body0.addEventListener('pointercancel',pe);
+  body0.style.touchAction='pan-y';
   window.addEventListener('resize',()=>{ if(TPG.on) tpPlace(); });
   ['snTradeType','snDigit','snSymbol'].forEach(id=>{ const e=$(id); if(e) ['change','input'].forEach(ev=>e.addEventListener(ev,()=>{ if(TPG.on){ try{ ensureTickSub($('snSymbol').value); }catch(_){} tpSched(); } })); });
 })();
