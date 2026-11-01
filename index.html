@@ -7890,7 +7890,7 @@ setInterval(function(){ if(TPG.on.dt) tpSched(); },1500);
 (function(){
 const EAK='wp_ea';
 const EA={on:false,cfg:{v:4,market:'',stake:1,mult:1000,minScore:18,rr:1.3,slAtr:1.5,risk:0.8,maxOpen:5,cool:4,perHour:15,lossStop:5,profitStop:0,groups:{}},
-  cache:{},scan:{},pos:{},black:{},last:{},hist:[],pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false};
+  cache:{},cf:{},mq:[],scan:{},pos:{},black:{},last:{},hist:[],pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false};
 try{ const s=JSON.parse(localStorage.getItem(EAK)||'{}'); if(s&&typeof s==='object'&&s.v===4){ Object.assign(EA.cfg,s,{groups:Object.assign({},s.groups||{})}); } }catch(e){}
 const eaSave=()=>{ try{ localStorage.setItem(EAK,JSON.stringify(EA.cfg)); }catch(e){} };
 const grpOn=g=>EA.cfg.groups[g]!==false;
@@ -8009,6 +8009,21 @@ function eaStopCheck(){
   if(EA.cfg.lossStop>0&&EA.pnl<=-EA.cfg.lossStop){ eaStop('Daily loss limit reached ('+EA.pnl.toFixed(2)+' USD)'); return true; }
   if(EA.cfg.profitStop>0&&EA.pnl>=EA.cfg.profitStop){ eaStop('Daily profit target reached (+'+EA.pnl.toFixed(2)+' USD)'); return true; }
   return false; }
+function durSec(x){ const m=/^(\d+)([tsmhd])$/.exec(x||''); if(!m) return null; const v=+m[1], u=m[2]; return {v,u,sec:u==='t'?v*2:u==='s'?v:u==='m'?v*60:u==='h'?v*3600:v*86400}; }
+function eaPickDur(rf){ const a=durSec(rf.min), b=durSec(rf.max); if(!a||!b) return {v:5,u:'t'};
+  if(b.u==='t') return {v:Math.max(a.v,Math.min(b.v,10)),u:'t'};
+  const sec=Math.max(a.sec,Math.min(b.sec,600));
+  if(sec>=86400&&sec%86400===0) return {v:sec/86400,u:'d'}; if(sec>=3600&&sec%3600===0) return {v:sec/3600,u:'h'}; if(sec>=60&&sec%60===0) return {v:sec/60,u:'m'}; return {v:sec,u:'s'}; }
+function eaNeedCf(sym){ const now=Date.now(); if(EA.cf[sym]||EA.mq.indexOf(sym)>=0||(EA.mreq[sym]&&now-EA.mreq[sym]<15000)) return; EA.mq.push(sym); }
+function eaParseCf(m){ const sy=m.echo_req.contracts_for; delete EA.mreq[sy];
+  if(m.error){ const t=(m.error.code||'')+' '+(m.error.message||''); if(/RateLimit|rate limit|too many/i.test(t)){ EA.pause=Date.now()+5000; return; } EA.black[sy]=Date.now()+30*60000; return; }
+  const av=(m.contracts_for&&m.contracts_for.available)||[]; let mult=[], rf=null;
+  av.forEach(a=>{ if(/^MULT(UP|DOWN)$/.test(a.contract_type)){ (a.multiplier_range||[]).forEach(v=>{ v=+v; if(v>0) mult.push(v); }); }
+    else if(a.contract_type==='CALL'&&a.start_type!=='forward'&&a.min_contract_duration&&a.max_contract_duration&&(!rf||a.barrier_category==='euro_atm')) rf={min:a.min_contract_duration,max:a.max_contract_duration}; });
+  mult=[...new Set(mult)].sort((x,y)=>x-y);
+  if(!mult.length&&!rf){ EA.cf[sy]={none:true}; EA.black[sy]=Date.now()+60*60000; return; }
+  EA.cf[sy]={mult:mult.length?mult:null,rf}; if(mult.length) MULTR[sy]=mult;
+  if(EA.on) eaEval(sy); }
 function eaTrade(an){
   const sym=an.sym, cf=EA.cfg, now=Date.now();
   if(!an||!an.sig||an.veto.length||an.score*an.dir<cf.minScore) return;
@@ -8017,19 +8032,25 @@ function eaTrade(an){
   if(now-(EA.last[sym]||0)<cf.cool*60000) return;
   EA.hist=EA.hist.filter(t=>now-t<3600000); if(EA.hist.length>=cf.perHour) return;
   if((EA.black[sym]||0)>now) return;
-  const list=MULTR[sym];
-  if(!list||!list.length){ if(!EA.mreq[sym]||now-EA.mreq[sym]>20000){ EA.mreq[sym]=now; send({contracts_for:sym,currency:'USD',product_type:'basic',passthrough:{mult:1}}); } return; }
-  const stake=cf.stake, cap=Math.min(cf.mult, cf.risk*an.px/(an.slD*stake));
-  let cand=list.filter(m=>m<=cap), mult;
-  if(cand.length) mult=cand[cand.length-1];
-  else { mult=list[0]; if(an.slD*stake*mult/an.px>stake*0.9){ EA.black[sym]=now+5*60000; eaLog(marketName(sym)+': stop-loss too wide for the smallest multiplier — skipped'); return; } }
-  const k=stake*mult/an.px, tp=Math.round(an.tpD*k*100)/100, sl=Math.round(Math.min(an.slD*k,stake*0.95)*100)/100;
-  if(!(tp>=0.01&&sl>=0.01)) return;
-  const code=an.dir>0?'MULTUP':'MULTDOWN';
+  const info=EA.cf[sym]; if(!info){ eaNeedCf(sym); return; }
+  const stake=cf.stake; let code, params, desc;
+  if(info.mult&&info.mult.length){
+    const list=info.mult, cap=Math.min(cf.mult, cf.risk*an.px/(an.slD*stake)); let cand=list.filter(m=>m<=cap), mult;
+    if(cand.length) mult=cand[cand.length-1]; else mult=list[0];
+    const k=stake*mult/an.px, tp=Math.round(an.tpD*k*100)/100, sl=Math.round(Math.min(an.slD*k,stake*0.95)*100)/100;
+    if(!cand.length&&an.slD*k>stake*0.9){ if(info.rf) info.mult=null; else { EA.black[sym]=now+5*60000; return; } }
+    else {
+      if(!(tp>=0.01&&sl>=0.01)) return;
+      code=an.dir>0?'MULTUP':'MULTDOWN'; params={amount:stake,basis:'stake',contract_type:code,currency:'USD',symbol:sym,multiplier:mult,limit_order:{take_profit:tp,stop_loss:sl}};
+      desc='x'+mult+' · TP +$'+tp.toFixed(2)+' / SL -$'+sl.toFixed(2); }
+  }
+  if(!params&&info.rf){ const d=eaPickDur(info.rf); code=an.dir>0?'CALL':'PUT';
+    params={amount:stake,basis:'stake',contract_type:code,currency:'USD',symbol:sym,duration:d.v,duration_unit:d.u}; desc='Rise/Fall '+d.v+d.u; }
+  if(!params) return;
   EA.last[sym]=now; EA.hist.push(now);
   pendingTradeSource='ea'; pendingTradeType=code;
-  send({buy:1,price:stake,parameters:{amount:stake,basis:'stake',contract_type:code,currency:'USD',symbol:sym,multiplier:mult,limit_order:{take_profit:tp,stop_loss:sl}},passthrough:{ea:1,sym:sym}});
-  eaLog((an.dir>0?'BUY ':'SELL ')+marketName(sym)+' x'+mult+' · '+an.setup+' · score '+an.score+' · TP +$'+tp.toFixed(2)+' / SL -$'+sl.toFixed(2)+' · '+an.regime);
+  send({buy:1,price:stake,parameters:params,passthrough:{ea:1,sym:sym}});
+  eaLog((an.dir>0?'BUY ':'SELL ')+marketName(sym)+' '+desc+' · '+an.setup+' · score '+an.score);
   try{ toastM('EA '+(an.dir>0?'BUY ':'SELL ')+marketName(sym)+' · '+an.setup); }catch(e){}
 }
 function eaEval(sym){ let an=null; try{ an=eaAnalyze(sym); }catch(e){ an=null; } if(!an) return; EA.scan[sym]=an; if(EA.on&&!eaStopCheck()) eaTrade(an); }
@@ -8039,6 +8060,7 @@ function eaTick(){
   if(!EA.on) return; if(!ws||ws.readyState!==1) return; if(!authorized) return;
   eaDay(); if(eaStopCheck()) return;
   const syms=eaSyms(); if(!syms.length) return; const now=Date.now(); if(now<(EA.pause||0)) return;
+  if(EA.mq.length){ const q=EA.mq.shift(); EA.mreq[q]=now; send({contracts_for:q,currency:'USD',product_type:'basic',passthrough:{eacf:1}}); return; }
   const single=syms.length===1;
   // one round-robin pass: first load = 1000 M5 candles (M15 and H1 are built from them), then tiny refreshes
   for(let k=0;k<syms.length;k++){ const sym=syms[(EA.ptr+k)%syms.length]; if((EA.black[sym]||0)>now) continue;
@@ -8050,18 +8072,21 @@ function eaStart(){
   if(!authorized){ try{ showLogin(); }catch(e){} return; }
   let demo=true; try{ demo=drIsDemo(); }catch(e){}
   if(!demo&&!confirm('EA will place REAL-money Buy/Sell trades automatically on your live account. Continue?')) return;
-  EA.cache={}; EA.scan={}; EA.req={}; EA.black={}; EA.mreq={}; EA.ptr=0; EA.pause=0; EA.t0=Date.now();
+  EA.cache={}; EA.scan={}; EA.req={}; EA.black={}; EA.mreq={}; EA.cf={}; EA.mq=[]; EA.ptr=0; EA.pause=0; EA.t0=Date.now();
   EA.on=true; eaDay(); eaLog('EA started — fresh scan of '+(EA.cfg.market?marketName(EA.cfg.market):eaSyms().length+' markets')); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,400); eaUI();
 }
 function eaStop(why){ EA.on=false; if(EA.tm){ clearInterval(EA.tm); EA.tm=null; } eaLog('EA stopped'+(why?' — '+why:'')); if(why){ try{ toastM('EA stopped — '+why); }catch(e){} } eaUI(); }
 window.eaResult=function(c,profit){ const id=c.contract_id; if(!EA.pos[id]&&!EA.on) return; delete EA.pos[id]; EA.pnl+=profit; EA.n++; if(profit>0) EA.w++; else EA.l++;
   eaLog((profit>=0?'WIN +':'LOSS ')+profit.toFixed(2)+' USD · '+marketName(c.underlying_symbol||c.symbol||'')); eaStopCheck(); eaUI(); };
-window.eaBuyErr=function(m){ const p=m.echo_req.passthrough||{}, sym=p.sym||'', msg=(m.error&&m.error.message)||'error'; pendingTradeSource=null; pendingTradeType=null;
-  if(/multiplier/i.test(msg)&&/accept|range|available|valid|allowed/i.test(msg)){ const nums=(msg.replace(/multiplier/ig,'').match(/\d+/g)||[]).map(Number).filter(x=>x>=2); if(nums.length>=2&&sym){ MULTR[sym]=[...new Set(nums)].sort((a,b)=>a-b); delete EA.last[sym]; } }
-  else if(/not offered|not available|unavailable|closed|suspended|not allowed|restricted/i.test(msg)) EA.black[sym]=Date.now()+30*60000;
-  else if(/balance|insufficient/i.test(msg)) eaStop('insufficient balance');
+window.eaBuyErr=function(m){ const p=m.echo_req.passthrough||{}, sym=p.sym||'', msg=(m.error&&m.error.message)||'error', info=EA.cf[sym]||{}; pendingTradeSource=null; pendingTradeType=null; delete EA.last[sym];
+  if(/multiplier/i.test(msg)&&/accept|range|available|valid|allowed|not offered|not available/i.test(msg)){ const nums=(msg.replace(/multiplier/ig,'').match(/\d+/g)||[]).map(Number).filter(x=>x>=2);
+    if(nums.length>=2&&sym){ const l=[...new Set(nums)].sort((a,b)=>a-b); EA.cf[sym]=Object.assign(info,{mult:l}); MULTR[sym]=l; }
+    else if(info.rf){ info.mult=null; EA.cf[sym]=info; } else EA.black[sym]=Date.now()+30*60000; }
+  else if(/rate limit|too many/i.test(msg)) EA.pause=Date.now()+5000;
+  else if(/balance|insufficient/i.test(msg)){ eaStop('insufficient balance'); return; }
+  else if(/not offered|not available|unavailable|closed|suspended|not allowed|restricted|invalid/i.test(msg)) EA.black[sym]=Date.now()+30*60000;
   else EA.black[sym]=Date.now()+10*60000;
-  eaLog('Error '+marketName(sym)+': '+msg); eaUI(); };
+  eaLog('Skipped '+marketName(sym)+': '+msg); eaUI(); };
 window.eaCandles=function(m){ const key=m.echo_req.passthrough.ea, sym=key.split('|')[0];
   if(m.error||!m.candles){ delete EA.req[key]; const code=(m.error&&m.error.code)||'', msg=(m.error&&m.error.message)||'';
     if(/RateLimit/i.test(code)||/rate limit|too many/i.test(msg)){ EA.pause=Date.now()+5000; return; }
@@ -8069,10 +8094,9 @@ window.eaCandles=function(m){ const key=m.echo_req.passthrough.ea, sym=key.split
   const nb=m.candles.map(x=>({t:x.epoch,o:+x.open,h:+x.high,l:+x.low,c:+x.close})), old=EA.cache[key];
   let bars=nb; if(old&&old.bars.length&&nb.length<100){ bars=old.bars.filter(x=>x.t<nb[0].t).concat(nb); if(bars.length>1300) bars=bars.slice(-1300); }
   EA.cache[key]={t:Date.now(),bars};
-  if(!MULTR[sym]&&(!EA.mreq[sym]||Date.now()-EA.mreq[sym]>20000)&&EA.on){ EA.mreq[sym]=Date.now(); send({contracts_for:sym,currency:'USD',product_type:'basic',passthrough:{mult:1}}); }
   eaEval(sym); };
 { const _h=handleMessage; handleMessage=function(m){ _h.apply(this,arguments);
-  try{ if(m&&m.msg_type==='contracts_for'&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.mult&&EA.mreq[m.echo_req.contracts_for]){ const sy=m.echo_req.contracts_for; if(m.error||!MULTR[sy]){ EA.black[sy]=Date.now()+30*60000; eaLog(marketName(sy)+': Buy/Sell (multipliers) not offered — skipped'); } else if(EA.on) eaEval(sy); } }catch(e){}
+  try{ if(m&&m.msg_type==='contracts_for'&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.eacf) eaParseCf(m); }catch(e){}
   try{ if(m&&m.msg_type==='buy'&&m.buy&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.ea){ EA.pos[m.buy.contract_id]={sym:m.echo_req.passthrough.sym,t:Date.now()}; eaUI(); } }catch(e){} }; }
 
 /* ---------- UI ---------- */
@@ -8104,7 +8128,7 @@ $('eaGrp').innerHTML=Object.keys(MARKETS).map(g=>'<label><input type="checkbox" 
 $('eaGrp').addEventListener('change',e=>{ const g=e.target.dataset.g; if(!g) return; EA.cfg.groups[g]=e.target.checked; eaSave(); });
 { const m=$('eaMkt'); m.innerHTML='<option value="">All markets (scan everything)</option>'+Object.keys(MARKETS).map(g=>'<optgroup label="'+MARKETS[g].label+'">'+MARKETS[g].items.map(i=>'<option value="'+i.sym+'">'+i.name+'</option>').join('')+'</optgroup>').join('');
   m.value=EA.cfg.market||''; if(m.value!==(EA.cfg.market||'')) EA.cfg.market='';
-  m.addEventListener('change',()=>{ EA.cfg.market=m.value; eaSave(); EA.scan={}; EA.cache={}; EA.req={}; EA.ptr=0; eaLog('Market: '+(m.value?marketName(m.value):'all markets')); eaUI(); }); }
+  m.addEventListener('change',()=>{ EA.cfg.market=m.value; eaSave(); EA.scan={}; EA.cache={}; EA.req={}; EA.cf={}; EA.mq=[]; EA.ptr=0; eaLog('Market: '+(m.value?marketName(m.value):'all markets')); eaUI(); }); }
 const PRE={safe:{minScore:35,maxOpen:2,cool:20,perHour:4,rr:1.8},bal:{minScore:25,maxOpen:3,cool:10,perHour:8,rr:1.5},more:{minScore:18,maxOpen:5,cool:4,perHour:15,rr:1.3},max:{minScore:10,maxOpen:8,cool:2,perHour:30,rr:1.2}};
 function eaPreSync(){ const f=$('eaPre'); let hit=''; for(const k in PRE){ if(Object.keys(PRE[k]).every(x=>EA.cfg[x]===PRE[k][x])) hit=k; } f.value=hit; }
 $('eaPre').addEventListener('change',e=>{ const v=PRE[e.target.value]; if(!v) return; Object.assign(EA.cfg,v); eaSave(); document.querySelectorAll('#eaCfg input').forEach(i=>{ i.value=EA.cfg[i.dataset.k]; }); eaLog('Preset applied: '+e.target.options[e.target.selectedIndex].text); });
@@ -8126,7 +8150,7 @@ function eaUI(){
 window.eaOpen=function(){ EA.open=true; pn.style.display='flex'; eaUI(); };
 setInterval(function(){ if(EA.open) eaUI(); },1500);
 { const sel=$('drawSel'); if(sel&&!sel.querySelector('option[value="ea"]')){ const op=document.createElement('option'); op.value='ea'; op.textContent='\u{1F916} EA (auto Buy/Sell)'; const v=sel.querySelector('option[value="voice"]'); sel.insertBefore(op,v||null); } }
-window.EA_DEBUG=EA; EA.analyze=eaAnalyze; EA.trade=eaTrade;
+window.EA_DEBUG=EA; EA.analyze=eaAnalyze; EA.trade=eaTrade; EA.parseCf=eaParseCf; EA.pick=eaPickDur;
 })();
 
 </script>
