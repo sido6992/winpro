@@ -7889,9 +7889,9 @@ setInterval(function(){ if(TPG.on.dt) tpSched(); },1500);
    with ATR/structure based TP and SL. Opened from Chart > Draw > EA. */
 (function(){
 const EAK='wp_ea';
-const EA={on:false,cfg:{v:3,market:'',stake:1,mult:1000,minScore:25,rr:1.5,slAtr:1.5,risk:0.8,maxOpen:3,cool:10,perHour:8,lossStop:5,profitStop:0,groups:{}},
+const EA={on:false,cfg:{v:4,market:'',stake:1,mult:1000,minScore:18,rr:1.3,slAtr:1.5,risk:0.8,maxOpen:5,cool:4,perHour:15,lossStop:5,profitStop:0,groups:{}},
   cache:{},scan:{},pos:{},black:{},last:{},hist:[],pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false};
-try{ const s=JSON.parse(localStorage.getItem(EAK)||'{}'); if(s&&typeof s==='object'&&s.v===3){ Object.assign(EA.cfg,s,{groups:Object.assign({},s.groups||{})}); } }catch(e){}
+try{ const s=JSON.parse(localStorage.getItem(EAK)||'{}'); if(s&&typeof s==='object'&&s.v===4){ Object.assign(EA.cfg,s,{groups:Object.assign({},s.groups||{})}); } }catch(e){}
 const eaSave=()=>{ try{ localStorage.setItem(EAK,JSON.stringify(EA.cfg)); }catch(e){} };
 const grpOn=g=>EA.cfg.groups[g]!==false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -7915,10 +7915,11 @@ function swings(h,l,atr){ const n=h.length, pts=[]; for(let i=3;i<n-3;i++){
     if(hi) pts.push(h[i]); if(lo) pts.push(l[i]); }
   pts.sort((a,b)=>a-b); const cl=[]; pts.forEach(p=>{ const c=cl[cl.length-1]; if(c&&p-c.sum/c.n<=0.5*atr){ c.sum+=p; c.n++; } else cl.push({sum:p,n:1}); });
   return cl.map(c=>({p:c.sum/c.n,n:c.n})); }
-function htfBias(sym,g){ const b=(EA.cache[sym+'|'+g]||{}).bars; if(!b||b.length<55) return null; const c=b.map(x=>x.c), e20=ema(c,20), e50=ema(c,50), n=c.length;
+function resample(bars,k){ const out=[]; let cur=null; bars.forEach(x=>{ const id=Math.floor(x.t/(300*k)); if(!cur||cur.id!==id){ cur={id,t:id*300*k,o:x.o,h:x.h,l:x.l,c:x.c}; out.push(cur); } else { cur.h=Math.max(cur.h,x.h); cur.l=Math.min(cur.l,x.l); cur.c=x.c; } }); return out; }
+function htfBars(sym,k){ const b=(EA.cache[sym+'|300']||{}).bars; return b?resample(b,k):null; }
+function htfBias(sym,k){ const b=htfBars(sym,k===900?3:12); if(!b||b.length<55) return null; const c=b.map(x=>x.c), e20=ema(c,20), e50=ema(c,50), n=c.length;
   return (e20[n-1]>e50[n-1]?1:-1)*0.6+(c[n-1]>e50[n-1]?1:-1)*0.4; }
-function strength(){ const s={},k={}; for(const sym in EA.scan||{}){} 
-  eaSyms().forEach(sym=>{ if(sym.indexOf('frx')!==0) return; const b=(EA.cache[sym+'|900']||{}).bars; if(!b||b.length<20) return; const n=b.length, r=b[n-1].c/b[n-17>=0?n-17:0].c-1, B=sym.slice(3,6), Q=sym.slice(6,9);
+function strength(){ const s={},k={}; eaSyms().forEach(sym=>{ if(sym.indexOf('frx')!==0) return; const b=htfBars(sym,3); if(!b||b.length<20) return; const n=b.length, r=b[n-1].c/b[Math.max(0,n-17)].c-1, B=sym.slice(3,6), Q=sym.slice(6,9);
     s[B]=(s[B]||0)+r; k[B]=(k[B]||0)+1; s[Q]=(s[Q]||0)-r; k[Q]=(k[Q]||0)+1; });
   for(const c in s) s[c]/=k[c]; return s; }
 
@@ -7993,7 +7994,6 @@ function eaAnalyze(sym){
   });
   sigs.forEach(g=>{ g.q=g.str+(sc*g.d>0?Math.min(30,Math.abs(sc)*0.6):-Math.abs(sc)*0.4); });
   sigs.sort((x,y)=>y.q-x.q); const best=sigs[0]||null, dir=best?best.d:(sc>=0?1:-1);
-  if(best&&(b15==null||b60==null)) veto.push('loading M15/H1 confirmation');
   // ---- trade plan: ATR / structure stop, reward by R:R (or the mean for range reversals) ----
   let slD=EA.cfg.slAtr*atr;
   if(dir>0&&sup){ const s2=px-sup.p+0.25*atr; if(s2>=0.8*atr&&s2<=2.5*atr) slD=Math.max(slD,s2); }
@@ -8033,26 +8033,25 @@ function eaTrade(an){
   try{ toastM('EA '+(an.dir>0?'BUY ':'SELL ')+marketName(sym)+' · '+an.setup); }catch(e){}
 }
 function eaEval(sym){ let an=null; try{ an=eaAnalyze(sym); }catch(e){ an=null; } if(!an) return; EA.scan[sym]=an; if(EA.on&&!eaStopCheck()) eaTrade(an); }
-function eaReq(sym,g){ const key=sym+'|'+g; EA.req[key]=Date.now();
-  send({ticks_history:sym,adjust_start_time:1,count:g===300?220:g===900?120:80,end:'latest',style:'candles',granularity:g,passthrough:{ea:key}}); }
+function eaReq(sym){ const key=sym+'|300', first=!(EA.cache[key]&&EA.cache[key].bars.length>=300); EA.req[key]=Date.now(); EA.sent=(EA.sent||0)+1;
+  send({ticks_history:sym,adjust_start_time:1,count:first?1000:12,end:'latest',style:'candles',granularity:300,passthrough:{ea:key}}); }
 function eaTick(){
   if(!EA.on) return; if(!ws||ws.readyState!==1) return; if(!authorized) return;
   eaDay(); if(eaStopCheck()) return;
-  const syms=eaSyms(); if(!syms.length) return; const now=Date.now(), single=syms.length===1, ttl5=single?20000:60000;
-  const fresh=(key,ttl)=>{ const c=EA.cache[key]; return (c&&now-c.t<ttl)||(EA.req[key]&&now-EA.req[key]<8000); };
-  // 1) M5 candles for every market (round-robin)
+  const syms=eaSyms(); if(!syms.length) return; const now=Date.now(); if(now<(EA.pause||0)) return;
+  const single=syms.length===1;
+  // one round-robin pass: first load = 1000 M5 candles (M15 and H1 are built from them), then tiny refreshes
   for(let k=0;k<syms.length;k++){ const sym=syms[(EA.ptr+k)%syms.length]; if((EA.black[sym]||0)>now) continue;
-    if(fresh(sym+'|300',ttl5)) continue; EA.ptr=(EA.ptr+k+1)%syms.length; eaReq(sym,300); return; }
-  // 2) M15 + H1 confirmation only for markets that have a setup / strong score
-  for(const sym of syms){ const an=EA.scan[sym]; if(!an||!an.want||(EA.black[sym]||0)>now) continue;
-    if(!fresh(sym+'|900',240000)){ eaReq(sym,900); return; } if(!fresh(sym+'|3600',900000)){ eaReq(sym,3600); return; } }
+    const key=sym+'|300', c=EA.cache[key], an=EA.scan[sym], ttl=single?15000:(an&&an.regime==='closed'?300000:45000);
+    if((c&&now-c.t<ttl)||(EA.req[key]&&now-EA.req[key]<8000)) continue;
+    EA.ptr=(EA.ptr+k+1)%syms.length; eaReq(sym); return; }
 }
 function eaStart(){
   if(!authorized){ try{ showLogin(); }catch(e){} return; }
   let demo=true; try{ demo=drIsDemo(); }catch(e){}
   if(!demo&&!confirm('EA will place REAL-money Buy/Sell trades automatically on your live account. Continue?')) return;
-  EA.cache={}; EA.scan={}; EA.req={}; EA.black={}; EA.mreq={}; EA.ptr=0;
-  EA.on=true; eaDay(); eaLog('EA started — fresh scan of '+(EA.cfg.market?marketName(EA.cfg.market):eaSyms().length+' markets')); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,1000); eaUI();
+  EA.cache={}; EA.scan={}; EA.req={}; EA.black={}; EA.mreq={}; EA.ptr=0; EA.pause=0; EA.t0=Date.now();
+  EA.on=true; eaDay(); eaLog('EA started — fresh scan of '+(EA.cfg.market?marketName(EA.cfg.market):eaSyms().length+' markets')); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,400); eaUI();
 }
 function eaStop(why){ EA.on=false; if(EA.tm){ clearInterval(EA.tm); EA.tm=null; } eaLog('EA stopped'+(why?' — '+why:'')); if(why){ try{ toastM('EA stopped — '+why); }catch(e){} } eaUI(); }
 window.eaResult=function(c,profit){ const id=c.contract_id; if(!EA.pos[id]&&!EA.on) return; delete EA.pos[id]; EA.pnl+=profit; EA.n++; if(profit>0) EA.w++; else EA.l++;
@@ -8063,12 +8062,17 @@ window.eaBuyErr=function(m){ const p=m.echo_req.passthrough||{}, sym=p.sym||'', 
   else if(/balance|insufficient/i.test(msg)) eaStop('insufficient balance');
   else EA.black[sym]=Date.now()+10*60000;
   eaLog('Error '+marketName(sym)+': '+msg); eaUI(); };
-window.eaCandles=function(m){ const key=m.echo_req.passthrough.ea, sym=key.split('|')[0], g=+key.split('|')[1];
-  if(m.error||!m.candles){ EA.black[sym]=Date.now()+10*60000; return; }
-  EA.cache[key]={t:Date.now(),bars:m.candles.map(x=>({t:x.epoch,o:+x.open,h:+x.high,l:+x.low,c:+x.close}))};
+window.eaCandles=function(m){ const key=m.echo_req.passthrough.ea, sym=key.split('|')[0];
+  if(m.error||!m.candles){ delete EA.req[key]; const code=(m.error&&m.error.code)||'', msg=(m.error&&m.error.message)||'';
+    if(/RateLimit/i.test(code)||/rate limit|too many/i.test(msg)){ EA.pause=Date.now()+5000; return; }
+    EA.black[sym]=Date.now()+10*60000; return; }
+  const nb=m.candles.map(x=>({t:x.epoch,o:+x.open,h:+x.high,l:+x.low,c:+x.close})), old=EA.cache[key];
+  let bars=nb; if(old&&old.bars.length&&nb.length<100){ bars=old.bars.filter(x=>x.t<nb[0].t).concat(nb); if(bars.length>1300) bars=bars.slice(-1300); }
+  EA.cache[key]={t:Date.now(),bars};
+  if(!MULTR[sym]&&(!EA.mreq[sym]||Date.now()-EA.mreq[sym]>20000)&&EA.on){ EA.mreq[sym]=Date.now(); send({contracts_for:sym,currency:'USD',product_type:'basic',passthrough:{mult:1}}); }
   eaEval(sym); };
 { const _h=handleMessage; handleMessage=function(m){ _h.apply(this,arguments);
-  try{ if(m&&m.msg_type==='contracts_for'&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.mult&&EA.mreq[m.echo_req.contracts_for]){ const sy=m.echo_req.contracts_for; if(m.error||!MULTR[sy]){ EA.black[sy]=Date.now()+30*60000; eaLog(marketName(sy)+': Buy/Sell (multipliers) not offered — skipped'); } } }catch(e){}
+  try{ if(m&&m.msg_type==='contracts_for'&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.mult&&EA.mreq[m.echo_req.contracts_for]){ const sy=m.echo_req.contracts_for; if(m.error||!MULTR[sy]){ EA.black[sy]=Date.now()+30*60000; eaLog(marketName(sy)+': Buy/Sell (multipliers) not offered — skipped'); } else if(EA.on) eaEval(sy); } }catch(e){}
   try{ if(m&&m.msg_type==='buy'&&m.buy&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.ea){ EA.pos[m.buy.contract_id]={sym:m.echo_req.passthrough.sym,t:Date.now()}; eaUI(); } }catch(e){} }; }
 
 /* ---------- UI ---------- */
@@ -8087,9 +8091,9 @@ document.head.appendChild(st);
 const pn=document.createElement('div'); pn.id='eaPanel';
 pn.innerHTML='<div class="ea-sheet"><div class="ea-top"><h3>&#129302; EA &mdash; Auto Buy / Sell</h3><span class="ea-x" id="eaX">&#10005;</span></div>'
  +'<div class="ea-note">Scans every enabled market (M5 entries, M15 + H1 confirmation): trend, MACD, RSI, ADX regime, Bollinger, support/resistance and candle patterns, plus volatility, session and currency-strength filters. Trades Multiplier Buy/Sell with ATR/structure TP and SL. Deriv has no news feed, so "fundamentals" are price-derived. No strategy guarantees profit &mdash; test on a demo account first.</div>'
- +'<button class="ea-go" id="eaGo">START EA</button>'
+ +'<button class="ea-go" id="eaGo">START EA</button><div class="ea-note" id="eaProg" style="margin:6px 0 0"></div>'
  +'<div class="ea-stats"><div><b id="eaS1">0</b>Open</div><div><b id="eaS2">0</b>Trades</div><div><b id="eaS3">0/0</b>W / L</div><div><b id="eaS4">0.00</b>P/L USD</div></div>'
- +'<label>Trade on</label><select id="eaMkt" style="width:100%;margin-bottom:6px"></select><div class="ea-grid" id="eaCfg"></div><label>Markets to scan</label><div class="ea-grp" id="eaGrp"></div>'
+ +'<label>Trading style (preset)</label><select id="eaPre" style="width:100%;margin-bottom:6px"><option value="">Custom</option><option value="safe">Safe &mdash; fewer, stronger trades</option><option value="bal">Balanced</option><option value="more">More trades</option><option value="max">Max trades</option></select><label>Trade on</label><select id="eaMkt" style="width:100%;margin-bottom:6px"></select><div class="ea-grid" id="eaCfg"></div><label>Markets to scan</label><div class="ea-grp" id="eaGrp"></div>'
  +'<label>Scanner (strongest setups)</label><table><thead><tr><th>Market</th><th>Score</th><th>Bias</th><th>Regime</th><th>Status</th></tr></thead><tbody id="eaTb"></tbody></table>'
  +'<label style="margin-top:10px">Log</label><div class="ea-log" id="eaLogBox"></div></div>';
 document.body.appendChild(pn);
@@ -8101,6 +8105,10 @@ $('eaGrp').addEventListener('change',e=>{ const g=e.target.dataset.g; if(!g) ret
 { const m=$('eaMkt'); m.innerHTML='<option value="">All markets (scan everything)</option>'+Object.keys(MARKETS).map(g=>'<optgroup label="'+MARKETS[g].label+'">'+MARKETS[g].items.map(i=>'<option value="'+i.sym+'">'+i.name+'</option>').join('')+'</optgroup>').join('');
   m.value=EA.cfg.market||''; if(m.value!==(EA.cfg.market||'')) EA.cfg.market='';
   m.addEventListener('change',()=>{ EA.cfg.market=m.value; eaSave(); EA.scan={}; EA.cache={}; EA.req={}; EA.ptr=0; eaLog('Market: '+(m.value?marketName(m.value):'all markets')); eaUI(); }); }
+const PRE={safe:{minScore:35,maxOpen:2,cool:20,perHour:4,rr:1.8},bal:{minScore:25,maxOpen:3,cool:10,perHour:8,rr:1.5},more:{minScore:18,maxOpen:5,cool:4,perHour:15,rr:1.3},max:{minScore:10,maxOpen:8,cool:2,perHour:30,rr:1.2}};
+function eaPreSync(){ const f=$('eaPre'); let hit=''; for(const k in PRE){ if(Object.keys(PRE[k]).every(x=>EA.cfg[x]===PRE[k][x])) hit=k; } f.value=hit; }
+$('eaPre').addEventListener('change',e=>{ const v=PRE[e.target.value]; if(!v) return; Object.assign(EA.cfg,v); eaSave(); document.querySelectorAll('#eaCfg input').forEach(i=>{ i.value=EA.cfg[i.dataset.k]; }); eaLog('Preset applied: '+e.target.options[e.target.selectedIndex].text); });
+$('eaCfg').addEventListener('change',()=>eaPreSync()); eaPreSync();
 $('eaGo').addEventListener('click',()=>{ EA.on?eaStop():eaStart(); });
 $('eaX').addEventListener('click',()=>{ EA.open=false; pn.style.display='none'; });
 pn.addEventListener('click',e=>{ if(e.target===pn){ EA.open=false; pn.style.display='none'; } });
@@ -8108,6 +8116,8 @@ function eaUI(){
   const go=$('eaGo'); if(go){ go.textContent=EA.on?'STOP EA':'START EA'; go.classList.toggle('on',EA.on); }
   const o=document.querySelector('#drawSel option[value="ea"]'); if(o) o.textContent=EA.on?'\u{1F916} EA: ON':'\u{1F916} EA (auto Buy/Sell)';
   if(!EA.open) return;
+  { const sy=eaSyms(), got=sy.filter(x=>EA.cache[x+'|300']).length, sg=Object.values(EA.scan).filter(a=>a.sig&&!a.veto.length&&a.score*a.dir>=EA.cfg.minScore).length; const pr=$('eaProg');
+    pr.textContent=!EA.on?(authorized?'Stopped. Tap START EA to scan.':'Log in first, then tap START EA.'):(!ws||ws.readyState!==1?'Waiting for connection\u2026':'Scanning: '+got+'/'+sy.length+' markets loaded \u00B7 '+sg+' ready setups \u00B7 '+Object.keys(EA.pos).length+' open'+((EA.pause||0)>Date.now()?' \u00B7 slowing down (rate limit)':'')); }
   $('eaS1').textContent=Object.keys(EA.pos).length; $('eaS2').textContent=EA.n; $('eaS3').textContent=EA.w+'/'+EA.l; const p=$('eaS4'); p.textContent=(EA.pnl>=0?'+':'')+EA.pnl.toFixed(2); p.style.color=EA.pnl>=0?'#16c784':'#ff4d6d';
   const rows=Object.values(EA.scan).sort((a,b)=>((b.sig?1000:0)+Math.abs(b.score))-((a.sig?1000:0)+Math.abs(a.score))).slice(0,EA.cfg.market?1:16);
   $('eaTb').innerHTML=rows.map(r=>'<tr><td>'+marketName(r.sym)+'</td><td>'+r.score+'</td><td class="'+(r.dir>0?'b':'s')+'">'+(r.dir?(r.dir>0?'BUY':'SELL'):'-')+'</td><td>'+(r.regime||'')+'</td><td>'+(r.veto&&r.veto.length?r.veto[0]:(r.sig?(r.score*r.dir>=EA.cfg.minScore?'READY \u00B7 '+r.setup:r.setup+' \u00B7 score low'):'no setup'))+'</td></tr>').join('')||'<tr><td colspan="5" style="color:var(--muted)">Start the EA to scan markets&hellip;</td></tr>';
