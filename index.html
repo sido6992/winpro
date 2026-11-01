@@ -7792,10 +7792,15 @@ function dtDomUpdate(){
 setInterval(function(){ try{ dtDomUpdate(); }catch(e){} },700);
 
 // ---------- Tick Progress: inline panel, opened from the Duration dropdown (last option) on DTrader and Bot ----------
-const TPG={on:{dt:false,bot:false},raf:0,rq:{},z:1,n:150};
+const TPG={on:{dt:false},raf:0,rq:{},z:1,n:150,w:250,h:240,x:null,y:null};
 const TP_CFG={dt:{type:'dtTradeType',dig:'dtDigit',sym:'dtSymbol',unit:'dtDurationUnit'},bot:{type:'botTradeType',dig:'botDigit',sym:'botSymbol',unit:'botDurationUnit'}};
-try{ Object.assign(TPG,{z:1,n:150},(function(){ const o=JSON.parse(localStorage.getItem('wp_tpcard')||'{}'); return {z:o.z||1,n:o.n||150}; })()); }catch(e){}
-function tpSave(){ try{ localStorage.setItem('wp_tpcard',JSON.stringify({z:TPG.z,n:TPG.n})); }catch(e){} }
+try{ const o=JSON.parse(localStorage.getItem('wp_tpcard')||'{}'); ['z','n','w','h','x','y'].forEach(k=>{ if(o[k]!=null) TPG[k]=o[k]; }); }catch(e){}
+function tpSave(){ try{ localStorage.setItem('wp_tpcard',JSON.stringify({z:TPG.z,n:TPG.n,w:TPG.w,h:TPG.h,x:TPG.x,y:TPG.y})); }catch(e){} }
+function tpPlace(){ const box=$('tpIn_dt'); if(!box) return;
+  TPG.w=Math.max(150,Math.min(innerWidth-8,TPG.w)); TPG.h=Math.max(110,Math.min(innerHeight-60,TPG.h));
+  if(TPG.x==null) TPG.x=Math.max(4,innerWidth-TPG.w-8); if(TPG.y==null) TPG.y=110;
+  TPG.x=Math.max(0,Math.min(innerWidth-TPG.w,TPG.x)); TPG.y=Math.max(0,Math.min(innerHeight-40,TPG.y));
+  box.style.width=TPG.w+'px'; box.style.height=TPG.h+'px'; box.style.left=TPG.x+'px'; box.style.top=TPG.y+'px'; }
 function tpSpec(g){
   const c=TP_CFG[g], key=($(c.type)||{}).value, d=parseInt(($(c.dig)||{}).value);
   switch(key){
@@ -7831,22 +7836,31 @@ function tpRender(g){
   let n=0; for(let i=items.length-1;i>=0&&items[i][0]===lc;i--) n++;
   sum.innerHTML='<b class="g">'+sp.a+' '+Math.round(ga/T*100)+'%</b> · <b class="r">'+sp.b+' '+Math.round(ra/T*100)+'%</b> · streak '+n+'×'+lc+' · '+items.length+' ticks';
 }
-function tpSched(){ if(TPG.raf) return; TPG.raf=requestAnimationFrame(()=>{ TPG.raf=0; ['dt','bot'].forEach(g=>{ try{ tpRender(g); }catch(e){} }); }); }
+function tpSched(){ if(TPG.raf) return; TPG.raf=requestAnimationFrame(()=>{ TPG.raf=0; ['dt'].forEach(g=>{ try{ tpRender(g); }catch(e){} }); }); }
 function tpSet(g,on){
-  TPG.on[g]=on; const box=$('tpIn_'+g); if(box) box.style.display=on?'block':'none';
+  TPG.on[g]=on; const box=$('tpIn_'+g); if(box){ box.style.display=on?'flex':'none'; if(on) tpPlace(); }
   const o=$(TP_CFG[g].unit)&&$(TP_CFG[g].unit).querySelector('option[value="__tp"]'); if(o) o.textContent=on?'\u{1F4CA} Tick Progress: ON (tap to hide)':'\u{1F4CA} Tick Progress';
   if(on){ try{ ensureTickSub(($(TP_CFG[g].sym)||{}).value); }catch(e){} tpRender(g); }
 }
 (function(){
-  ['dt','bot'].forEach(g=>{
+  ['dt'].forEach(g=>{
     const c=TP_CFG[g], sel=$(c.unit); if(!sel) return;
     if(!sel.querySelector('option[value="__tp"]')){ const o=document.createElement('option'); o.value='__tp'; o.textContent='\u{1F4CA} Tick Progress'; sel.appendChild(o); }
     const combo=sel.closest('.duration-combo')||sel.parentNode, row=combo.closest('.row')||combo.parentNode;
-    const box=document.createElement('div'); box.id='tpIn_'+g; box.className='tp-inline'; box.style.display='none';
+    const box=document.createElement('div'); box.id='tpIn_'+g; box.className='tp-card'; box.style.display='none';
     box.innerHTML='<div class="tp-head"><span class="tpi-title">Tick Progress</span><span class="tp-x" title="Close">&#10005;</span></div>'
       +'<div class="tp-ctl"><button type="button" class="zm" title="Zoom out">&minus;</button><span class="zl">100%</span><button type="button" class="zp" title="Zoom in">+</button><span style="margin-left:auto">Ticks</span><input class="tpi-n" type="number" inputmode="numeric" min="5" max="290" step="5"></div>'
-      +'<div class="tp-sum tpi-sum"></div><div class="tp-body"></div>';
-    row.parentNode.insertBefore(box,row.nextSibling);
+      +'<div class="tp-sum tpi-sum"></div><div class="tp-body"></div><div class="tp-rs"></div>';
+    document.body.appendChild(box);
+    const head=box.querySelector('.tp-head'); let dg=null;
+    head.addEventListener('pointerdown',e=>{ if(e.target.classList.contains('tp-x')) return; dg={ox:e.clientX-TPG.x,oy:e.clientY-TPG.y}; try{ head.setPointerCapture(e.pointerId); }catch(_){} });
+    head.addEventListener('pointermove',e=>{ if(!dg) return; TPG.x=e.clientX-dg.ox; TPG.y=e.clientY-dg.oy; tpPlace(); });
+    const de=()=>{ if(dg){ dg=null; tpSave(); } }; head.addEventListener('pointerup',de); head.addEventListener('pointercancel',de);
+    const rs=box.querySelector('.tp-rs'); let rz=null;
+    rs.addEventListener('pointerdown',e=>{ rz={sx:e.clientX,sy:e.clientY,w:TPG.w,h:TPG.h}; try{ rs.setPointerCapture(e.pointerId); }catch(_){} e.stopPropagation(); });
+    rs.addEventListener('pointermove',e=>{ if(!rz) return; TPG.w=rz.w+(e.clientX-rz.sx); TPG.h=rz.h+(e.clientY-rz.sy); tpPlace(); });
+    const re=()=>{ if(rz){ rz=null; tpSave(); } }; rs.addEventListener('pointerup',re); rs.addEventListener('pointercancel',re);
+    window.addEventListener('resize',()=>{ if(TPG.on[g]) tpPlace(); });
     let last=sel.value&&sel.value!=='__tp'?sel.value:'t';
     combo.addEventListener('change',e=>{ if(e.target!==sel) return;
       if(sel.value==='__tp'){ e.stopPropagation(); e.stopImmediatePropagation(); sel.value=last; tpSet(g,!TPG.on[g]); }
@@ -7865,8 +7879,8 @@ function tpSet(g,on){
     [c.type,c.dig,c.sym].forEach(id=>{ const e=$(id); if(e) ['change','input'].forEach(ev=>e.addEventListener(ev,()=>{ if(TPG.on[g]){ try{ ensureTickSub(($(c.sym)||{}).value); }catch(_){} tpSched(); } })); });
   });
 })();
-{ const _h=handleMessage; handleMessage=function(m){ _h.apply(this,arguments); try{ if((TPG.on.dt||TPG.on.bot)&&m&&(m.msg_type==='tick'||m.msg_type==='history')) tpSched(); }catch(e){} }; }
-setInterval(function(){ if(TPG.on.dt||TPG.on.bot) tpSched(); },1500);
+{ const _h=handleMessage; handleMessage=function(m){ _h.apply(this,arguments); try{ if(TPG.on.dt&&m&&(m.msg_type==='tick'||m.msg_type==='history')) tpSched(); }catch(e){} }; }
+setInterval(function(){ if(TPG.on.dt) tpSched(); },1500);
 </script>
 <script>
 /* ===================== EA — automatic Buy/Sell (Multipliers) on every market =====================
@@ -7875,9 +7889,9 @@ setInterval(function(){ if(TPG.on.dt||TPG.on.bot) tpSched(); },1500);
    with ATR/structure based TP and SL. Opened from Chart > Draw > EA. */
 (function(){
 const EAK='wp_ea';
-const EA={on:false,cfg:{stake:1,mult:100,minScore:60,rr:1.8,slAtr:1.5,risk:0.5,maxOpen:3,cool:15,perHour:6,lossStop:5,profitStop:0,groups:{}},
+const EA={on:false,cfg:{v:2,stake:1,mult:1000,minScore:40,rr:1.5,slAtr:1.5,risk:0.8,maxOpen:3,cool:10,perHour:8,lossStop:5,profitStop:0,groups:{}},
   cache:{},scan:{},pos:{},black:{},last:{},hist:[],pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false};
-try{ const s=JSON.parse(localStorage.getItem(EAK)||'{}'); if(s&&typeof s==='object'){ Object.assign(EA.cfg,s,{groups:Object.assign({},s.groups||{})}); } }catch(e){}
+try{ const s=JSON.parse(localStorage.getItem(EAK)||'{}'); if(s&&typeof s==='object'&&s.v===2){ Object.assign(EA.cfg,s,{groups:Object.assign({},s.groups||{})}); } }catch(e){}
 const eaSave=()=>{ try{ localStorage.setItem(EAK,JSON.stringify(EA.cfg)); }catch(e){} };
 const grpOn=g=>EA.cfg.groups[g]!==false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -7922,6 +7936,7 @@ function eaAnalyze(sym){
   const w=c.slice(-20), mean=w.reduce((a,b)=>a+b,0)/20, sd=Math.sqrt(w.reduce((a,b)=>a+(b-mean)*(b-mean),0)/20), up=mean+2*sd, lo=mean-2*sd;
   const lv=swings(h.slice(-160),l.slice(-160),atr);
   let sup=null,res=null; lv.forEach(x=>{ if(x.p<px-0.1*atr&&(!sup||x.p>sup.p)) sup=x; if(x.p>px+0.1*atr&&(!res||x.p<res.p)) res=x; });
+  let supM=null,resM=null; lv.forEach(x=>{ if(x.n<2&&Math.abs(x.p-px)<1.2*atr) return; if(x.p<px-0.1*atr&&(!supM||x.p>supM.p)) supM=x; if(x.p>px+0.1*atr&&(!resM||x.p<resM.p)) resM=x; });
   const dS=sup?(px-sup.p)/atr:99, dR=res?(res.p-px)/atr:99;
   let sc=0; const why=[], veto=[]; const add=(v,t)=>{ if(!v) return; sc+=v; why.push((v>0?'+':'')+Math.round(v)+' '+t); };
   // 1 trend
@@ -7936,6 +7951,9 @@ function eaAnalyze(sym){
   // 4 RSI by regime
   if(trending){ if(rsi>52&&rsi<=70) add(8,'RSI '+Math.round(rsi)+' bullish zone'); else if(rsi<48&&rsi>=30) add(-8,'RSI '+Math.round(rsi)+' bearish zone'); else if(rsi>78) add(-6,'RSI overbought'); else if(rsi<22) add(6,'RSI oversold'); }
   else { if(rsi<30) add(14,'RSI '+Math.round(rsi)+' oversold (range)'); else if(rsi>70) add(-14,'RSI '+Math.round(rsi)+' overbought (range)'); else if(rsi<40) add(5,'RSI low'); else if(rsi>60) add(-5,'RSI high'); }
+  // 4b trend pullback entry (higher timeframes agree, price pulled back to EMA20/50 and turns)
+  if(trending&&b15!=null&&b60!=null&&Math.sign(b15)===Math.sign(b60)&&Math.abs(b15)>.5){ const d=Math.sign(b15), nearE=Math.abs(px-e20[n-1])<0.9*atr||Math.abs(px-e50[n-1])<0.9*atr, turn=d>0?c[n-1]>o[n-1]:c[n-1]<o[n-1], zone=d>0?(rsi>=36&&rsi<=55):(rsi>=45&&rsi<=64);
+    if(nearE&&turn&&zone&&Math.sign(trd)===d) add(16*d,'pullback entry with the trend'); }
   // 5 Bollinger
   if(!trending){ if(px<=lo) add(10,'at lower Bollinger band'); else if(px>=up) add(-10,'at upper Bollinger band'); }
   else { if(px>up) add(8,'Bollinger breakout up'); else if(px<lo) add(-8,'Bollinger breakout down'); }
@@ -7968,8 +7986,8 @@ function eaAnalyze(sym){
   let slD=EA.cfg.slAtr*atr;
   if(dir>0&&sup){ const s2=px-sup.p+0.25*atr; if(s2>=0.8*atr&&s2<=2.5*atr) slD=Math.max(slD,s2); }
   if(dir<0&&res){ const s2=res.p-px+0.25*atr; if(s2>=0.8*atr&&s2<=2.5*atr) slD=Math.max(slD,s2); }
-  let tpD=slD*EA.cfg.rr; const room=dir>0?(res?res.p-px:99*atr):(sup?px-sup.p:99*atr);
-  if(room<tpD){ if(room*0.97>=slD*1.1) tpD=room*0.97; else veto.push('no room to target (S/R too close)'); }
+  let tpD=slD*EA.cfg.rr; const room=dir>0?(resM?resM.p-px:99*atr):(supM?px-supM.p:99*atr);
+  if(room<tpD){ if(room*0.97>=slD*0.9) tpD=Math.max(room*0.97,slD*0.9); else if(trending&&Math.abs(sc)>=EA.cfg.minScore+15) { /* strong trend: ride through the level */ } else veto.push('major S/R level too close to target'); }
   return {sym,score:sc,side,regime:trending?'trend':(adx<18?'range':'mixed'),adx,rsi,atr,px,slD,tpD,veto,why,t:Date.now(),sup:sup&&sup.p,res:res&&res.p};
 }
 
@@ -7990,7 +8008,7 @@ function eaTrade(an){
   const list=MULTR[sym];
   if(!list||!list.length){ if(!EA.mreq[sym]||now-EA.mreq[sym]>20000){ EA.mreq[sym]=now; send({contracts_for:sym,currency:'USD',product_type:'basic',passthrough:{mult:1}}); } return; }
   const stake=cf.stake, cap=Math.min(cf.mult, cf.risk*an.px/(an.slD*stake));
-  const cand=list.filter(m=>m<=cap); if(!cand.length){ EA.black[sym]=now+20*60000; eaLog(marketName(sym)+': stop-loss too wide for the smallest multiplier — skipped'); return; }
+  const cand=list.filter(m=>m<=cap); if(!cand.length){ EA.black[sym]=now+5*60000; eaLog(marketName(sym)+': stop-loss too wide for the smallest multiplier — skipped'); return; }
   const mult=cand[cand.length-1], k=stake*mult/an.px, tp=Math.round(an.tpD*k*100)/100, sl=Math.round(Math.min(an.slD*k,stake*0.95)*100)/100;
   if(!(tp>=0.01&&sl>=0.01)) return;
   const code=an.score>0?'MULTUP':'MULTDOWN';
@@ -8075,7 +8093,7 @@ function eaUI(){
 window.eaOpen=function(){ EA.open=true; pn.style.display='flex'; eaUI(); };
 setInterval(function(){ if(EA.open) eaUI(); },1500);
 { const sel=$('drawSel'); if(sel&&!sel.querySelector('option[value="ea"]')){ const op=document.createElement('option'); op.value='ea'; op.textContent='\u{1F916} EA (auto Buy/Sell)'; const v=sel.querySelector('option[value="voice"]'); sel.insertBefore(op,v||null); } }
-window.EA_DEBUG=EA; EA.analyze=eaAnalyze;
+window.EA_DEBUG=EA; EA.analyze=eaAnalyze; EA.trade=eaTrade;
 })();
 
 </script>
