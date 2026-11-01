@@ -7890,13 +7890,15 @@ setInterval(function(){ if(TPG.on.dt) tpSched(); },1500);
 (function(){
 const EAK='wp_ea';
 const EA={on:false,cfg:{v:4,market:'',stake:1,mult:1000,minScore:18,rr:1.3,slAtr:1.5,risk:0.8,maxOpen:5,cool:4,perHour:15,lossStop:5,profitStop:0,groups:{}},
-  cache:{},cf:{},mq:[],scan:{},pos:{},black:{},last:{},hist:[],pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false};
+  cache:{},cf:{},mq:[],scan:{},pos:{},black:{},last:{},hist:[],why:{},err:{},fail:{},minLim:{},cfAsk:{},lastErr:'',pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false};
 try{ const s=JSON.parse(localStorage.getItem(EAK)||'{}'); if(s&&typeof s==='object'&&s.v===4){ Object.assign(EA.cfg,s,{groups:Object.assign({},s.groups||{})}); } }catch(e){}
 const eaSave=()=>{ try{ localStorage.setItem(EAK,JSON.stringify(EA.cfg)); }catch(e){} };
 const grpOn=g=>EA.cfg.groups[g]!==false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function eaLog(t){ EA.logs.unshift('['+new Date().toLocaleTimeString()+'] '+t); if(EA.logs.length>120) EA.logs.pop(); }
-function eaSyms(){ if(EA.cfg.market) return [EA.cfg.market]; const out=[]; for(const g in MARKETS){ if(!grpOn(g)) continue; MARKETS[g].items.forEach(i=>{ if(out.indexOf(i.sym)<0) out.push(i.sym); }); } return out; }
+const CHARTM='__chart__';
+function eaChartSym(){ let c=''; try{ c=currentSymbol; }catch(e){} return c||'R_100'; }
+function eaSyms(){ if(EA.cfg.market===CHARTM) return [eaChartSym()]; if(EA.cfg.market) return [EA.cfg.market]; const out=[]; for(const g in MARKETS){ if(!grpOn(g)) continue; MARKETS[g].items.forEach(i=>{ if(out.indexOf(i.sym)<0) out.push(i.sym); }); } return out; }
 
 /* ---------- indicators ---------- */
 function ema(a,p){ const k=2/(p+1),o=new Array(a.length); let e=a[0]; for(let i=0;i<a.length;i++){ e=i?a[i]*k+e*(1-k):a[0]; o[i]=e; } return o; }
@@ -8016,44 +8018,57 @@ function eaPickDur(rf){ const a=durSec(rf.min), b=durSec(rf.max); if(!a||!b) ret
   if(sec>=86400&&sec%86400===0) return {v:sec/86400,u:'d'}; if(sec>=3600&&sec%3600===0) return {v:sec/3600,u:'h'}; if(sec>=60&&sec%60===0) return {v:sec/60,u:'m'}; return {v:sec,u:'s'}; }
 function eaNeedCf(sym){ const now=Date.now(); if(EA.cf[sym]||EA.mq.indexOf(sym)>=0||(EA.mreq[sym]&&now-EA.mreq[sym]<15000)) return; EA.mq.push(sym); }
 function eaParseCf(m){ const sy=m.echo_req.contracts_for; delete EA.mreq[sy];
-  if(m.error){ const t=(m.error.code||'')+' '+(m.error.message||''); if(/RateLimit|rate limit|too many/i.test(t)){ EA.pause=Date.now()+5000; return; } EA.black[sy]=Date.now()+30*60000; return; }
+  if(m.error){ const t=(m.error.code||'')+' '+(m.error.message||''); if(/RateLimit|rate limit|too many/i.test(t)){ EA.pause=Date.now()+5000; return; }
+    // contract info unavailable: do NOT block the market — try a direct order and let Deriv's reply tell us the valid multipliers
+    EA.cf[sy]={mult:null,rf:null,guess:true,err:t}; eaLog('Contract info for '+marketName(sy)+' unavailable ('+(m.error.message||m.error.code||'error')+') — will try a direct order'); if(EA.on) eaEval(sy); return; }
   const av=(m.contracts_for&&m.contracts_for.available)||[]; let mult=[], rf=null;
-  av.forEach(a=>{ if(/^MULT(UP|DOWN)$/.test(a.contract_type)){ (a.multiplier_range||[]).forEach(v=>{ v=+v; if(v>0) mult.push(v); }); }
-    else if(a.contract_type==='CALL'&&a.start_type!=='forward'&&a.min_contract_duration&&a.max_contract_duration&&(!rf||a.barrier_category==='euro_atm')) rf={min:a.min_contract_duration,max:a.max_contract_duration}; });
+  av.forEach(a=>{ const ct=String(a.contract_type||'');
+    if(/^MULT(UP|DOWN)$/.test(ct)||/multiplier/i.test(String(a.contract_category||''))){ (a.multiplier_range||a.multipliers||[]).forEach(v=>{ v=+v; if(v>0) mult.push(v); }); }
+    else if(ct==='CALL'&&a.start_type!=='forward'&&a.min_contract_duration&&a.max_contract_duration&&(!rf||a.barrier_category==='euro_atm')) rf={min:a.min_contract_duration,max:a.max_contract_duration}; });
   mult=[...new Set(mult)].sort((x,y)=>x-y);
-  if(!mult.length&&!rf){ EA.cf[sy]={none:true}; EA.black[sy]=Date.now()+60*60000; return; }
+  if(!mult.length&&!rf){
+    if(av.length){ EA.cf[sy]={mult:null,rf:null,guess:true}; eaLog(marketName(sy)+': contract list had no recognised Buy/Sell format — will try a direct order'); if(EA.on) eaEval(sy); return; }
+    EA.cf[sy]={none:true}; EA.black[sy]=Date.now()+30*60000; EA.why[sy]='no contracts offered on this market'; eaLog(marketName(sy)+': no contracts offered — skipped for 30 min'); return; }
   EA.cf[sy]={mult:mult.length?mult:null,rf}; if(mult.length) MULTR[sy]=mult;
   if(EA.on) eaEval(sy); }
 function eaTrade(an){
-  const sym=an.sym, cf=EA.cfg, now=Date.now();
-  if(!an||!an.sig||an.veto.length||an.score*an.dir<cf.minScore) return;
-  if(Object.keys(EA.pos).length>=cf.maxOpen) return;
-  if(Object.keys(EA.pos).some(k=>EA.pos[k].sym===sym)) return;
-  if(now-(EA.last[sym]||0)<cf.cool*60000) return;
-  EA.hist=EA.hist.filter(t=>now-t<3600000); if(EA.hist.length>=cf.perHour) return;
-  if((EA.black[sym]||0)>now) return;
-  const info=EA.cf[sym]; if(!info){ eaNeedCf(sym); return; }
+  const sym=an.sym, cf=EA.cfg, now=Date.now(), blk=t=>{ EA.why[sym]=t; };
+  if(!an||!an.sig||an.veto.length||an.score*an.dir<cf.minScore){ delete EA.why[sym]; return; }
+  if(Object.keys(EA.pos).length>=cf.maxOpen){ blk('max open trades ('+cf.maxOpen+') reached'); return; }
+  if(Object.keys(EA.pos).some(k=>EA.pos[k].sym===sym)){ blk('already has an open trade'); return; }
+  if(now-(EA.last[sym]||0)<cf.cool*60000){ blk('cooldown '+Math.ceil((cf.cool*60000-(now-EA.last[sym]))/60000)+' min'); return; }
+  EA.hist=EA.hist.filter(t=>now-t<3600000); if(EA.hist.length>=cf.perHour){ blk('hourly trade limit ('+cf.perHour+') reached'); return; }
+  if((EA.black[sym]||0)>now){ blk(EA.err[sym]?'paused: '+EA.err[sym]:'paused after an error'); return; }
+  let info=EA.cf[sym];
+  if(!info){
+    const since=EA.cfAsk[sym]; if(!since) EA.cfAsk[sym]=now;
+    if(!since||now-since<9000){ eaNeedCf(sym); blk('waiting for contract info'); return; }
+    // no answer after 9 s: place a direct order anyway; if the multiplier is wrong Deriv replies with the valid list and the EA retries
+    info=EA.cf[sym]={mult:null,rf:null,guess:true}; eaLog('No contract info for '+marketName(sym)+' after 9 s — trying a direct order'); }
   const stake=cf.stake; let code, params, desc;
-  if(info.mult&&info.mult.length){
-    const list=info.mult, cap=Math.min(cf.mult, cf.risk*an.px/(an.slD*stake)); let cand=list.filter(m=>m<=cap), mult;
+  let list=(info.mult&&info.mult.length)?info.mult:(info.guess?(MULTR[sym]&&MULTR[sym].length?MULTR[sym]:[100]):null);
+  if(list&&list.length){
+    const cap=Math.min(cf.mult, cf.risk*an.px/(an.slD*stake)); let cand=list.filter(m=>m<=cap), mult;
     if(cand.length) mult=cand[cand.length-1]; else mult=list[0];
-    const k=stake*mult/an.px, tp=Math.round(an.tpD*k*100)/100, sl=Math.round(Math.min(an.slD*k,stake*0.95)*100)/100;
-    if(!cand.length&&an.slD*k>stake*0.9){ if(info.rf) info.mult=null; else { EA.black[sym]=now+5*60000; return; } }
-    else {
-      if(!(tp>=0.01&&sl>=0.01)) return;
+    const k=stake*mult/an.px, fl=(EA.minLim[sym]||0)*1.1;
+    let tp=Math.round(Math.max(an.tpD*k,fl)*100)/100, sl=Math.round(Math.min(Math.max(an.slD*k,fl),stake*0.95)*100)/100;
+    if(!cand.length&&an.slD*k>stake*0.9&&!EA.minLim[sym]){ if(info.rf) list=null; else { EA.black[sym]=now+5*60000; EA.err[sym]='smallest multiplier too high for this market\u2019s volatility'; blk('paused: '+EA.err[sym]); return; } }
+    if(list){
+      if(!(tp>=0.01&&sl>=0.01)){ blk('TP/SL too small for this market'); return; }
       code=an.dir>0?'MULTUP':'MULTDOWN'; params={amount:stake,basis:'stake',contract_type:code,currency:'USD',symbol:sym,multiplier:mult,limit_order:{take_profit:tp,stop_loss:sl}};
-      desc='x'+mult+' · TP +$'+tp.toFixed(2)+' / SL -$'+sl.toFixed(2); }
+      desc='x'+mult+' \u00B7 TP +$'+tp.toFixed(2)+' / SL -$'+sl.toFixed(2); }
   }
   if(!params&&info.rf){ const d=eaPickDur(info.rf); code=an.dir>0?'CALL':'PUT';
     params={amount:stake,basis:'stake',contract_type:code,currency:'USD',symbol:sym,duration:d.v,duration_unit:d.u}; desc='Rise/Fall '+d.v+d.u; }
-  if(!params) return;
-  EA.last[sym]=now; EA.hist.push(now);
+  if(!params){ blk('no tradable contract found'); return; }
+  EA.last[sym]=now; EA.hist.push(now); delete EA.why[sym];
   pendingTradeSource='ea'; pendingTradeType=code;
-  send({buy:1,price:stake,parameters:params,passthrough:{ea:1,sym:sym}});
-  eaLog((an.dir>0?'BUY ':'SELL ')+marketName(sym)+' '+desc+' · '+an.setup+' · score '+an.score);
-  try{ toastM('EA '+(an.dir>0?'BUY ':'SELL ')+marketName(sym)+' · '+an.setup); }catch(e){}
+  const id=send({buy:1,price:stake,parameters:params,passthrough:{ea:1,sym:sym,t:now}});
+  if(id==null){ pendingTradeSource=null; pendingTradeType=null; delete EA.last[sym]; EA.hist=EA.hist.filter(x=>x!==now); blk('order not sent (connection / invalid parameters)'); eaLog('Order NOT sent for '+marketName(sym)+' \u2014 check connection / account login'); return; }
+  eaLog((an.dir>0?'BUY ':'SELL ')+marketName(sym)+' '+desc+' \u00B7 '+an.setup+' \u00B7 score '+an.score+' \u2014 order sent');
+  try{ toastM('EA '+(an.dir>0?'BUY ':'SELL ')+marketName(sym)+' \u00B7 '+an.setup); }catch(e){}
 }
-function eaEval(sym){ let an=null; try{ an=eaAnalyze(sym); }catch(e){ an=null; } if(!an) return; EA.scan[sym]=an; if(EA.on&&!eaStopCheck()) eaTrade(an); }
+function eaEval(sym){ let an=null; try{ an=eaAnalyze(sym); }catch(e){ an=null; eaLog('Analysis error on '+marketName(sym)+': '+(e&&e.message)); } if(!an) return; EA.scan[sym]=an; if(EA.on&&!eaStopCheck()){ try{ eaTrade(an); }catch(e){ eaLog('Trade error on '+marketName(sym)+': '+(e&&e.message)); } } }
 function eaReq(sym){ const key=sym+'|300', first=!(EA.cache[key]&&EA.cache[key].bars.length>=300); EA.req[key]=Date.now(); EA.sent=(EA.sent||0)+1;
   send({ticks_history:sym,adjust_start_time:1,count:first?1000:12,end:'latest',style:'candles',granularity:300,passthrough:{ea:key}}); }
 function eaTick(){
@@ -8072,21 +8087,35 @@ function eaStart(){
   if(!authorized){ try{ showLogin(); }catch(e){} return; }
   let demo=true; try{ demo=drIsDemo(); }catch(e){}
   if(!demo&&!confirm('EA will place REAL-money Buy/Sell trades automatically on your live account. Continue?')) return;
-  EA.cache={}; EA.scan={}; EA.req={}; EA.black={}; EA.mreq={}; EA.cf={}; EA.mq=[]; EA.ptr=0; EA.pause=0; EA.t0=Date.now();
-  EA.on=true; eaDay(); eaLog('EA started — fresh scan of '+(EA.cfg.market?marketName(EA.cfg.market):eaSyms().length+' markets')); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,400); eaUI();
+  EA.cache={}; EA.scan={}; EA.req={}; EA.black={}; EA.mreq={}; EA.cf={}; EA.mq=[]; EA.ptr=0; EA.pause=0; EA.t0=Date.now(); EA.why={}; EA.err={}; EA.fail={}; EA.cfAsk={}; EA.lastErr='';
+  EA.on=true; eaDay(); eaLog('EA started \u2014 '+(EA.cfg.market===CHARTM?'attached to the chart market: '+marketName(eaChartSym()):'fresh scan of '+(EA.cfg.market?marketName(EA.cfg.market):eaSyms().length+' markets'))); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,400); eaUI();
 }
 function eaStop(why){ EA.on=false; if(EA.tm){ clearInterval(EA.tm); EA.tm=null; } eaLog('EA stopped'+(why?' — '+why:'')); if(why){ try{ toastM('EA stopped — '+why); }catch(e){} } eaUI(); }
 window.eaResult=function(c,profit){ const id=c.contract_id; if(!EA.pos[id]&&!EA.on) return; delete EA.pos[id]; EA.pnl+=profit; EA.n++; if(profit>0) EA.w++; else EA.l++;
   eaLog((profit>=0?'WIN +':'LOSS ')+profit.toFixed(2)+' USD · '+marketName(c.underlying_symbol||c.symbol||'')); eaStopCheck(); eaUI(); };
-window.eaBuyErr=function(m){ const p=m.echo_req.passthrough||{}, sym=p.sym||'', msg=(m.error&&m.error.message)||'error', info=EA.cf[sym]||{}; pendingTradeSource=null; pendingTradeType=null; delete EA.last[sym];
+window.eaBuyErr=function(m){ const p=m.echo_req.passthrough||{}, sym=p.sym||'', msg=(m.error&&m.error.message)||'error', info=EA.cf[sym]||{}, nm=marketName(sym);
+  pendingTradeSource=null; pendingTradeType=null; delete EA.last[sym]; if(p.t) EA.hist=EA.hist.filter(x=>x!==p.t);
+  EA.fail[sym]=(EA.fail[sym]||0)+1; EA.err[sym]=msg; EA.lastErr=nm+': '+msg;
+  const again=()=>{ setTimeout(function(){ try{ if(EA.on) eaEval(sym); }catch(e){} },600); };
+  // 1) this Deriv API version names the market field differently — same one-time auto-retry the rest of the app uses
+  if(/validation failed/i.test(msg)&&lastBuy&&lastBuy.payload&&lastBuy.payload.passthrough&&lastBuy.payload.passthrough.ea&&lastBuy.payload.passthrough.sym===sym&&ws&&ws.readyState===1){
+    if(!lastBuy.retried){ lastBuy.retried=true; SYM_KEY=SYM_KEY==='symbol'?'underlying_symbol':'symbol'; const o=JSON.parse(JSON.stringify(lastBuy.payload)); setSymKey(o.parameters,SYM_KEY); o.req_id=reqId++;
+      pendingTradeSource='ea'; pendingTradeType=o.parameters.contract_type; EA.hist.push(p.t||Date.now()); EA.last[sym]=Date.now(); ws.send(JSON.stringify(o)); eaLog('Order for '+nm+' rejected ('+msg+') \u2014 retrying with the "'+SYM_KEY+'" field'); return; }
+    SYM_KEY=SYM_KEY==='symbol'?'underlying_symbol':'symbol'; }
+  // 2) wrong multiplier for this market — Deriv lists the valid ones
   if(/multiplier/i.test(msg)&&/accept|range|available|valid|allowed|not offered|not available/i.test(msg)){ const nums=(msg.replace(/multiplier/ig,'').match(/\d+/g)||[]).map(Number).filter(x=>x>=2);
-    if(nums.length>=2&&sym){ const l=[...new Set(nums)].sort((a,b)=>a-b); EA.cf[sym]=Object.assign(info,{mult:l}); MULTR[sym]=l; }
-    else if(info.rf){ info.mult=null; EA.cf[sym]=info; } else EA.black[sym]=Date.now()+30*60000; }
-  else if(/rate limit|too many/i.test(msg)) EA.pause=Date.now()+5000;
-  else if(/balance|insufficient/i.test(msg)){ eaStop('insufficient balance'); return; }
-  else if(/not offered|not available|unavailable|closed|suspended|not allowed|restricted|invalid/i.test(msg)) EA.black[sym]=Date.now()+30*60000;
-  else EA.black[sym]=Date.now()+10*60000;
-  eaLog('Skipped '+marketName(sym)+': '+msg); eaUI(); };
+    if(nums.length>=2&&sym){ const l=[...new Set(nums)].sort((a,b)=>a-b); EA.cf[sym]=Object.assign(info,{mult:l,guess:false}); MULTR[sym]=l; eaLog(nm+': valid multipliers are '+l.join(', ')+' \u2014 retrying'); if(EA.fail[sym]<4){ again(); eaUI(); return; } }
+    else if(info.rf){ info.mult=null; info.guess=false; EA.cf[sym]=info; again(); }
+    else EA.black[sym]=Date.now()+30*60000; }
+  // 3) take-profit / stop-loss / commission minimum — raise the floor and retry
+  else if(/stop.?loss|take.?profit|commission|limit.?order/i.test(msg)){ const nums=(msg.match(/\d+(?:\.\d+)?/g)||[]).map(Number).filter(x=>x>0&&x<=EA.cfg.stake); const prev=EA.minLim[sym]||0;
+    EA.minLim[sym]=nums.length?Math.max.apply(null,nums.concat([prev])):Math.max(prev*1.5,0.2);
+    if(EA.minLim[sym]*1.1>=EA.cfg.stake*0.95||EA.fail[sym]>=4){ EA.black[sym]=Date.now()+15*60000; EA.err[sym]='TP/SL limits not accepted \u2014 try a larger stake'; } else { eaLog(nm+': TP/SL limits adjusted to at least $'+(EA.minLim[sym]*1.1).toFixed(2)+' \u2014 retrying'); again(); } }
+  else if(/rate limit|too many/i.test(msg)){ EA.pause=Date.now()+5000; again(); }
+  else if(/balance|insufficient/i.test(msg)){ eaLog('Order rejected: '+msg); eaStop('insufficient balance'); return; }
+  else if(/not offered|not available|unavailable|closed|suspended|not allowed|restricted/i.test(msg)) EA.black[sym]=Date.now()+30*60000;
+  else EA.black[sym]=Date.now()+(EA.fail[sym]>=3?10:3)*60000;
+  eaLog('Order REJECTED for '+nm+': '+msg); eaUI(); };
 window.eaCandles=function(m){ const key=m.echo_req.passthrough.ea, sym=key.split('|')[0];
   if(m.error||!m.candles){ delete EA.req[key]; const code=(m.error&&m.error.code)||'', msg=(m.error&&m.error.message)||'';
     if(/RateLimit/i.test(code)||/rate limit|too many/i.test(msg)){ EA.pause=Date.now()+5000; return; }
@@ -8095,9 +8124,9 @@ window.eaCandles=function(m){ const key=m.echo_req.passthrough.ea, sym=key.split
   let bars=nb; if(old&&old.bars.length&&nb.length<100){ bars=old.bars.filter(x=>x.t<nb[0].t).concat(nb); if(bars.length>1300) bars=bars.slice(-1300); }
   EA.cache[key]={t:Date.now(),bars};
   eaEval(sym); };
-{ const _h=handleMessage; handleMessage=function(m){ _h.apply(this,arguments);
-  try{ if(m&&m.msg_type==='contracts_for'&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.eacf) eaParseCf(m); }catch(e){}
-  try{ if(m&&m.msg_type==='buy'&&m.buy&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.ea){ EA.pos[m.buy.contract_id]={sym:m.echo_req.passthrough.sym,t:Date.now()}; eaUI(); } }catch(e){} }; }
+{ const _h=handleMessage; handleMessage=function(m){ try{ _h.apply(this,arguments); }catch(e){}
+  try{ if(m&&m.msg_type==='contracts_for'&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.eacf) eaParseCf(m); }catch(e){ eaLog('Contract info error: '+(e&&e.message)); }
+  try{ if(m&&m.msg_type==='buy'&&m.buy&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.ea){ const sy=m.echo_req.passthrough.sym; EA.pos[m.buy.contract_id]={sym:sy,t:Date.now()}; EA.fail[sy]=0; delete EA.err[sy]; delete EA.why[sy]; eaLog('OPENED '+marketName(sy)+' \u00B7 contract '+m.buy.contract_id+' \u00B7 stake $'+(+m.buy.buy_price||0).toFixed(2)); eaUI(); } }catch(e){} }; }
 
 /* ---------- UI ---------- */
 const st=document.createElement('style'); st.textContent=
@@ -8114,7 +8143,7 @@ const st=document.createElement('style'); st.textContent=
 document.head.appendChild(st);
 const pn=document.createElement('div'); pn.id='eaPanel';
 pn.innerHTML='<div class="ea-sheet"><div class="ea-top"><h3>&#129302; EA &mdash; Auto Buy / Sell</h3><span class="ea-x" id="eaX">&#10005;</span></div>'
- +'<div class="ea-note">Scans every enabled market (M5 entries, M15 + H1 confirmation): trend, MACD, RSI, ADX regime, Bollinger, support/resistance and candle patterns, plus volatility, session and currency-strength filters. Trades Multiplier Buy/Sell with ATR/structure TP and SL. Deriv has no news feed, so "fundamentals" are price-derived. No strategy guarantees profit &mdash; test on a demo account first.</div>'
+ +'<div class="ea-note">Scans every enabled market (M5 entries, M15 + H1 confirmation): trend, MACD, RSI, ADX regime, Bollinger, support/resistance and candle patterns, plus volatility, session and currency-strength filters. Trades Multiplier Buy/Sell with ATR/structure TP and SL. <b>Trade on</b> works two ways: <b>Chart market</b> attaches the EA to whichever market is open on the chart (like dragging an MT5 EA onto a chart &mdash; change the chart market and the EA follows), or <b>All markets</b> scans and trades everything it finds. Deriv has no news feed, so "fundamentals" are price-derived. No strategy guarantees profit &mdash; test on a demo account first.</div>'
  +'<button class="ea-go" id="eaGo">START EA</button><div class="ea-note" id="eaProg" style="margin:6px 0 0"></div>'
  +'<div class="ea-stats"><div><b id="eaS1">0</b>Open</div><div><b id="eaS2">0</b>Trades</div><div><b id="eaS3">0/0</b>W / L</div><div><b id="eaS4">0.00</b>P/L USD</div></div>'
  +'<label>Trading style (preset)</label><select id="eaPre" style="width:100%;margin-bottom:6px"><option value="">Custom</option><option value="safe">Safe &mdash; fewer, stronger trades</option><option value="bal">Balanced</option><option value="more">More trades</option><option value="max">Max trades</option></select><label>Trade on</label><select id="eaMkt" style="width:100%;margin-bottom:6px"></select><div class="ea-grid" id="eaCfg"></div><label>Markets to scan</label><div class="ea-grp" id="eaGrp"></div>'
@@ -8126,9 +8155,9 @@ $('eaCfg').innerHTML=FIELDS.map(f=>'<div><label>'+f[1]+'</label><input type="num
 $('eaCfg').addEventListener('change',e=>{ const k=e.target.dataset.k; if(!k) return; const f=FIELDS.find(x=>x[0]===k), v=parseFloat(e.target.value); EA.cfg[k]=isNaN(v)?EA.cfg[k]:Math.max(f[2],v); e.target.value=EA.cfg[k]; eaSave(); });
 $('eaGrp').innerHTML=Object.keys(MARKETS).map(g=>'<label><input type="checkbox" data-g="'+g+'"'+(grpOn(g)?' checked':'')+'> '+MARKETS[g].label+'</label>').join('');
 $('eaGrp').addEventListener('change',e=>{ const g=e.target.dataset.g; if(!g) return; EA.cfg.groups[g]=e.target.checked; eaSave(); });
-{ const m=$('eaMkt'); m.innerHTML='<option value="">All markets (scan everything)</option>'+Object.keys(MARKETS).map(g=>'<optgroup label="'+MARKETS[g].label+'">'+MARKETS[g].items.map(i=>'<option value="'+i.sym+'">'+i.name+'</option>').join('')+'</optgroup>').join('');
+{ const m=$('eaMkt'); m.innerHTML='<option value="__chart__">\u{1F4C8} Chart market \u2014 attach to the chart (MT5 style)</option><option value="">All markets (scan everything)</option>'+Object.keys(MARKETS).map(g=>'<optgroup label="'+MARKETS[g].label+'">'+MARKETS[g].items.map(i=>'<option value="'+i.sym+'">'+i.name+'</option>').join('')+'</optgroup>').join('');
   m.value=EA.cfg.market||''; if(m.value!==(EA.cfg.market||'')) EA.cfg.market='';
-  m.addEventListener('change',()=>{ EA.cfg.market=m.value; eaSave(); EA.scan={}; EA.cache={}; EA.req={}; EA.cf={}; EA.mq=[]; EA.ptr=0; eaLog('Market: '+(m.value?marketName(m.value):'all markets')); eaUI(); }); }
+  m.addEventListener('change',()=>{ EA.cfg.market=m.value; eaSave(); EA.scan={}; EA.cache={}; EA.req={}; EA.cf={}; EA.mq=[]; EA.ptr=0; EA.why={}; EA.cfAsk={}; eaLog('Trading mode: '+(m.value===CHARTM?'attached to the chart ('+marketName(eaChartSym())+')':m.value?marketName(m.value):'all markets')); eaUI(); }); }
 const PRE={safe:{minScore:35,maxOpen:2,cool:20,perHour:4,rr:1.8},bal:{minScore:25,maxOpen:3,cool:10,perHour:8,rr:1.5},more:{minScore:18,maxOpen:5,cool:4,perHour:15,rr:1.3},max:{minScore:10,maxOpen:8,cool:2,perHour:30,rr:1.2}};
 function eaPreSync(){ const f=$('eaPre'); let hit=''; for(const k in PRE){ if(Object.keys(PRE[k]).every(x=>EA.cfg[x]===PRE[k][x])) hit=k; } f.value=hit; }
 $('eaPre').addEventListener('change',e=>{ const v=PRE[e.target.value]; if(!v) return; Object.assign(EA.cfg,v); eaSave(); document.querySelectorAll('#eaCfg input').forEach(i=>{ i.value=EA.cfg[i.dataset.k]; }); eaLog('Preset applied: '+e.target.options[e.target.selectedIndex].text); });
@@ -8140,16 +8169,20 @@ function eaUI(){
   const go=$('eaGo'); if(go){ go.textContent=EA.on?'STOP EA':'START EA'; go.classList.toggle('on',EA.on); }
   const o=document.querySelector('#drawSel option[value="ea"]'); if(o) o.textContent=EA.on?'\u{1F916} EA: ON':'\u{1F916} EA (auto Buy/Sell)';
   if(!EA.open) return;
-  { const sy=eaSyms(), got=sy.filter(x=>EA.cache[x+'|300']).length, sg=Object.values(EA.scan).filter(a=>a.sig&&!a.veto.length&&a.score*a.dir>=EA.cfg.minScore).length; const pr=$('eaProg');
-    pr.textContent=!EA.on?(authorized?'Stopped. Tap START EA to scan.':'Log in first, then tap START EA.'):(!ws||ws.readyState!==1?'Waiting for connection\u2026':'Scanning: '+got+'/'+sy.length+' markets loaded \u00B7 '+sg+' ready setups \u00B7 '+Object.keys(EA.pos).length+' open'+((EA.pause||0)>Date.now()?' \u00B7 slowing down (rate limit)':'')); }
+  { const sy=eaSyms(), got=sy.filter(x=>EA.cache[x+'|300']).length, sg=Object.values(EA.scan).filter(a=>sy.indexOf(a.sym)>=0&&a.sig&&!a.veto.length&&a.score*a.dir>=EA.cfg.minScore).length; const pr=$('eaProg');
+    const bl={}; Object.keys(EA.why).forEach(k=>{ if(sy.indexOf(k)<0) return; const w=String(EA.why[k]).replace(/\d+/g,'#'); bl[w]=(bl[w]||0)+1; }); const bt=Object.keys(bl).map(w=>bl[w]+'\u00D7 '+w).join(', ');
+    const md=EA.cfg.market===CHARTM?'\u{1F4C8} Attached to chart: '+marketName(eaChartSym())+' \u00B7 ':'';
+    pr.textContent=!EA.on?(authorized?'Stopped. Tap START EA to scan.':'Log in first, then tap START EA.'):(!ws||ws.readyState!==1?'Waiting for connection\u2026':md+'Scanning: '+got+'/'+sy.length+' markets loaded \u00B7 '+sg+' ready setups \u00B7 '+Object.keys(EA.pos).length+' open'+((EA.pause||0)>Date.now()?' \u00B7 slowing down (rate limit)':'')+(bt?' \u00B7 Holding: '+bt:'')+(EA.lastErr?' \u00B7 Last error: '+EA.lastErr:'')); }
   $('eaS1').textContent=Object.keys(EA.pos).length; $('eaS2').textContent=EA.n; $('eaS3').textContent=EA.w+'/'+EA.l; const p=$('eaS4'); p.textContent=(EA.pnl>=0?'+':'')+EA.pnl.toFixed(2); p.style.color=EA.pnl>=0?'#16c784':'#ff4d6d';
-  const rows=Object.values(EA.scan).sort((a,b)=>((b.sig?1000:0)+Math.abs(b.score))-((a.sig?1000:0)+Math.abs(a.score))).slice(0,EA.cfg.market?1:16);
-  $('eaTb').innerHTML=rows.map(r=>'<tr><td>'+marketName(r.sym)+'</td><td>'+r.score+'</td><td class="'+(r.dir>0?'b':'s')+'">'+(r.dir?(r.dir>0?'BUY':'SELL'):'-')+'</td><td>'+(r.regime||'')+'</td><td>'+(r.veto&&r.veto.length?r.veto[0]:(r.sig?(r.score*r.dir>=EA.cfg.minScore?'READY \u00B7 '+r.setup:r.setup+' \u00B7 score low'):'no setup'))+'</td></tr>').join('')||'<tr><td colspan="5" style="color:var(--muted)">Start the EA to scan markets&hellip;</td></tr>';
+  const sy2=eaSyms(), rows=Object.values(EA.scan).filter(a=>sy2.indexOf(a.sym)>=0).sort((a,b)=>((b.sig?1000:0)+Math.abs(b.score))-((a.sig?1000:0)+Math.abs(a.score))).slice(0,EA.cfg.market?1:16);
+  $('eaTb').innerHTML=rows.map(r=>'<tr><td>'+marketName(r.sym)+'</td><td>'+r.score+'</td><td class="'+(r.dir>0?'b':'s')+'">'+(r.dir?(r.dir>0?'BUY':'SELL'):'-')+'</td><td>'+(r.regime||'')+'</td><td>'+(Object.keys(EA.pos).some(k=>EA.pos[k].sym===r.sym)?'TRADE OPEN':r.veto&&r.veto.length?r.veto[0]:(r.sig?(r.score*r.dir>=EA.cfg.minScore?'READY \u00B7 '+(EA.why[r.sym]||r.setup):r.setup+' \u00B7 score low'):'no setup'))+'</td></tr>').join('')||'<tr><td colspan="5" style="color:var(--muted)">Start the EA to scan markets&hellip;</td></tr>';
   $('eaLogBox').innerHTML=EA.logs.map(x=>'<div>'+x.replace(/</g,'&lt;')+'</div>').join('');
 }
 window.eaOpen=function(){ EA.open=true; pn.style.display='flex'; eaUI(); };
 setInterval(function(){ if(EA.open) eaUI(); },1500);
 { const sel=$('drawSel'); if(sel&&!sel.querySelector('option[value="ea"]')){ const op=document.createElement('option'); op.value='ea'; op.textContent='\u{1F916} EA (auto Buy/Sell)'; const v=sel.querySelector('option[value="voice"]'); sel.insertBefore(op,v||null); } }
+{ const bd=document.createElement('div'); bd.id='eaBadge'; bd.style.cssText='position:fixed;right:8px;top:calc(60px + env(safe-area-inset-top,0px));z-index:61;display:none;background:rgba(22,199,132,.16);border:1px solid #16c784;color:#16c784;border-radius:999px;padding:3px 10px;font:700 11px var(--font);cursor:pointer;backdrop-filter:blur(2px)'; bd.onclick=function(){ eaOpen(); }; document.body.appendChild(bd);
+  setInterval(function(){ try{ bd.style.display=EA.on?'block':'none'; if(EA.on) bd.textContent='\u{1F916} EA ON \u00B7 '+(EA.cfg.market===CHARTM?marketName(eaChartSym()):EA.cfg.market?marketName(EA.cfg.market):'all markets')+' \u00B7 '+Object.keys(EA.pos).length+' open'; }catch(e){} },1000); }
 window.EA_DEBUG=EA; EA.analyze=eaAnalyze; EA.trade=eaTrade; EA.parseCf=eaParseCf; EA.pick=eaPickDur;
 })();
 
