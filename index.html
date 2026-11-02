@@ -751,6 +751,8 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 .tpb.last{outline:2px solid #fff;outline-offset:1px}
 .tp-na{font-size:11px;color:var(--muted);padding:6px}
 .tp-rs{position:absolute;right:0;bottom:0;width:24px;height:24px;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 50%,rgba(152,251,152,.75) 50%);border-bottom-right-radius:12px}
+.sidebar .side-links .side-link img.ea-ti{width:34px;height:34px;border-radius:9px;object-fit:cover;display:block}
+@media(max-width:520px){.sidebar .side-links .side-link img.ea-ti{width:28px;height:28px;border-radius:7px}}
 </style>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAABgFBMVEX79DL74Rz40j7yxSX0uxXysSz5qyDxqwf1oxXXnhXyjRDkkBXogQ/xchHhdx3GkBGrjUTFeBPNbxmobhDsZCLOZDjdUhu6YBK2VQn0SB/USBu9SAq8Pw2gYBWUVBakTAiLShKiRAmdPAORQQh9QgqBPQn0NR7fNBHyJBLMOQ3GLgXNJwL4GRX2EAbjGgbQFwW7NweqNgyxLwSbNQKWMAW1JQKXJQK2EwOdFQKFNwaHMgmILgd+LQRzNQtwKwV/IgVuIwJ/EAFtGAFdLQpgJwddIwhZHQVZEgNEIgpCGgI5EAYgEAf6CQn1AgT2AAHbCQPfAQHOBQLDCAG8AQGwAwGPAwBXBgFDBwJCAQMzBwUlBwUpAgUlAQUZCQwZBg0bBQodAQQXAQUPCRILCRYKCRcJChkJCRkJCRcJCBkJCBcICRoICBoICBkICBgQBg8MBhEKBhIIBxgIBhQQBAoPAAEJAgQHCRkHCBoHCBkGCBcHBxcGBhMGBREGAwgEAAAAAAEiEjzTAAADXUlEQVR42lWT6X/hahiGY6nY2woVTAUtKghjCWqpfauqWItaWkORTCxjpjl0+NeP9rRnOs+3572v3/PlvS/g+f9hGGaxmM8X1IJi/rwCHynFUMPFt5lWSw8mU+Z1PgFv62T5Mnu5h+H+b5qeLSjq/Qzwng+6P/LhZiJ6dBRPtXXZzeT7pwsMNR70YncpmTJwymZDAUSW/N3t9ejBO8BQ3/e5GD4PSbUC+QmkZQfOwnWnJ0OT1CvAUGu6XuNyI9s8AnJ5Ipgtaq0CMj5+R397A6gnOiwVCRq77bUWgY4g4+Hp6ucuwuVqMq3JHiCH9BmPfSBN7HQKaBtWqPUKGaLQ7Qxs3kFkNt0Dv3oaic2mSmTlJs21wmaXm7CTglznMRUk7tnoGaDWHb9YVbw4V9sKFp2t6DQXUWvxxqS0lyTB3h4YdHoweFK0S22lollVdESwohMrEYS9dCupt9dj4DGPC8+dN7dmwko4HOV4yk44q35LuVpxSJSR5hpYRjiyvoaoVHz6aq3m7QcrPlfNn3b6alYPRxTvALQScK/gSpXAo+WaI751+tAvXkvr3nyrSiGyegdYhnjKvvICM/WTZvTr6lrvSefT4VTWqJFlYyyoCzw2XUIckl6m8mFtInGqUKjDWYVcpTKp820YOOwBneiJF433dWqVyqZS28wW+4W6YA2F7Pb0FchPzYB1UiIR19MXBdx9g1lvdDrMgRajuxzmaLhAT28AjLoxHid2ZcfOL0uolcAIa8pX+aq1lPFLtrT+OAZG8yshILIQZQxDQ36/2+fXf0FRFA8cs7je2PwZGC5DQg4gruLR3EPO6+14XO7LTGu1TbJYkKW+3P/FpBsSAfyyf3edDXpyu93qXnD48BBmgRAc+8Hs+0A+tXEOW2iARMKD5M9GOgMKwGMd6/Auircn5Gvlxo9tg1TMl7nKoOCKwwWhXU4MIn23s70k/ystSTcQw92qrwEFXOgMyQQzHsMKgZuz1+a/eTHoNpGz1rZ5zOIcK8V8Z70Biw33szHzIQ416bQjsLvej0ACUJxZ5YyGUHP+ln+oxzzR+QCsj8bjwWAA0ad6m39I5i83ydHypZeLGI3GcDJPb36NKOZvYI9MmfXmZbnZrJnp9CP+DDAMRY5Gw+F0SpJ/7H/+F1VKIlG9kvG6AAAAAElFTkSuQmCC">
@@ -864,6 +866,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   <button class="sidebar-close" onclick="toggleSidebar(false)">&#10005;</button>
   <h3>Menu</h3>
   <div class="side-links"><div class="side-link" style="border-color:var(--teal);color:var(--teal);font-weight:900" onclick="goToTab('guide');toggleSidebar(false)"><span class="ti">&#128214;</span><span>How to use</span></div>
+  <div class="side-link" style="border-color:#4cc9f0;color:#8fe4ff;font-weight:900" onclick="goToTab('ea');toggleSidebar(false)"><img class="ea-ti" width="34" height="34" alt="" src="data:image/jpeg;base64,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"><span>EA Automation</span></div>
   <div class="side-link" style="border-color:var(--lime);color:var(--lime)" onclick="goToTab('livetrades');toggleSidebar(false)"><span class="ti">&#128200;</span><span>Live Trades</span></div>
   <div class="side-link" style="border-color:var(--teal);color:var(--teal)" onclick="goToTab('copytrading');toggleSidebar(false)"><span class="ti">&#128257;</span><span>Copy Trading</span></div>
   <div class="side-link" style="border-color:var(--blue);color:var(--blue)" onclick="goToTab('tradehistory');toggleSidebar(false)"><span class="ti">&#128337;</span><span>Trade History</span></div>
@@ -1164,7 +1167,7 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
           <option value="7200">2 Hours</option>
           <option value="14400">4 Hours</option>
           <option value="86400">1 Day</option>
-        </select><select id="drawSel" onchange="drawSelChange(this)"><option value="">&#9998; Draw</option><option value="trend">Trendline</option><option value="sr">Horizontal line (S/R)</option><option value="rect">Rectangle</option><option value="text">T Text (write on chart)</option><option value="pos">TP / SL box (Buy/Sell)</option><option value="signal">&#128161; Signal (scan market)</option><option value="ea">&#129302; EA (auto Buy/Sell)</option><option value="voice" id="dvChartOpt">&#127908; Voice: OFF</option></select><button type="button" class="dv-btn dv-ind" id="dvChartInd" data-dv="chart" onclick="dvToggle('chart')" title="Voice is ON for the chart — tap to turn off" style="display:none"></button><select id="indSel" onchange="indSelChange(this)"><option value="">&#402; Indicators</option><option value="rsi">RSI</option><option value="ma">Moving Average</option><option value="bb">Bollinger Bands</option><option value="sar">Parabolic SAR</option><option value="bull">Bulls/Bears Power</option><option value="mom">Momentum</option><option value="vol">Volumes</option><option value="ad">Accumulation/Distribution</option><option value="macd">MACD</option><option value="stoch">Stochastic</option><option value="atr">ATR (volatility)</option></select><button class="ct-btn" onclick="toggleDrawPanel()" title="Edit objects">&#9881;</button></div>
+        </select><select id="drawSel" onchange="drawSelChange(this)"><option value="">&#9998; Draw</option><option value="trend">Trendline</option><option value="sr">Horizontal line (S/R)</option><option value="rect">Rectangle</option><option value="text">T Text (write on chart)</option><option value="pos">TP / SL box (Buy/Sell)</option><option value="signal">&#128161; Signal (scan market)</option><option value="voice" id="dvChartOpt">&#127908; Voice: OFF</option></select><button type="button" class="dv-btn dv-ind" id="dvChartInd" data-dv="chart" onclick="dvToggle('chart')" title="Voice is ON for the chart — tap to turn off" style="display:none"></button><select id="indSel" onchange="indSelChange(this)"><option value="">&#402; Indicators</option><option value="rsi">RSI</option><option value="ma">Moving Average</option><option value="bb">Bollinger Bands</option><option value="sar">Parabolic SAR</option><option value="bull">Bulls/Bears Power</option><option value="mom">Momentum</option><option value="vol">Volumes</option><option value="ad">Accumulation/Distribution</option><option value="macd">MACD</option><option value="stoch">Stochastic</option><option value="atr">ATR (volatility)</option></select><button class="ct-btn" onclick="toggleDrawPanel()" title="Edit objects">&#9881;</button></div>
     <div class="chart-sub"><span id="candleCountdownField"><b id="candleCountdown">--:--</b></span><span id="drawHint"></span><span id="mktInfo"></span><div class="price" id="livePrice">--</div></div>
     <span id="cqBtns" style="position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:45;max-width:98vw"><span style="display:flex;gap:12px;align-items:center"><button id="cqLock" title="Lock / unlock moving" style="border:0;border-radius:8px;padding:8px 9px;font-size:14px;background:rgba(255,255,255,.14);color:#fff">&#128274;</button><span id="cqGrip" title="Drag to move" style="display:none;touch-action:none;cursor:grab;font-size:20px;color:#fff;padding:0 4px;user-select:none">&#10021;</span><button id="cqBuy" style="border:0;border-radius:9px;padding:11px 16px;font-size:14px;font-weight:800;background:#16c784;color:#04210f;text-transform:uppercase" onclick="placeTrade('btn1')">BUY</button><button id="cqSell" style="border:0;border-radius:9px;padding:11px 16px;font-size:14px;font-weight:800;background:#ff4d6d;color:#fff;text-transform:uppercase" onclick="placeTrade('btn2')">SELL</button><button id="cqStart" style="border:0;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:800;background:#cfc58a;color:#2b2708" onclick="fabToggleBot()">START BOT</button></span></span>
     <div id="chPl" class="hidden-field"></div>
@@ -2523,7 +2526,7 @@ function setHint(t){ const h=document.getElementById('drawHint'); if(h) h.textCo
 function toggleDrawPanel(){ document.getElementById('drawPanel').classList.toggle('hidden-field'); renderObjList(); sizeChartToScreen(); }
 function syncCv(){ ensureCanvas(); { const so=chartObjs.find(x=>x.id===sel); if(so&&(so.kind==='pos'||so.kind==='text')&&document.getElementById('drawPanel').classList.contains('hidden-field')){ document.getElementById('drawPanel').classList.remove('hidden-field'); renderObjList(); setTimeout(sizeChartToScreen,0); } } drawCv.style.pointerEvents=(drawMode||sel!=null)?'auto':'none';
   setHint(drawMode?(drawMode==='sr'?'Tap chart to place line':drawMode==='text'?'Tap chart where the text should go':'Drag on chart to draw'):(sel!=null?'Drag handles to edit · tap empty area to finish':'')); }
-function drawSelChange(el){ const v=el.value; el.value=''; if(!v) return; if(v==='voice'){ dvToggle('chart'); return; } if(v==='signal'){ try{ sigScan(); }catch(e){} return; } if(v==='ea'){ try{ eaOpen(); }catch(e){} return; } drawMode=v; sel=null; syncCv(); }
+function drawSelChange(el){ const v=el.value; el.value=''; if(!v) return; if(v==='voice'){ dvToggle('chart'); return; } if(v==='signal'){ try{ sigScan(); }catch(e){} return; } drawMode=v; sel=null; syncCv(); }
 function indSelChange(el){ const v=el.value; el.value=''; if(!v) return;
   chartObjs.push({id:objSeq++,kind:v,color:OBJ_COL[v],period:OBJ_PER[v]||14,ma:'sma'}); saveObjs(); applyObjs(); renderObjList(); }
 function placePosTrade(id){
@@ -7883,15 +7886,21 @@ function tpSet(g,on){
 setInterval(function(){ if(TPG.on.dt) tpSched(); },1500);
 </script>
 <script>
-/* ===================== EA — automatic Buy/Sell (Multipliers) on every market =====================
-   Scans every enabled market on M5 with M15 + H1 confirmation, scores technicals (trend, MACD, RSI, ADX regime,
-   Bollinger, support/resistance, candle patterns), applies macro/volatility filters, then trades MULTUP/MULTDOWN
-   with ATR/structure based TP and SL. Opened from Chart > Draw > EA. */
+/* ===================== EA Automation — automatic Buy/Sell (Multipliers) =====================
+   Opened from the sidebar tile "EA Automation". Pick a strategy, set SL/TP per trade and for all open
+   trades, press START. Each market automatically gets its own best multiplier. */
 (function(){
-const EAK='wp_ea';
-const EA={on:false,cfg:{v:4,market:'',stake:1,mult:1000,minScore:18,rr:1.3,slAtr:1.5,risk:0.8,maxOpen:5,cool:4,perHour:15,lossStop:5,profitStop:0,groups:{}},
-  cache:{},cf:{},mq:[],scan:{},pos:{},black:{},last:{},hist:[],why:{},err:{},fail:{},minLim:{},cfAsk:{},lastErr:'',pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false};
-try{ const s=JSON.parse(localStorage.getItem(EAK)||'{}'); if(s&&typeof s==='object'&&s.v===4){ Object.assign(EA.cfg,s,{groups:Object.assign({},s.groups||{})}); } }catch(e){}
+const EAK='wp_ea', EASK='wp_ea_sess';
+const EA={on:false,cfg:{v:5,market:'',strat:'smart',stake:1,mult:0,slUsd:0.8,tpUsd:1.04,slAll:0,tpAll:0,minScore:18,maxOpen:5,cool:4,perHour:15,lossStop:5,profitStop:0,groups:{}},
+  cache:{},cf:{},mq:[],scan:{},pos:{},black:{},last:{},hist:[],why:{},err:{},fail:{},minLim:{},cfAsk:{},lastErr:'',pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false,closed:[],noNew:0};
+try{ const s=JSON.parse(localStorage.getItem(EAK)||'{}');
+  if(s&&typeof s==='object'&&(s.v===4||s.v===5)){
+    if(s.v===4){ s.slUsd=s.risk>0?s.risk:0.8; s.tpUsd=Math.round(s.slUsd*(s.rr>0?s.rr:1.3)*100)/100; s.mult=(s.mult>=1000?0:(s.mult||0)); delete s.risk; delete s.rr; delete s.slAtr; s.v=5; }
+    Object.assign(EA.cfg,s,{groups:Object.assign({},s.groups||{})}); } }catch(e){}
+try{ const ss=JSON.parse(localStorage.getItem(EASK)||'{}');
+  if(ss&&typeof ss==='object'){ EA.closed=Array.isArray(ss.closed)?ss.closed.slice(0,100):[];
+    if(ss.day===new Date().toISOString().slice(0,10)){ EA.day=ss.day; EA.n=+ss.n||0; EA.w=+ss.w||0; EA.l=+ss.l||0; EA.pnl=+ss.pnl||0; } } }catch(e){}
+const eaPersist=()=>{ try{ localStorage.setItem(EASK,JSON.stringify({day:EA.day,n:EA.n,w:EA.w,l:EA.l,pnl:EA.pnl,closed:EA.closed})); }catch(e){} };
 const eaSave=()=>{ try{ localStorage.setItem(EAK,JSON.stringify(EA.cfg)); }catch(e){} };
 const grpOn=g=>EA.cfg.groups[g]!==false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -7925,15 +7934,92 @@ function strength(){ const s={},k={}; eaSyms().forEach(sym=>{ if(sym.indexOf('fr
     s[B]=(s[B]||0)+r; k[B]=(k[B]||0)+1; s[Q]=(s[Q]||0)-r; k[Q]=(k[Q]||0)+1; });
   for(const c in s) s[c]/=k[c]; return s; }
 
+
+/* ---------- strategies (rule-based interpretations of well-known trading styles) ---------- */
+const STRATS={
+  smart:{name:'Smart Confluence',d:'All-round engine: trend + momentum + support/resistance, confirmed on 3 timeframes.',sl:1.5,rr:1.3,own:false},
+  scalp:{name:'Scalping',d:'Fast in-and-out: small TP per trade, closes quickly, re-opens a new trade as soon as TP is hit.',sl:0.8,rr:0.67,own:true,cool:0.1},
+  ptj:{name:'Paul Tudor Jones',d:'Trades with the 200-MA trend on pullbacks and breakouts, aiming for 3:1 reward vs risk.',sl:1.2,rr:3,own:true},
+  turtle:{name:'Richard Dennis (Turtles)',d:'Donchian breakouts of the 20/55-bar high or low with a wide 2×ATR stop (2:1).',sl:2,rr:2,own:true},
+  raschke:{name:'Linda Raschke',d:'“Holy Grail”: strong ADX trend, pullback to the 20 EMA, enter on the break (1.5:1).',sl:1.3,rr:1.5,own:true},
+  williams:{name:'Larry Williams',d:'Volatility breakout above/below the hourly open ± 60% of last hour’s range, %R confirmed (1.5:1).',sl:1.2,rr:1.5,own:true},
+  livermore:{name:'Jesse Livermore',d:'Pivotal-point breakout from a tight consolidation with a decisive candle (2.5:1).',sl:1.2,rr:2.5,own:true},
+  minervini:{name:'Mark Minervini',d:'VCP: stacked EMAs, volatility contracts, then a breakout of the recent high/low (2:1).',sl:1.5,rr:2,own:true},
+  seykota:{name:'Ed Seykota',d:'Ride the trend: fresh EMA 20/50 cross in the 200-EMA direction, let winners run (3:1).',sl:2,rr:3,own:true},
+  connors:{name:'Larry Connors',d:'RSI-2 pullback: buy deep dips in uptrends, sell sharp spikes in downtrends (1:1).',sl:1.5,rr:1,own:true},
+  soros:{name:'George Soros',d:'Momentum surge: accelerating MACD + ADX + band break with all timeframes agreeing (2.5:1).',sl:1.8,rr:2.5,own:true}
+};
+Object.keys(STRATS).forEach(k=>{ STRATS[k].id=k; });
+function stratSigs(id,X){
+  const o=X.o,h=X.h,l=X.l,c=X.c,n=X.n,px=X.px,atr=X.atr,atrs=X.atrs,e20=X.e20,e50=X.e50,e200=X.e200,adx=X.adx,ax=X.ax,rsi=X.rsi,hist=X.hist,up=X.up,lo=X.lo,b15=X.b15,b60=X.b60, out=[];
+  const hi=(a,b)=>Math.max.apply(null,h.slice(Math.max(0,a),b)), lw=(a,b)=>Math.min.apply(null,l.slice(Math.max(0,a),b));
+  const avg=(a,i,j)=>{ let s=0; for(let k=i;k<j;k++) s+=a[k]; return s/(j-i); };
+  const bull=c[n-1]>o[n-1], bear=c[n-1]<o[n-1];
+  let e5=null,e13=null,r2=50; if(id==='scalp'){ e5=ema(c,5); e13=ema(c,13); } if(id==='connors') r2=rsiA(c,2)[n-1];
+  [1,-1].forEach(d=>{
+    const T=d>0?bull:bear;
+    switch(id){
+    case 'scalp':
+      if((e5[n-1]-e13[n-1])*d>0&&(px-e13[n-1])*d>0&&Math.abs(px-e13[n-1])<1.6*atr&&(c[n-1]-c[n-2])*d>0&&hist[n-1]*d>0&&adx>=12&&(d>0?(rsi>=50&&rsi<=74):(rsi<=50&&rsi>=26))) out.push({k:'Scalp momentum',d,str:55});
+      break;
+    case 'ptj':
+      if(Math.sign(px-e200[n-1])===d&&(e20[n-1]-e200[n-1])*d>0&&(e50[n-1]-e200[n-1])*d>0&&hist[n-1]*d>0){
+        const near=Math.abs(px-e20[n-1])<1.0*atr, brk=d>0?c[n-1]>hi(n-21,n-1):c[n-1]<lw(n-21,n-1);
+        if((near&&T)||brk) out.push({k:'200-MA trend',d,str:62}); }
+      break;
+    case 'turtle': {
+      if(atr<avg(atrs,n-50,n)*0.9) break;
+      const h20=hi(n-21,n-1),l20=lw(n-21,n-1),h55=hi(n-56,n-1),l55=lw(n-56,n-1);
+      if(d>0&&c[n-1]>h20&&c[n-2]<=h20) out.push({k:c[n-1]>h55?'55-bar breakout':'20-bar breakout',d,str:c[n-1]>h55?70:58});
+      if(d<0&&c[n-1]<l20&&c[n-2]>=l20) out.push({k:c[n-1]<l55?'55-bar breakdown':'20-bar breakdown',d,str:c[n-1]<l55?70:58});
+      break; }
+    case 'raschke':
+      if(adx>=25&&ax.adx[n-1]>ax.adx[n-4]&&(ax.pdi[n-1]-ax.mdi[n-1])*d>0){
+        const touched=d>0?Math.min(l[n-2],l[n-3],l[n-4])<=e20[n-1]+0.15*atr:Math.max(h[n-2],h[n-3],h[n-4])>=e20[n-1]-0.15*atr, brk=d>0?c[n-1]>h[n-2]:c[n-1]<l[n-2];
+        if(touched&&brk&&(px-e20[n-1])*d>0) out.push({k:'Holy Grail pullback',d,str:68}); }
+      break;
+    case 'williams': {
+      const hb=resample(X.bars,12); if(hb.length<3) break;
+      const cur=hb[hb.length-1], pv=hb[hb.length-2], lvl=cur.o+d*0.6*(pv.h-pv.l), hh=hi(n-14,n), ll=lw(n-14,n), wr=hh>ll?(hh-px)/(hh-ll)*-100:-50;
+      if((px-lvl)*d>0&&(c[n-2]-lvl)*d<=0&&(e50[n-1]-e50[n-6])*d>0&&(d>0?wr>-50:wr<-50)) out.push({k:'Volatility breakout',d,str:60});
+      break; }
+    case 'livermore': {
+      const rH=hi(n-11,n-1), rL=lw(n-11,n-1); if(rH-rL>2.4*atr) break;
+      const body=Math.abs(c[n-1]-o[n-1]);
+      if(d>0&&bull&&c[n-1]>rH&&body>=0.6*atr) out.push({k:'Pivot breakout',d,str:62});
+      if(d<0&&bear&&c[n-1]<rL&&body>=0.6*atr) out.push({k:'Pivot breakdown',d,str:62});
+      break; }
+    case 'minervini': {
+      if(!((e20[n-1]-e50[n-1])*d>0&&(e50[n-1]-e200[n-1])*d>0&&(px-e20[n-1])*d>0)) break;
+      if(!(avg(atrs,n-10,n)<avg(atrs,n-40,n-10)*0.85)) break;
+      const pv=d>0?hi(n-21,n-1):lw(n-21,n-1);
+      if((c[n-1]-pv)*d>0&&(c[n-2]-pv)*d<=0&&T) out.push({k:'VCP breakout',d,str:64});
+      break; }
+    case 'seykota': {
+      const x=i=>(e20[i]-e50[i])*d, fresh=x(n-1)>0&&(x(n-2)<=0||x(n-3)<=0||x(n-4)<=0||x(n-5)<=0||x(n-6)<=0);
+      if(fresh&&(px-e200[n-1])*d>0&&adx>=18&&hist[n-1]*d>0&&(e200[n-1]-e200[n-11])*d>=0) out.push({k:'Trend ride (EMA cross)',d,str:60});
+      break; }
+    case 'connors':
+      if(d>0&&px>e200[n-1]&&r2<10) out.push({k:'RSI-2 dip in uptrend',d,str:58});
+      if(d<0&&px<e200[n-1]&&r2>90) out.push({k:'RSI-2 spike in downtrend',d,str:58});
+      break;
+    case 'soros': {
+      const acc=hist[n-1]*d>0&&hist[n-2]*d>0&&Math.abs(hist[n-1])>Math.abs(hist[n-2])&&Math.abs(hist[n-2])>Math.abs(hist[n-3]);
+      if(acc&&adx>=25&&ax.adx[n-1]>ax.adx[n-4]&&(d>0?px>up:px<lo)&&(b15==null||Math.sign(b15)===d)&&(b60==null||Math.sign(b60)===d)) out.push({k:'Momentum surge',d,str:66});
+      break; }
+    }
+  });
+  return out;
+}
 /* ---------- analysis ---------- */
 function eaAnalyze(sym){
   const raw=(EA.cache[sym+'|300']||{}).bars; if(!raw||raw.length<120) return null;
-  const nowS=Date.now()/1000, lastT=raw[raw.length-1].t;
+  const SP=STRATS[EA.cfg.strat]||STRATS.smart, nowS=Date.now()/1000, lastT=raw[raw.length-1].t;
   if(nowS-lastT>300*3+90) return {sym,score:0,dir:0,sig:false,side:'-',regime:'closed',veto:['market closed / no fresh candles'],why:[]};
-  const bars=(lastT+300>nowS)?raw.slice(0,-1):raw, n=bars.length; if(n<110) return null;
+  const bars=(lastT+300>nowS&&SP.id!=='scalp')?raw.slice(0,-1):raw, n=bars.length; if(n<110) return null;
   const o=bars.map(x=>x.o),h=bars.map(x=>x.h),l=bars.map(x=>x.l),c=bars.map(x=>x.c), px=c[n-1];
   const atrs=atrA(h,l,c,14), atr=atrs[n-1]; if(!(atr>0)) return null;
-  const e20=ema(c,20),e50=ema(c,50), ax=adxA(h,l,c,14), adx=ax.adx[n-1], trending=adx>=22;
+  const e20=ema(c,20),e50=ema(c,50),e200=ema(c,200), ax=adxA(h,l,c,14), adx=ax.adx[n-1], trending=adx>=22;
   const rs=rsiA(c,14), rsi=rs[n-1];
   const e12=ema(c,12),e26=ema(c,26), macd=e12.map((v,i)=>v-e26[i]), sg=ema(macd,9), hist=macd.map((v,i)=>v-sg[i]);
   const w=c.slice(-20), mean=w.reduce((a,b)=>a+b,0)/20, sd=Math.sqrt(w.reduce((a,b)=>a+(b-mean)*(b-mean),0)/20), up=mean+2*sd, lo=mean-2*sd;
@@ -7994,15 +8080,16 @@ function eaAnalyze(sym){
     if(d>0&&sup&&sup.n>=2&&dS<0.6&&(bullE||hammer||(lastBull&&rsi<45))) sigs.push({k:'Support bounce',d,str:55});
     if(d<0&&res&&res.n>=2&&dR<0.6&&(bearE||star||(lastBear&&rsi>55))) sigs.push({k:'Resistance rejection',d,str:55});
   });
+  if(SP.id!=='smart'){ sigs.length=0; stratSigs(SP.id,{o,h,l,c,n,px,atr,atrs,e20,e50,e200,adx,ax,rsi,hist,up,lo,b15,b60,bars}).forEach(g=>sigs.push(g)); }
   sigs.forEach(g=>{ g.q=g.str+(sc*g.d>0?Math.min(30,Math.abs(sc)*0.6):-Math.abs(sc)*0.4); });
   sigs.sort((x,y)=>y.q-x.q); const best=sigs[0]||null, dir=best?best.d:(sc>=0?1:-1);
   // ---- trade plan: ATR / structure stop, reward by R:R (or the mean for range reversals) ----
-  let slD=EA.cfg.slAtr*atr;
+  let slD=SP.sl*atr;
   if(dir>0&&sup){ const s2=px-sup.p+0.25*atr; if(s2>=0.8*atr&&s2<=2.5*atr) slD=Math.max(slD,s2); }
   if(dir<0&&res){ const s2=res.p-px+0.25*atr; if(s2>=0.8*atr&&s2<=2.5*atr) slD=Math.max(slD,s2); }
-  let tpD=slD*EA.cfg.rr;
-  if(best&&best.mid){ const dm=Math.abs(best.mid-px); if(dm>=slD*0.9) tpD=Math.min(dm,slD*Math.max(EA.cfg.rr,2)); }
-  return {sym,score:sc,dir,side:dir>0?'BUY':'SELL',setup:best?best.k:'',sig:!!best,want:!!best||Math.abs(sc)>=EA.cfg.minScore*0.7,regime:trending?'trend':(adx<18?'range':'mixed'),adx,rsi,atr,px,slD,tpD,veto,why,t:Date.now()};
+  let tpD=slD*SP.rr;
+  if(best&&best.mid){ const dm=Math.abs(best.mid-px); if(dm>=slD*0.9) tpD=Math.min(dm,slD*Math.max(SP.rr,2)); }
+  return {sym,own:SP.own,strat:SP.id,score:sc,dir,side:dir>0?'BUY':'SELL',setup:best?best.k:'',sig:!!best,want:!!best||Math.abs(sc)>=EA.cfg.minScore*0.7,regime:trending?'trend':(adx<18?'range':'mixed'),adx,rsi,atr,px,slD,tpD,veto,why,t:Date.now()};
 }
 
 /* ---------- trading ---------- */
@@ -8031,44 +8118,63 @@ function eaParseCf(m){ const sy=m.echo_req.contracts_for; delete EA.mreq[sy];
     EA.cf[sy]={none:true}; EA.black[sy]=Date.now()+30*60000; EA.why[sy]='no contracts offered on this market'; eaLog(marketName(sy)+': no contracts offered — skipped for 30 min'); return; }
   EA.cf[sy]={mult:mult.length?mult:null,rf}; if(mult.length) MULTR[sy]=mult;
   if(EA.on) eaEval(sy); }
+const r2=v=>Math.round(v*100)/100;
+function eaOk(an){ return !!an&&!!an.sig&&!(an.veto&&an.veto.length)&&(!!an.own||an.score*an.dir>=EA.cfg.minScore); }
+function eaEff(){ const S=STRATS[EA.cfg.strat]||STRATS.smart; return {cool:S.cool!=null?S.cool:EA.cfg.cool, perHour:S.id==='scalp'?Math.max(EA.cfg.perHour,60):EA.cfg.perHour}; }
+function eaList(sym){ const i=EA.cf[sym]; if(i&&i.mult&&i.mult.length) return i.mult; if(typeof MULTR!=='undefined'&&MULTR[sym]&&MULTR[sym].length) return MULTR[sym]; return null; }
+/* Picks the best multiplier for ONE market from the multipliers that market really offers, and the exact SL / TP (USD) for it.
+   SL per trade / TP per trade are the user's amounts; the multiplier is chosen so that SL sits at a sensible distance for this market. */
+function eaPlan(sym,an,listIn){
+  const cf=EA.cfg, list=listIn||eaList(sym), stake=cf.stake;
+  if(!list||!list.length||!an||!(an.slD>0)||!(an.px>0)) return null;
+  const cap=stake*0.95, ratio=cf.tpUsd/Math.max(cf.slUsd,0.01), fl=(EA.minLim[sym]||0)*1.1;
+  let sl=Math.min(cf.slUsd,cap), tp=cf.tpUsd, mult=null, note='';
+  const dist=m=>sl*an.px/(stake*m)/an.slD;   // 1 = stop sits exactly one normal stop-distance away
+  if(cf.mult>0&&list.indexOf(cf.mult)>=0){ const d=dist(cf.mult); if(d>=0.6&&d<=3) mult=cf.mult; }
+  if(mult==null){ const ideal=sl*an.px/(stake*an.slD), ok=list.filter(m=>m<=ideal*1.15); mult=ok.length?ok[ok.length-1]:list[0]; }
+  if(dist(mult)<0.55){   // even the lowest allowed multiplier makes the stop too tight on this market: widen SL for it
+    const need=0.6*an.slD*stake*mult/an.px;
+    if(need>cap) return {need:r2(need/0.95+0.005),mult};
+    sl=r2(Math.max(need,sl)); tp=r2(Math.max(tp,sl*ratio)); note='SL widened for this market'; }
+  tp=r2(Math.max(tp,fl)); sl=r2(Math.min(Math.max(sl,fl),cap));
+  if(!(tp>=0.01&&sl>=0.01)) return {need:0.01,mult};
+  return {mult,sl,tp,note};
+}
 function eaTrade(an){
-  const sym=an.sym, cf=EA.cfg, now=Date.now(), blk=t=>{ EA.why[sym]=t; };
-  if(!an||!an.sig||an.veto.length||an.score*an.dir<cf.minScore){ delete EA.why[sym]; return; }
+  const sym=an.sym, cf=EA.cfg, now=Date.now(), blk=t=>{ EA.why[sym]=t; }, ef=eaEff();
+  if(!eaOk(an)){ delete EA.why[sym]; return; }
+  if(now<(EA.noNew||0)){ blk('short rest after closing all'); return; }
   if(Object.keys(EA.pos).length>=cf.maxOpen){ blk('max open trades ('+cf.maxOpen+') reached'); return; }
   if(Object.keys(EA.pos).some(k=>EA.pos[k].sym===sym)){ blk('already has an open trade'); return; }
-  if(now-(EA.last[sym]||0)<cf.cool*60000){ blk('cooldown '+Math.ceil((cf.cool*60000-(now-EA.last[sym]))/60000)+' min'); return; }
-  EA.hist=EA.hist.filter(t=>now-t<3600000); if(EA.hist.length>=cf.perHour){ blk('hourly trade limit ('+cf.perHour+') reached'); return; }
+  { const left=ef.cool*60000-(now-(EA.last[sym]||0)); if(left>0){ blk('cooldown '+(left>=60000?Math.ceil(left/60000)+' min':Math.ceil(left/1000)+' s')); return; } }
+  EA.hist=EA.hist.filter(t=>now-t<3600000); if(EA.hist.length>=ef.perHour){ blk('hourly trade limit ('+ef.perHour+') reached'); return; }
   if((EA.black[sym]||0)>now){ blk(EA.err[sym]?'paused: '+EA.err[sym]:'paused after an error'); return; }
   let info=EA.cf[sym];
   if(!info){
     const since=EA.cfAsk[sym]; if(!since) EA.cfAsk[sym]=now;
     if(!since||now-since<9000){ eaNeedCf(sym); blk('waiting for contract info'); return; }
     // no answer after 9 s: place a direct order anyway; if the multiplier is wrong Deriv replies with the valid list and the EA retries
-    info=EA.cf[sym]={mult:null,rf:null,guess:true}; eaLog('No contract info for '+marketName(sym)+' after 9 s — trying a direct order'); }
-  const stake=cf.stake; let code, params, desc;
+    info=EA.cf[sym]={mult:null,rf:null,guess:true}; eaLog('No contract info for '+marketName(sym)+' after 9 s \u2014 trying a direct order'); }
+  const stake=cf.stake; let code, params, desc, tpV=0, slV=0, mV=0;
   let list=(info.mult&&info.mult.length)?info.mult:(info.guess?(MULTR[sym]&&MULTR[sym].length?MULTR[sym]:[100]):null);
   if(list&&list.length){
-    const cap=Math.min(cf.mult, cf.risk*an.px/(an.slD*stake)); let cand=list.filter(m=>m<=cap), mult;
-    if(cand.length) mult=cand[cand.length-1]; else mult=list[0];
-    const k=stake*mult/an.px, fl=(EA.minLim[sym]||0)*1.1;
-    let tp=Math.round(Math.max(an.tpD*k,fl)*100)/100, sl=Math.round(Math.min(Math.max(an.slD*k,fl),stake*0.95)*100)/100;
-    if(!cand.length&&an.slD*k>stake*0.9&&!EA.minLim[sym]){ if(info.rf) list=null; else { EA.black[sym]=now+5*60000; EA.err[sym]='smallest multiplier too high for this market\u2019s volatility'; blk('paused: '+EA.err[sym]); return; } }
-    if(list){
-      if(!(tp>=0.01&&sl>=0.01)){ blk('TP/SL too small for this market'); return; }
-      code=an.dir>0?'MULTUP':'MULTDOWN'; params={amount:stake,basis:'stake',contract_type:code,currency:'USD',symbol:sym,multiplier:mult,limit_order:{take_profit:tp,stop_loss:sl}};
-      desc='x'+mult+' \u00B7 TP +$'+tp.toFixed(2)+' / SL -$'+sl.toFixed(2); }
+    const pl=eaPlan(sym,an,list);
+    if(pl&&pl.need){ if(info.rf) list=null; else { blk('stake too small for this market (min '+pl.need.toFixed(2)+' USD)'); return; } }
+    else if(pl){ code=an.dir>0?'MULTUP':'MULTDOWN'; mV=pl.mult; tpV=pl.tp; slV=pl.sl;
+      params={amount:stake,basis:'stake',contract_type:code,currency:'USD',symbol:sym,multiplier:pl.mult,limit_order:{take_profit:pl.tp,stop_loss:pl.sl}};
+      desc='x'+pl.mult+' \u00B7 TP +'+pl.tp.toFixed(2)+' / SL -'+pl.sl.toFixed(2)+(pl.note?' ('+pl.note+')':''); }
   }
   if(!params&&info.rf){ const d=eaPickDur(info.rf); code=an.dir>0?'CALL':'PUT';
     params={amount:stake,basis:'stake',contract_type:code,currency:'USD',symbol:sym,duration:d.v,duration_unit:d.u}; desc='Rise/Fall '+d.v+d.u; }
   if(!params){ blk('no tradable contract found'); return; }
   EA.last[sym]=now; EA.hist.push(now); delete EA.why[sym];
   pendingTradeSource='ea'; pendingTradeType=code;
-  const id=send({buy:1,price:stake,parameters:params,passthrough:{ea:1,sym:sym,t:now}});
+  const id=send({buy:1,price:stake,parameters:params,passthrough:{ea:1,sym:sym,t:now,tp:tpV,sl:slV,mult:mV,side:code}});
   if(id==null){ pendingTradeSource=null; pendingTradeType=null; delete EA.last[sym]; EA.hist=EA.hist.filter(x=>x!==now); blk('order not sent (connection / invalid parameters)'); eaLog('Order NOT sent for '+marketName(sym)+' \u2014 check connection / account login'); return; }
-  eaLog((an.dir>0?'BUY ':'SELL ')+marketName(sym)+' '+desc+' \u00B7 '+an.setup+' \u00B7 score '+an.score+' \u2014 order sent');
+  eaLog((an.dir>0?'BUY ':'SELL ')+marketName(sym)+' '+desc+' \u00B7 '+an.setup+' \u2014 order sent');
   try{ toastM('EA '+(an.dir>0?'BUY ':'SELL ')+marketName(sym)+' \u00B7 '+an.setup); }catch(e){}
 }
-function eaEval(sym){ let an=null; try{ an=eaAnalyze(sym); }catch(e){ an=null; eaLog('Analysis error on '+marketName(sym)+': '+(e&&e.message)); } if(!an) return; EA.scan[sym]=an; if(EA.on&&!eaStopCheck()){ try{ eaTrade(an); }catch(e){ eaLog('Trade error on '+marketName(sym)+': '+(e&&e.message)); } } }
+function eaEval(sym){ let an=null; try{ an=eaAnalyze(sym); }catch(e){ an=null; eaLog('Analysis error on '+marketName(sym)+': '+(e&&e.message)); } if(!an) return; EA.scan[sym]=an; if(an.sig&&!EA.cf[sym]) eaNeedCf(sym); if(EA.on&&!eaStopCheck()){ try{ eaTrade(an); }catch(e){ eaLog('Trade error on '+marketName(sym)+': '+(e&&e.message)); } } }
 function eaReq(sym){ const key=sym+'|300', first=!(EA.cache[key]&&EA.cache[key].bars.length>=300); EA.req[key]=Date.now(); EA.sent=(EA.sent||0)+1;
   send({ticks_history:sym,adjust_start_time:1,count:first?1000:12,end:'latest',style:'candles',granularity:300,passthrough:{ea:key}}); }
 function eaTick(){
@@ -8079,8 +8185,8 @@ function eaTick(){
   const single=syms.length===1;
   // one round-robin pass: first load = 1000 M5 candles (M15 and H1 are built from them), then tiny refreshes
   for(let k=0;k<syms.length;k++){ const sym=syms[(EA.ptr+k)%syms.length]; if((EA.black[sym]||0)>now) continue;
-    const key=sym+'|300', c=EA.cache[key], an=EA.scan[sym], ttl=single?15000:(an&&an.regime==='closed'?300000:45000);
-    if((c&&now-c.t<ttl)||(EA.req[key]&&now-EA.req[key]<8000)) continue;
+    const key=sym+'|300', c=EA.cache[key], an=EA.scan[sym], ttl=single?(EA.cfg.strat==='scalp'?4000:15000):(an&&an.regime==='closed'?300000:(EA.cfg.strat==='scalp'?15000:45000));
+    if((c&&now-c.t<ttl)||(EA.req[key]&&now-EA.req[key]<(EA.cfg.strat==='scalp'?3000:8000))) continue;
     EA.ptr=(EA.ptr+k+1)%syms.length; eaReq(sym); return; }
 }
 function eaStart(){
@@ -8088,11 +8194,14 @@ function eaStart(){
   let demo=true; try{ demo=drIsDemo(); }catch(e){}
   if(!demo&&!confirm('EA will place REAL-money Buy/Sell trades automatically on your live account. Continue?')) return;
   EA.cache={}; EA.scan={}; EA.req={}; EA.black={}; EA.mreq={}; EA.cf={}; EA.mq=[]; EA.ptr=0; EA.pause=0; EA.t0=Date.now(); EA.why={}; EA.err={}; EA.fail={}; EA.cfAsk={}; EA.lastErr='';
-  EA.on=true; eaDay(); eaLog('EA started \u2014 '+(EA.cfg.market===CHARTM?'attached to the chart market: '+marketName(eaChartSym()):'fresh scan of '+(EA.cfg.market?marketName(EA.cfg.market):eaSyms().length+' markets'))); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,400); eaUI();
+  EA.noNew=0; EA.on=true; eaDay(); eaLog('EA started \u2014 '+(EA.cfg.market===CHARTM?'attached to the chart market: '+marketName(eaChartSym()):'fresh scan of '+(EA.cfg.market?marketName(EA.cfg.market):eaSyms().length+' markets'))); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,400); eaUI();
 }
 function eaStop(why){ EA.on=false; if(EA.tm){ clearInterval(EA.tm); EA.tm=null; } eaLog('EA stopped'+(why?' — '+why:'')); if(why){ try{ toastM('EA stopped — '+why); }catch(e){} } eaUI(); }
-window.eaResult=function(c,profit){ const id=c.contract_id; if(!EA.pos[id]&&!EA.on) return; delete EA.pos[id]; EA.pnl+=profit; EA.n++; if(profit>0) EA.w++; else EA.l++;
-  eaLog((profit>=0?'WIN +':'LOSS ')+profit.toFixed(2)+' USD · '+marketName(c.underlying_symbol||c.symbol||'')); eaStopCheck(); eaUI(); };
+window.eaResult=function(c,profit){ const id=c.contract_id; if(!EA.pos[id]&&!EA.on) return; const p=EA.pos[id]||{}, sym=p.sym||c.underlying_symbol||c.symbol||''; delete EA.pos[id]; EA.pnl+=profit; EA.n++; if(profit>0) EA.w++; else EA.l++;
+  EA.closed.unshift({t:Date.now(),sym:sym,side:p.side||c.contract_type||'',m:p.mult||0,pnl:profit}); if(EA.closed.length>100) EA.closed.length=100; eaPersist();
+  eaLog((profit>=0?'WIN +':'LOSS ')+profit.toFixed(2)+' USD \u00B7 '+marketName(sym));
+  if(EA.cfg.strat==='scalp'&&sym){ delete EA.last[sym]; const k=sym+'|300'; if(EA.cache[k]) EA.cache[k].t=0; }   // scalping: re-open straight away
+  eaStopCheck(); eaUI(); };
 window.eaBuyErr=function(m){ const p=m.echo_req.passthrough||{}, sym=p.sym||'', msg=(m.error&&m.error.message)||'error', info=EA.cf[sym]||{}, nm=marketName(sym);
   pendingTradeSource=null; pendingTradeType=null; delete EA.last[sym]; if(p.t) EA.hist=EA.hist.filter(x=>x!==p.t);
   EA.fail[sym]=(EA.fail[sym]||0)+1; EA.err[sym]=msg; EA.lastErr=nm+': '+msg;
@@ -8126,64 +8235,160 @@ window.eaCandles=function(m){ const key=m.echo_req.passthrough.ea, sym=key.split
   eaEval(sym); };
 { const _h=handleMessage; handleMessage=function(m){ try{ _h.apply(this,arguments); }catch(e){}
   try{ if(m&&m.msg_type==='contracts_for'&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.eacf) eaParseCf(m); }catch(e){ eaLog('Contract info error: '+(e&&e.message)); }
-  try{ if(m&&m.msg_type==='buy'&&m.buy&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.ea){ const sy=m.echo_req.passthrough.sym; EA.pos[m.buy.contract_id]={sym:sy,t:Date.now()}; EA.fail[sy]=0; delete EA.err[sy]; delete EA.why[sy]; eaLog('OPENED '+marketName(sy)+' \u00B7 contract '+m.buy.contract_id+' \u00B7 stake $'+(+m.buy.buy_price||0).toFixed(2)); eaUI(); } }catch(e){} }; }
+  try{ if(m&&m.msg_type==='buy'&&m.buy&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.ea){ const sy=m.echo_req.passthrough.sym; const pt=m.echo_req.passthrough; EA.pos[m.buy.contract_id]={sym:sy,t:Date.now(),tp:+pt.tp||0,sl:+pt.sl||0,mult:+pt.mult||0,side:pt.side||''}; EA.fail[sy]=0; delete EA.err[sy]; delete EA.why[sy]; eaLog('OPENED '+marketName(sy)+' \u00B7 contract '+m.buy.contract_id+' \u00B7 stake $'+(+m.buy.buy_price||0).toFixed(2)); eaUI(); } }catch(e){} }; }
 
-/* ---------- UI ---------- */
+/* ---------- basket SL / TP for ALL open EA trades ---------- */
+function eaFloat(){ let s=0; const lt=(typeof liveTrades!=='undefined')?liveTrades:{}; Object.keys(EA.pos).forEach(id=>{ const t=lt[id]; if(t&&isFinite(t.profit)) s+=t.profit; }); return s; }
+function eaBasket(){
+  if(!EA.on) return; const ids=Object.keys(EA.pos); if(!ids.length) return; const lt=(typeof liveTrades!=='undefined')?liveTrades:{};
+  if(!ids.some(id=>lt[id]&&!lt[id].closing)) return;
+  const tot=eaFloat(), cf=EA.cfg; let why='';
+  if(cf.slAll>0&&tot<=-cf.slAll) why='SL for all open trades reached ('+tot.toFixed(2)+' USD)';
+  else if(cf.tpAll>0&&tot>=cf.tpAll) why='TP for all open trades reached (+'+tot.toFixed(2)+' USD)';
+  if(!why) return;
+  eaLog(why+' \u2014 closing all EA trades'); try{ toastM('EA: '+why); }catch(e){}
+  EA.noNew=Date.now()+8000; ids.forEach(id=>{ try{ closeLiveTrade(id); }catch(e){} });
+}
+setInterval(eaBasket,1000);
+function eaClear(){
+  const n=Object.keys(EA.pos).length;
+  if(!confirm(n?('Clear EA history, stats and log and start fresh?\n\n'+n+' EA trade'+(n>1?'s are':' is')+' still open \u2014 they stay open and keep being tracked.'):'Clear EA history, stats and log and start fresh?')) return;
+  EA.n=0; EA.w=0; EA.l=0; EA.pnl=0; EA.closed=[]; EA.logs=[]; EA.hist=[]; EA.last={}; EA.black={}; EA.err={}; EA.fail={}; EA.why={}; EA.minLim={}; EA.lastErr=''; EA.scan={}; EA.noNew=0;
+  eaPersist(); eaLog('History cleared \u2014 fresh start'); eaUI();
+}
+
+/* ---------- UI: full page opened from the sidebar tile ---------- */
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 const st=document.createElement('style'); st.textContent=
-'#eaPanel{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.62);display:none;align-items:flex-end;justify-content:center}'
-+'#eaPanel .ea-sheet{width:100%;max-width:560px;max-height:92vh;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:16px 16px 0 0;padding:12px 14px calc(16px + env(safe-area-inset-bottom,0px))}'
-+'#eaPanel h3{margin:0;font-size:15px}#eaPanel .ea-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}'
-+'#eaPanel .ea-x{font-size:20px;padding:2px 8px;cursor:pointer}#eaPanel .ea-note{font-size:11px;color:var(--muted);line-height:1.45;margin:4px 0 8px}'
-+'#eaPanel .ea-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}#eaPanel .ea-stats div{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:6px;text-align:center;font-size:10px;color:var(--muted)}#eaPanel .ea-stats b{display:block;font-size:14px;color:var(--text)}'
-+'#eaPanel .ea-go{width:100%;padding:12px;border:0;border-radius:10px;font-weight:800;font-size:14px;color:#04210f;background:#16c784}#eaPanel .ea-go.on{background:#ff4d6d;color:#fff}'
-+'#eaPanel .ea-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}#eaPanel label{font-size:10px;color:var(--muted);display:block;margin-bottom:2px}#eaPanel input[type=number]{width:100%;box-sizing:border-box}'
-+'#eaPanel .ea-grp{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}#eaPanel .ea-grp label{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text);background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:999px;padding:4px 9px;margin:0}'
-+'#eaPanel table{width:100%;border-collapse:collapse;font-size:11px}#eaPanel td,#eaPanel th{padding:4px 3px;border-bottom:1px solid var(--border);text-align:left}#eaPanel th{color:var(--muted);font-weight:600}'
-+'#eaPanel .b{color:#16c784;font-weight:800}#eaPanel .s{color:#ff4d6d;font-weight:800}#eaPanel .ea-log{font-family:var(--mono);font-size:10px;max-height:150px;overflow-y:auto;color:var(--muted);line-height:1.5}';
+'#view-ea{padding:8px 10px calc(70px + env(safe-area-inset-bottom,0px));max-width:560px}'
++'#view-ea .ea-hd{display:flex;align-items:center;gap:8px;margin-bottom:6px}#view-ea .ea-hd img{width:32px;height:32px;border-radius:8px;object-fit:cover}#view-ea .ea-hd b{font-size:15px;flex:1}'
++'#view-ea .ea-st{font:700 10px var(--font);padding:2px 9px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}#view-ea .ea-st.on{color:#16c784;border-color:#16c784;background:rgba(22,199,132,.12)}'
++'#view-ea .ea-btns{display:grid;grid-template-columns:1fr auto;gap:6px}'
++'#view-ea .ea-go{padding:10px;border:0;border-radius:10px;font-weight:800;font-size:13px;color:#04210f;background:#16c784}#view-ea .ea-go.on{background:#ff4d6d;color:#fff}'
++'#view-ea .ea-clr{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:transparent;color:var(--text);font-weight:700;font-size:12px}'
++'#view-ea .ea-prog{font-size:10px;color:var(--muted);line-height:1.35;margin:5px 0 4px;min-height:13px}'
++'#view-ea .ea-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:4px 0 6px}#view-ea .ea-stats div{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:5px 2px;text-align:center;font-size:9px;color:var(--muted)}#view-ea .ea-stats b{display:block;font-size:13px;color:var(--text)}'
++'#view-ea label{font-size:9.5px;color:var(--muted);display:block;margin:0 0 2px}#view-ea select,#view-ea input[type=number]{width:100%;box-sizing:border-box;padding:6px 6px;font-size:12px}'
++'#view-ea .ea-g2{display:grid;grid-template-columns:1fr 1fr;gap:6px}#view-ea .ea-g3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}'
++'#view-ea .ea-sd{font-size:10px;color:var(--muted);line-height:1.35;margin:4px 0 2px;min-height:13px}'
++'#view-ea details.ea-d{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;margin:6px 0;padding:0 8px 8px}#view-ea details.ea-d>summary{padding:8px 0 6px;font-size:12px;font-weight:700;cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px}'
++'#view-ea details.ea-d>summary::-webkit-details-marker{display:none}#view-ea details.ea-d>summary::after{content:"\\25BE";margin-left:auto;color:var(--muted)}#view-ea details.ea-d[open]>summary::after{content:"\\25B4"}#view-ea summary small{font-weight:500;color:var(--muted);font-size:10px}'
++'#view-ea .ea-hint{font-size:9.5px;color:var(--muted);line-height:1.35;margin-top:6px}'
++'#view-ea .ea-mk{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}#view-ea .ea-mk label{margin:0;cursor:pointer}#view-ea .ea-mk input{display:none}'
++'#view-ea .ea-mk span{display:block;text-align:center;font-size:10px;padding:5px 2px;border:1px solid var(--border);border-radius:8px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#view-ea .ea-mk input:checked+span{color:#04210f;background:#16c784;border-color:#16c784;font-weight:700}'
++'#view-ea .ea-mkb{display:flex;gap:6px;margin-bottom:6px}#view-ea .ea-mkb button{flex:1;padding:4px;font-size:10px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:7px}'
++'#view-ea table{width:100%;border-collapse:collapse;font-size:10.5px}#view-ea td,#view-ea th{padding:3px 3px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}#view-ea th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel)}#view-ea td small{display:block;font-size:9px;color:var(--muted);font-weight:400}'
++'#view-ea .b{color:#16c784;font-weight:800}#view-ea .s{color:#ff4d6d;font-weight:800}#view-ea .ea-tw{max-height:210px;overflow:auto}'
++'#view-ea .ea-log{font-family:var(--mono);font-size:10px;max-height:130px;overflow-y:auto;color:var(--muted);line-height:1.5}'
++'#view-ea .ea-lh{font-size:11px;font-weight:700;margin:2px 0}#view-ea .ea-lv{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;padding:5px 7px;margin:3px 0}'
++'#view-ea .ea-lv-t{display:flex;align-items:center;gap:6px;font-size:11px}#view-ea .ea-lv-t b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#view-ea .ea-lv-p{font-weight:800;font-size:12px}'
++'#view-ea .ea-lv-x{border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;font-size:11px;padding:1px 7px}'
++'#view-ea .ea-bar{position:relative;height:6px;border-radius:4px;background:rgba(255,255,255,.08);margin:5px 0 2px;overflow:hidden}#view-ea .ea-bar i{position:absolute;top:0;bottom:0}#view-ea .ea-bar u{position:absolute;top:0;bottom:0;width:2px;background:var(--muted);text-decoration:none}'
++'#view-ea .ea-lv-s{display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}';
 document.head.appendChild(st);
-const pn=document.createElement('div'); pn.id='eaPanel';
-pn.innerHTML='<div class="ea-sheet"><div class="ea-top"><h3>&#129302; EA &mdash; Auto Buy / Sell</h3><span class="ea-x" id="eaX">&#10005;</span></div>'
- +'<div class="ea-note">Scans every enabled market (M5 entries, M15 + H1 confirmation): trend, MACD, RSI, ADX regime, Bollinger, support/resistance and candle patterns, plus volatility, session and currency-strength filters. Trades Multiplier Buy/Sell with ATR/structure TP and SL. <b>Trade on</b> works two ways: <b>Chart market</b> attaches the EA to whichever market is open on the chart (like dragging an MT5 EA onto a chart &mdash; change the chart market and the EA follows), or <b>All markets</b> scans and trades everything it finds. Deriv has no news feed, so "fundamentals" are price-derived. No strategy guarantees profit &mdash; test on a demo account first.</div>'
- +'<button class="ea-go" id="eaGo">START EA</button><div class="ea-note" id="eaProg" style="margin:6px 0 0"></div>'
- +'<div class="ea-stats"><div><b id="eaS1">0</b>Open</div><div><b id="eaS2">0</b>Trades</div><div><b id="eaS3">0/0</b>W / L</div><div><b id="eaS4">0.00</b>P/L USD</div></div>'
- +'<label>Trading style (preset)</label><select id="eaPre" style="width:100%;margin-bottom:6px"><option value="">Custom</option><option value="safe">Safe &mdash; fewer, stronger trades</option><option value="bal">Balanced</option><option value="more">More trades</option><option value="max">Max trades</option></select><label>Trade on</label><select id="eaMkt" style="width:100%;margin-bottom:6px"></select><div class="ea-grid" id="eaCfg"></div><label>Markets to scan</label><div class="ea-grp" id="eaGrp"></div>'
- +'<label>Scanner (strongest setups)</label><table><thead><tr><th>Market</th><th>Score</th><th>Bias</th><th>Regime</th><th>Status</th></tr></thead><tbody id="eaTb"></tbody></table>'
- +'<label style="margin-top:10px">Log</label><div class="ea-log" id="eaLogBox"></div></div>';
-document.body.appendChild(pn);
-const FIELDS=[['stake','Stake (USD)',0.35,0.01],['mult','Max multiplier',2,1],['risk','Max loss / trade (USD)',0.01,0.01],['rr','Reward : Risk',1,0.1],['slAtr','Stop-loss (× ATR)',0.5,0.1],['minScore','Min confluence score (0-100)',5,1],['maxOpen','Max open trades',1,1],['cool','Cooldown / market (min)',1,1],['perHour','Max trades / hour',1,1],['lossStop','Daily loss stop (USD, 0=off)',0,0.5],['profitStop','Daily profit target (USD, 0=off)',0,0.5]];
-$('eaCfg').innerHTML=FIELDS.map(f=>'<div><label>'+f[1]+'</label><input type="number" data-k="'+f[0]+'" min="'+f[2]+'" step="'+f[3]+'" value="'+EA.cfg[f[0]]+'"></div>').join('');
-$('eaCfg').addEventListener('change',e=>{ const k=e.target.dataset.k; if(!k) return; const f=FIELDS.find(x=>x[0]===k), v=parseFloat(e.target.value); EA.cfg[k]=isNaN(v)?EA.cfg[k]:Math.max(f[2],v); e.target.value=EA.cfg[k]; eaSave(); });
-$('eaGrp').innerHTML=Object.keys(MARKETS).map(g=>'<label><input type="checkbox" data-g="'+g+'"'+(grpOn(g)?' checked':'')+'> '+MARKETS[g].label+'</label>').join('');
-$('eaGrp').addEventListener('change',e=>{ const g=e.target.dataset.g; if(!g) return; EA.cfg.groups[g]=e.target.checked; eaSave(); });
-{ const m=$('eaMkt'); m.innerHTML='<option value="__chart__">\u{1F4C8} Chart market \u2014 attach to the chart (MT5 style)</option><option value="">All markets (scan everything)</option>'+Object.keys(MARKETS).map(g=>'<optgroup label="'+MARKETS[g].label+'">'+MARKETS[g].items.map(i=>'<option value="'+i.sym+'">'+i.name+'</option>').join('')+'</optgroup>').join('');
+const LOGO=(document.querySelector('img.ea-ti')||{}).src||'';
+const vw=document.createElement('div'); vw.className='view'; vw.id='view-ea';
+vw.innerHTML='<div class="ea-hd"><img src="'+LOGO+'" alt=""><b>EA Automation</b><span class="ea-st" id="eaSt">OFF</span></div>'
+ +'<div class="ea-btns"><button class="ea-go" id="eaGo">START EA</button><button class="ea-clr" id="eaClr">Clear history</button></div>'
+ +'<div class="ea-prog" id="eaProg"></div>'
+ +'<div class="ea-stats"><div><b id="eaS1">0</b>Open</div><div><b id="eaS2">0/0</b>W / L</div><div><b id="eaS3">0</b>Trades</div><div><b id="eaS4">0.00</b>P/L</div><div><b id="eaS5">0.00</b>Live</div></div>'
+ +'<div id="eaLive" style="display:none"><div class="ea-lh" id="eaLiveH"></div><div id="eaLiveRows"></div></div>'
+ +'<div class="ea-g2"><div><label>Strategy</label><select id="eaStrat"></select></div><div><label>Trade on</label><select id="eaMkt"></select></div></div>'
+ +'<div class="ea-sd" id="eaSd"></div>'
+ +'<details class="ea-d" open><summary>Risk &amp; targets <small>(USD)</small></summary><div class="ea-g3" id="eaRisk"></div>'
+ +'<div class="ea-hint"><b>Per trade</b> = each trade closes by itself at exactly this amount. <b>All open</b> = the EA closes every EA trade once their combined profit / loss reaches this amount. Multiplier 0 = the EA picks the best one for each market.</div></details>'
+ +'<details class="ea-d"><summary>More settings</summary><div style="margin-bottom:6px"><label>Trade frequency</label><select id="eaPre"><option value="">Custom</option><option value="safe">Safe \u2014 fewer, stronger trades</option><option value="bal">Balanced</option><option value="more">More trades</option><option value="max">Max trades</option></select></div><div class="ea-g3" id="eaMore"></div></details>'
+ +'<details class="ea-d"><summary>Markets to scan <small id="eaMkSum"></small></summary><div class="ea-mkb"><button type="button" data-all="1">Select all</button><button type="button" data-all="0">Clear</button></div><div class="ea-mk" id="eaGrp"></div></details>'
+ +'<details class="ea-d" open><summary>Scanner</summary><div class="ea-tw"><table><thead><tr><th>Market</th><th>Signal</th><th>Best multiplier</th><th>Status</th></tr></thead><tbody id="eaTb"></tbody></table></div></details>'
+ +'<details class="ea-d"><summary>History <small id="eaHistN"></small></summary><div class="ea-tw"><table><tbody id="eaHist"></tbody></table></div></details>'
+ +'<details class="ea-d"><summary>Log</summary><div class="ea-log" id="eaLogBox"></div></details>';
+{ const lv=document.getElementById('view-livetrades'); if(lv) lv.after(vw); else document.body.appendChild(vw); }
+const RISK=[['stake','Stake',0.35,0.01],['slUsd','SL per trade',0.01,0.01],['tpUsd','TP per trade',0.01,0.01],['mult','Multiplier (0 = auto)',0,1],['slAll','SL all open (0 = off)',0,0.1],['tpAll','TP all open (0 = off)',0,0.1]];
+const MORE=[['minScore','Min score (Smart)',5,1],['maxOpen','Max open trades',1,1],['cool','Cooldown / market (min)',0,1],['perHour','Max trades / hour',1,1],['lossStop','Stop EA at day loss (0 = off)',0,0.5],['profitStop','Stop EA at day profit (0 = off)',0,0.5]];
+const fh=f=>'<div><label>'+f[1]+'</label><input type="number" inputmode="decimal" data-k="'+f[0]+'" min="'+f[2]+'" step="'+f[3]+'" value="'+EA.cfg[f[0]]+'"></div>';
+$('eaRisk').innerHTML=RISK.map(fh).join(''); $('eaMore').innerHTML=MORE.map(fh).join('');
+function eaSync(){ vw.querySelectorAll('input[data-k]').forEach(i=>{ i.value=EA.cfg[i.dataset.k]; }); $('eaStrat').value=EA.cfg.strat; eaPreSync(); }
+vw.addEventListener('change',e=>{ const k=e.target.dataset&&e.target.dataset.k; if(!k) return; const f=RISK.concat(MORE).find(x=>x[0]===k); if(!f) return;
+  let v=parseFloat(e.target.value); if(isNaN(v)) v=EA.cfg[k]; v=Math.max(f[2],v); EA.cfg[k]=v;
+  if(k==='slUsd'&&v>EA.cfg.stake*0.95){ EA.cfg.slUsd=r2(EA.cfg.stake*0.95); try{ toastM('SL per trade can\u2019t be bigger than the stake'); }catch(x){} }
+  if(k==='stake'&&EA.cfg.slUsd>v*0.95) EA.cfg.slUsd=r2(v*0.95);
+  eaSave(); eaSync(); eaUI(); });
+{ const s=$('eaStrat'), grp=(l,ids)=>'<optgroup label="'+l+'">'+ids.map(i=>'<option value="'+i+'">'+STRATS[i].name+'</option>').join('')+'</optgroup>';
+  s.innerHTML=grp('Built-in',['smart','scalp'])+grp('Famous traders',['ptj','turtle','raschke','williams','livermore','minervini','seykota','connors','soros']);
+  if(!STRATS[EA.cfg.strat]) EA.cfg.strat='smart'; s.value=EA.cfg.strat; }
+function eaStratUI(){ $('eaSd').textContent=(STRATS[EA.cfg.strat]||STRATS.smart).d; }
+function eaApplyStrat(id){ const S=STRATS[id]||STRATS.smart, cf=EA.cfg; cf.strat=S.id;
+  if(S.id==='scalp'){ cf.slUsd=r2(cf.stake*0.3); cf.tpUsd=r2(cf.stake*0.2); } else cf.tpUsd=r2(cf.slUsd*S.rr);
+  eaSave(); eaSync(); eaStratUI(); EA.scan={};
+  eaLog('Strategy: '+S.name+' \u2014 TP '+cf.tpUsd.toFixed(2)+' / SL '+cf.slUsd.toFixed(2)+' USD per trade');
+  Object.keys(EA.cache).forEach(k=>{ try{ eaEval(k.split('|')[0]); }catch(e){} }); eaUI(); }
+$('eaStrat').addEventListener('change',e=>eaApplyStrat(e.target.value));
+function eaGrpUI(){ const all=Object.keys(MARKETS), on=all.filter(grpOn); let mk=0; on.forEach(g=>{ mk+=MARKETS[g].items.length; });
+  $('eaGrp').innerHTML=all.map(g=>'<label><input type="checkbox" data-g="'+g+'"'+(grpOn(g)?' checked':'')+'><span title="'+esc(MARKETS[g].label)+'">'+esc(MARKETS[g].label)+'</span></label>').join('');
+  $('eaMkSum').textContent=on.length+'/'+all.length+' groups \u00B7 '+mk+' markets'; }
+$('eaGrp').addEventListener('change',e=>{ const g=e.target.dataset.g; if(!g) return; EA.cfg.groups[g]=e.target.checked; eaSave(); eaGrpUI(); });
+vw.querySelector('.ea-mkb').addEventListener('click',e=>{ const a=e.target.dataset&&e.target.dataset.all; if(a==null) return; Object.keys(MARKETS).forEach(g=>{ EA.cfg.groups[g]=(a==='1'); }); eaSave(); eaGrpUI(); });
+eaGrpUI();
+{ const m=$('eaMkt'); m.innerHTML='<option value="__chart__">\u{1F4C8} Chart market</option><option value="">All markets</option>'+Object.keys(MARKETS).map(g=>'<optgroup label="'+esc(MARKETS[g].label)+'">'+MARKETS[g].items.map(i=>'<option value="'+i.sym+'">'+esc(i.name)+'</option>').join('')+'</optgroup>').join('');
   m.value=EA.cfg.market||''; if(m.value!==(EA.cfg.market||'')) EA.cfg.market='';
   m.addEventListener('change',()=>{ EA.cfg.market=m.value; eaSave(); EA.scan={}; EA.cache={}; EA.req={}; EA.cf={}; EA.mq=[]; EA.ptr=0; EA.why={}; EA.cfAsk={}; eaLog('Trading mode: '+(m.value===CHARTM?'attached to the chart ('+marketName(eaChartSym())+')':m.value?marketName(m.value):'all markets')); eaUI(); }); }
-const PRE={safe:{minScore:35,maxOpen:2,cool:20,perHour:4,rr:1.8},bal:{minScore:25,maxOpen:3,cool:10,perHour:8,rr:1.5},more:{minScore:18,maxOpen:5,cool:4,perHour:15,rr:1.3},max:{minScore:10,maxOpen:8,cool:2,perHour:30,rr:1.2}};
+const PRE={safe:{minScore:35,maxOpen:2,cool:20,perHour:4},bal:{minScore:25,maxOpen:3,cool:10,perHour:8},more:{minScore:18,maxOpen:5,cool:4,perHour:15},max:{minScore:10,maxOpen:8,cool:2,perHour:30}};
 function eaPreSync(){ const f=$('eaPre'); let hit=''; for(const k in PRE){ if(Object.keys(PRE[k]).every(x=>EA.cfg[x]===PRE[k][x])) hit=k; } f.value=hit; }
-$('eaPre').addEventListener('change',e=>{ const v=PRE[e.target.value]; if(!v) return; Object.assign(EA.cfg,v); eaSave(); document.querySelectorAll('#eaCfg input').forEach(i=>{ i.value=EA.cfg[i.dataset.k]; }); eaLog('Preset applied: '+e.target.options[e.target.selectedIndex].text); });
-$('eaCfg').addEventListener('change',()=>eaPreSync()); eaPreSync();
+$('eaPre').addEventListener('change',e=>{ const v=PRE[e.target.value]; if(!v) return; Object.assign(EA.cfg,v); eaSave(); eaSync(); eaLog('Trade frequency: '+e.target.options[e.target.selectedIndex].text); });
 $('eaGo').addEventListener('click',()=>{ EA.on?eaStop():eaStart(); });
-$('eaX').addEventListener('click',()=>{ EA.open=false; pn.style.display='none'; });
-pn.addEventListener('click',e=>{ if(e.target===pn){ EA.open=false; pn.style.display='none'; } });
-function eaUI(){
+$('eaClr').addEventListener('click',eaClear);
+function eaStatsUI(){
+  const st2=$('eaSt'); if(st2){ st2.textContent=EA.on?'RUNNING':'OFF'; st2.classList.toggle('on',EA.on); }
   const go=$('eaGo'); if(go){ go.textContent=EA.on?'STOP EA':'START EA'; go.classList.toggle('on',EA.on); }
-  const o=document.querySelector('#drawSel option[value="ea"]'); if(o) o.textContent=EA.on?'\u{1F916} EA: ON':'\u{1F916} EA (auto Buy/Sell)';
   if(!EA.open) return;
-  { const sy=eaSyms(), got=sy.filter(x=>EA.cache[x+'|300']).length, sg=Object.values(EA.scan).filter(a=>sy.indexOf(a.sym)>=0&&a.sig&&!a.veto.length&&a.score*a.dir>=EA.cfg.minScore).length; const pr=$('eaProg');
-    const bl={}; Object.keys(EA.why).forEach(k=>{ if(sy.indexOf(k)<0) return; const w=String(EA.why[k]).replace(/\d+/g,'#'); bl[w]=(bl[w]||0)+1; }); const bt=Object.keys(bl).map(w=>bl[w]+'\u00D7 '+w).join(', ');
-    const md=EA.cfg.market===CHARTM?'\u{1F4C8} Attached to chart: '+marketName(eaChartSym())+' \u00B7 ':'';
-    pr.textContent=!EA.on?(authorized?'Stopped. Tap START EA to scan.':'Log in first, then tap START EA.'):(!ws||ws.readyState!==1?'Waiting for connection\u2026':md+'Scanning: '+got+'/'+sy.length+' markets loaded \u00B7 '+sg+' ready setups \u00B7 '+Object.keys(EA.pos).length+' open'+((EA.pause||0)>Date.now()?' \u00B7 slowing down (rate limit)':'')+(bt?' \u00B7 Holding: '+bt:'')+(EA.lastErr?' \u00B7 Last error: '+EA.lastErr:'')); }
-  $('eaS1').textContent=Object.keys(EA.pos).length; $('eaS2').textContent=EA.n; $('eaS3').textContent=EA.w+'/'+EA.l; const p=$('eaS4'); p.textContent=(EA.pnl>=0?'+':'')+EA.pnl.toFixed(2); p.style.color=EA.pnl>=0?'#16c784':'#ff4d6d';
-  const sy2=eaSyms(), rows=Object.values(EA.scan).filter(a=>sy2.indexOf(a.sym)>=0).sort((a,b)=>((b.sig?1000:0)+Math.abs(b.score))-((a.sig?1000:0)+Math.abs(a.score))).slice(0,EA.cfg.market?1:16);
-  $('eaTb').innerHTML=rows.map(r=>'<tr><td>'+marketName(r.sym)+'</td><td>'+r.score+'</td><td class="'+(r.dir>0?'b':'s')+'">'+(r.dir?(r.dir>0?'BUY':'SELL'):'-')+'</td><td>'+(r.regime||'')+'</td><td>'+(Object.keys(EA.pos).some(k=>EA.pos[k].sym===r.sym)?'TRADE OPEN':r.veto&&r.veto.length?r.veto[0]:(r.sig?(r.score*r.dir>=EA.cfg.minScore?'READY \u00B7 '+(EA.why[r.sym]||r.setup):r.setup+' \u00B7 score low'):'no setup'))+'</td></tr>').join('')||'<tr><td colspan="5" style="color:var(--muted)">Start the EA to scan markets&hellip;</td></tr>';
-  $('eaLogBox').innerHTML=EA.logs.map(x=>'<div>'+x.replace(/</g,'&lt;')+'</div>').join('');
+  $('eaS1').textContent=Object.keys(EA.pos).length; $('eaS2').textContent=EA.w+'/'+EA.l; $('eaS3').textContent=EA.n;
+  const p=$('eaS4'); p.textContent=(EA.pnl>=0?'+':'')+EA.pnl.toFixed(2); p.style.color=EA.pnl>=0?'#16c784':'#ff4d6d';
+  const fl=eaFloat(), q=$('eaS5'); q.textContent=(fl>=0?'+':'')+fl.toFixed(2); q.style.color=fl>=0?'#16c784':'#ff4d6d';
 }
-window.eaOpen=function(){ EA.open=true; pn.style.display='flex'; eaUI(); };
+function eaLiveUI(){
+  const box=$('eaLive'); if(!box) return; const ids=Object.keys(EA.pos); box.style.display=ids.length?'block':'none';
+  const lt=(typeof liveTrades!=='undefined')?liveTrades:{}; let tot=0;
+  const list=ids.map(id=>{ const t=lt[id], pr=(t&&isFinite(t.profit))?t.profit:0; tot+=pr; return {id:id,p:EA.pos[id],pr:pr,closing:!!(t&&t.closing)}; });
+  $('eaLiveH').textContent='Live trades ('+ids.length+') \u00B7 '+(tot>=0?'+':'')+tot.toFixed(2)+' USD';
+  syncLiveEls($('eaLiveRows'),list,'ealv_',
+    t=>{ const el=document.createElement('div'); el.className='ea-lv';
+      el.innerHTML='<div class="ea-lv-t"><b></b><span class="ea-lv-p"></span><button class="ea-lv-x" title="Close this trade">\u2715</button></div><div class="ea-bar"><i></i><u></u></div><div class="ea-lv-s"><span></span><span></span></div>';
+      el.querySelector('.ea-lv-x').addEventListener('click',()=>{ try{ closeLiveTrade(t.id); }catch(e){} }); return el; },
+    (el,t)=>{ const p=t.p, sl=p.sl||0, tp=p.tp||0, side=p.side==='MULTDOWN'?'SELL':p.side==='MULTUP'?'BUY':(p.side||'');
+      el.querySelector('b').textContent=marketName(p.sym)+' \u00B7 '+side+(p.mult?' x'+p.mult:'');
+      const pe=el.querySelector('.ea-lv-p'); pe.textContent=(t.pr>=0?'+':'')+t.pr.toFixed(2); pe.style.color=t.pr>=0?'#16c784':'#ff4d6d';
+      const sum=sl+tp, zero=sum>0?sl/sum*100:50, bar=el.querySelector('.ea-bar i'); el.querySelector('.ea-bar u').style.left=zero+'%';
+      if(t.pr>=0){ const w=tp>0?Math.min(1,t.pr/tp)*(100-zero):0; bar.style.left=zero+'%'; bar.style.width=w+'%'; bar.style.background='#16c784'; }
+      else { const w=sl>0?Math.min(1,-t.pr/sl)*zero:0; bar.style.left=(zero-w)+'%'; bar.style.width=w+'%'; bar.style.background='#ff4d6d'; }
+      const sp=el.querySelectorAll('.ea-lv-s span'); sp[0].textContent='SL -'+sl.toFixed(2); sp[1].textContent='TP +'+tp.toFixed(2);
+      const x=el.querySelector('.ea-lv-x'); x.disabled=t.closing; x.textContent=t.closing?'\u2026':'\u2715'; });
+}
+function eaUI(){
+  eaStatsUI(); if(!EA.open) return;
+  { const sy=eaSyms(), got=sy.filter(x=>EA.cache[x+'|300']).length, sg=Object.values(EA.scan).filter(a=>sy.indexOf(a.sym)>=0&&eaOk(a)).length, pr=$('eaProg');
+    const bl={}; Object.keys(EA.why).forEach(k=>{ if(sy.indexOf(k)<0) return; const w=String(EA.why[k]).replace(/\d+/g,'#'); bl[w]=(bl[w]||0)+1; }); const bt=Object.keys(bl).map(w=>bl[w]+'\u00D7 '+w).join(', ');
+    const md=EA.cfg.market===CHARTM?'Chart: '+marketName(eaChartSym())+' \u00B7 ':'';
+    pr.textContent=!EA.on?(authorized?'Stopped \u2014 tap START EA to scan.':'Log in first, then tap START EA.'):(!ws||ws.readyState!==1?'Waiting for connection\u2026':md+got+'/'+sy.length+' markets loaded \u00B7 '+sg+' ready'+((EA.pause||0)>Date.now()?' \u00B7 slowing down (rate limit)':'')+(bt?' \u00B7 Holding: '+bt:'')+(EA.lastErr?' \u00B7 Last error: '+EA.lastErr:'')); }
+  eaLiveUI(); eaStratUI();
+  const sy2=eaSyms(), rows=Object.values(EA.scan).filter(a=>sy2.indexOf(a.sym)>=0).sort((a,b)=>((b.sig?1000:0)+Math.abs(b.score))-((a.sig?1000:0)+Math.abs(a.score))).slice(0,EA.cfg.market?1:14);
+  $('eaTb').innerHTML=rows.map(r=>{
+    const openT=Object.keys(EA.pos).some(k=>EA.pos[k].sym===r.sym); let mc='\u2013';
+    if(r.sig){ const ci=EA.cf[r.sym], pl=eaPlan(r.sym,r,null);
+      mc=pl?(pl.need?'needs stake '+pl.need.toFixed(2)+'+':'<b>x'+pl.mult+'</b><small>SL '+pl.sl.toFixed(2)+' / TP '+pl.tp.toFixed(2)+'</small>'):(ci&&ci.none?'n/a':(ci&&ci.rf&&!ci.mult?'Rise/Fall':'\u2026')); }
+    const stt=openT?'TRADE OPEN':(r.veto&&r.veto.length?r.veto[0]:(r.sig?(eaOk(r)?'READY'+(EA.why[r.sym]?' \u00B7 '+EA.why[r.sym]:''):r.setup+' \u00B7 score low'):'no setup'));
+    return '<tr><td>'+esc(marketName(r.sym))+'</td><td class="'+(r.dir>0?'b':'s')+'">'+(r.dir?(r.dir>0?'BUY':'SELL'):'-')+'<small>'+r.score+'</small></td><td>'+mc+'</td><td>'+esc(stt)+'</td></tr>'; }).join('')
+    ||'<tr><td colspan="4" style="color:var(--muted)">Start the EA to scan markets\u2026</td></tr>';
+  $('eaHistN').textContent=EA.closed.length?'('+EA.closed.length+')':'';
+  $('eaHist').innerHTML=EA.closed.slice(0,40).map(x=>'<tr><td>'+new Date(x.t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+'</td><td>'+esc(marketName(x.sym))+'</td><td>'+(x.side==='MULTUP'?'BUY':x.side==='MULTDOWN'?'SELL':esc(x.side))+(x.m?' x'+x.m:'')+'</td><td class="'+(x.pnl>=0?'b':'s')+'">'+(x.pnl>=0?'+':'')+x.pnl.toFixed(2)+'</td></tr>').join('')||'<tr><td style="color:var(--muted)">No EA trades yet</td></tr>';
+  $('eaLogBox').innerHTML=EA.logs.map(x=>'<div>'+esc(x)+'</div>').join('');
+}
+window.eaOpen=function(){ try{ goToTab('ea'); }catch(e){} };
+{ const _g=goToTab; goToTab=function(n){ _g.apply(this,arguments); EA.open=(n==='ea'); if(EA.open){ eaSync(); eaStratUI(); eaUI(); } }; }
 setInterval(function(){ if(EA.open) eaUI(); },1500);
-{ const sel=$('drawSel'); if(sel&&!sel.querySelector('option[value="ea"]')){ const op=document.createElement('option'); op.value='ea'; op.textContent='\u{1F916} EA (auto Buy/Sell)'; const v=sel.querySelector('option[value="voice"]'); sel.insertBefore(op,v||null); } }
+setInterval(function(){ if(EA.open){ eaStatsUI(); eaLiveUI(); } },1000);
 { const bd=document.createElement('div'); bd.id='eaBadge'; bd.style.cssText='position:fixed;right:8px;top:calc(60px + env(safe-area-inset-top,0px));z-index:61;display:none;background:rgba(22,199,132,.16);border:1px solid #16c784;color:#16c784;border-radius:999px;padding:3px 10px;font:700 11px var(--font);cursor:pointer;backdrop-filter:blur(2px)'; bd.onclick=function(){ eaOpen(); }; document.body.appendChild(bd);
-  setInterval(function(){ try{ bd.style.display=EA.on?'block':'none'; if(EA.on) bd.textContent='\u{1F916} EA ON \u00B7 '+(EA.cfg.market===CHARTM?marketName(eaChartSym()):EA.cfg.market?marketName(EA.cfg.market):'all markets')+' \u00B7 '+Object.keys(EA.pos).length+' open'; }catch(e){} },1000); }
-window.EA_DEBUG=EA; EA.analyze=eaAnalyze; EA.trade=eaTrade; EA.parseCf=eaParseCf; EA.pick=eaPickDur;
+  setInterval(function(){ try{ bd.style.display=(EA.on&&!EA.open)?'block':'none'; if(EA.on){ const fl=eaFloat(); bd.textContent='\u{1F916} EA ON \u00B7 '+Object.keys(EA.pos).length+' open \u00B7 '+(fl>=0?'+':'')+fl.toFixed(2); } }catch(e){} },1000); }
+window.EA_DEBUG=EA; EA.analyze=eaAnalyze; EA.trade=eaTrade; EA.parseCf=eaParseCf; EA.pick=eaPickDur; EA.plan=eaPlan; EA.strats=STRATS; EA.stratSigs=stratSigs; EA.basket=eaBasket;
 })();
 
 </script>
