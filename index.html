@@ -775,6 +775,41 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 <meta name="theme-color" content="#07081a">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="WIN PRO">
+<style id="v7css">
+/* v7: small sidebar tiles that fit the screen */
+.sidebar{width:272px!important;max-width:84vw!important}
+.sidebar .side-links{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important;margin-bottom:6px!important}
+.sidebar .side-links .side-link.ic-tile,.sidebar .side-links .side-link.ea-tile{min-height:0!important;aspect-ratio:1/1!important;border-width:1.5px!important;border-radius:10px!important}
+.sidebar .side-links .side-link.ic-tile{box-shadow:0 0 5px var(--ac,#39f5ff)!important}
+.sidebar h3{margin:8px 0 6px!important}
+/* v7: compact strategy picker */
+#view-ea .ea-p.cmp{position:relative;padding:6px 8px}
+#view-ea .ea-p.cmp>*:not(.ea-sx){display:none!important}
+#view-ea .ea-sxr{display:flex;gap:6px;align-items:center}
+#view-ea .ea-sxb{flex:none;padding:6px 10px;border-radius:999px;border:1.5px solid #a78bfa;background:transparent;color:#cdbcff;font:700 12px var(--font);white-space:nowrap;cursor:pointer}
+#view-ea .ea-sxb.pick{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left}
+#view-ea .ea-sxb.on{background:#a78bfa;color:#10062a}
+#view-ea .ea-sxd{font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+#view-ea .ea-sxp{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--bg2,#10162b);border:1.5px solid #a78bfa;border-radius:12px;padding:8px;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+#view-ea .ea-sxp[hidden]{display:none!important}
+#view-ea .ea-sxh{display:flex;gap:6px;align-items:center;margin-bottom:2px}#view-ea .ea-sxh b{flex:1;font-size:12px}
+#view-ea .ea-sxh button,#view-ea .ea-sxg button{padding:3px 9px;font-size:10.5px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:7px}
+#view-ea .ea-sxg{display:flex;gap:6px;align-items:center;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:7px 0 3px}#view-ea .ea-sxg span{flex:1}
+#view-ea .ea-sxc{display:flex;flex-wrap:wrap;gap:5px}
+#view-ea .ea-sxo{padding:5px 9px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font:600 11.5px var(--font)}
+#view-ea .ea-sxo.on{background:#a78bfa;border-color:#a78bfa;color:#10062a}
+/* v7: yellow strategy name inside the live trade row (same row, no extra height) */
+#view-ea .ea-lv-st{flex:1;min-width:0;text-align:center;color:#ffd54a;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px}
+/* v7: Trade on = pick any number of markets */
+#view-ea .ea-mqb{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+#view-ea .ea-mqb button{padding:6px 11px;border-radius:999px;border:1.5px solid #1de9b6;background:transparent;color:#1de9b6;font:700 12px var(--font)}
+#view-ea .ea-mqb button.on{background:#1de9b6;color:#04211a}
+#view-ea input.ea-mqs{width:100%;box-sizing:border-box;padding:7px;font-size:12px;margin-bottom:6px}
+#view-ea #eaMqList{max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#view-ea .ea-mqg{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px}
+#view-ea .ea-mq1{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text);padding:4px 0;margin:0}
+#view-ea .ea-mq1 input{width:auto;margin:0}#view-ea .ea-mq1 span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
 </head>
 <body>
 <!-- ============ SPLASH LOADER: logo bounces while loading, then bursts into pieces ============ -->
@@ -7947,23 +7982,26 @@ setInterval(function(){ if(TPG.on.dt) tpSched(); },1500);
    trades, press START. Each market automatically gets its own best multiplier. */
 (function(){
 const EAK='wp_ea', EASK='wp_ea_sess';
-const EA={on:false,cfg:{v:5,market:'',strat:'smart',multi:false,sel:[],need:1,stake:1,mult:0,slUsd:0.8,tpUsd:1.04,slAll:0,tpAll:0,minScore:18,maxOpen:5,cool:4,perHour:15,lossStop:5,profitStop:0,groups:{}},
-  cache:{},cf:{},mq:[],scan:{},pos:{},black:{},last:{},hist:[],why:{},err:{},fail:{},minLim:{},mStep:{},cfAsk:{},lastErr:'',pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false,closed:[],noNew:0};
+const EA={on:false,cfg:{v:5,market:'',strat:'smart',multi:false,sel:[],need:1,stake:1,mult:0,slUsd:0.8,tpUsd:1.04,slAll:0,tpAll:0,minScore:18,maxOpen:5,cool:4,perHour:15,lossStop:5,profitStop:0,markets:[],groups:{}},
+  cache:{},cf:{},mq:[],scan:{},pos:{},black:{},last:{},hist:[],why:{},err:{},fail:{},minLim:{},mStep:{},cfAsk:{},lastErr:'',pnl:0,day:'',n:0,w:0,l:0,logs:[],ptr:0,req:{},mreq:{},tm:null,open:false,closed:[],noNew:0,want:false,boot:Date.now()};
 try{ const s=JSON.parse(localStorage.getItem(EAK)||'{}');
   if(s&&typeof s==='object'&&(s.v===4||s.v===5)){
     if(s.v===4){ s.slUsd=s.risk>0?s.risk:0.8; s.tpUsd=Math.round(s.slUsd*(s.rr>0?s.rr:1.3)*100)/100; s.mult=(s.mult>=1000?0:(s.mult||0)); delete s.risk; delete s.rr; delete s.slAtr; s.v=5; }
     Object.assign(EA.cfg,s,{groups:Object.assign({},s.groups||{})}); } }catch(e){}
+if(!Array.isArray(EA.cfg.markets)) EA.cfg.markets=[];
+if(EA.cfg.market&&EA.cfg.market!=='__chart__'){ if(EA.cfg.markets.indexOf(EA.cfg.market)<0) EA.cfg.markets.push(EA.cfg.market); EA.cfg.market=''; }
 try{ const ss=JSON.parse(localStorage.getItem(EASK)||'{}');
-  if(ss&&typeof ss==='object'){ EA.closed=Array.isArray(ss.closed)?ss.closed.slice(0,100):[];
+  if(ss&&typeof ss==='object'){ EA.closed=Array.isArray(ss.closed)?ss.closed.slice(0,100):[]; EA.want=!!ss.want; if(ss.pos&&typeof ss.pos==='object') EA.pos=ss.pos;
     if(ss.day===new Date().toISOString().slice(0,10)){ EA.day=ss.day; EA.n=+ss.n||0; EA.w=+ss.w||0; EA.l=+ss.l||0; EA.pnl=+ss.pnl||0; } } }catch(e){}
-const eaPersist=()=>{ try{ localStorage.setItem(EASK,JSON.stringify({day:EA.day,n:EA.n,w:EA.w,l:EA.l,pnl:EA.pnl,closed:EA.closed})); }catch(e){} };
+const eaPersist=()=>{ try{ localStorage.setItem(EASK,JSON.stringify({day:EA.day,n:EA.n,w:EA.w,l:EA.l,pnl:EA.pnl,closed:EA.closed,want:!!(EA.on||EA.want),pos:EA.pos})); }catch(e){} };
 const eaSave=()=>{ try{ localStorage.setItem(EAK,JSON.stringify(EA.cfg)); }catch(e){} };
 const grpOn=g=>EA.cfg.groups[g]!==false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function eaLog(t){ EA.logs.unshift('['+new Date().toLocaleTimeString()+'] '+t); if(EA.logs.length>120) EA.logs.pop(); }
 const CHARTM='__chart__';
 function eaChartSym(){ let c=''; try{ c=currentSymbol; }catch(e){} return c||'R_100'; }
-function eaSyms(){ if(EA.cfg.market===CHARTM) return [eaChartSym()]; if(EA.cfg.market) return [EA.cfg.market]; const out=[]; for(const g in MARKETS){ if(!grpOn(g)) continue; MARKETS[g].items.forEach(i=>{ if(out.indexOf(i.sym)<0) out.push(i.sym); }); } return out; }
+function eaPicked(){ const all={}; for(const g in MARKETS) MARKETS[g].items.forEach(i=>{ all[i.sym]=1; }); return (EA.cfg.markets||[]).filter(x=>all[x]); }
+function eaSyms(){ if(EA.cfg.market===CHARTM) return [eaChartSym()]; { const pk=eaPicked(); if(pk.length) return pk; } if(EA.cfg.market) return [EA.cfg.market]; const out=[]; for(const g in MARKETS){ if(!grpOn(g)) continue; MARKETS[g].items.forEach(i=>{ if(out.indexOf(i.sym)<0) out.push(i.sym); }); } return out; }
 
 /* ---------- indicators ---------- */
 function ema(a,p){ const k=2/(p+1),o=new Array(a.length); let e=a[0]; for(let i=0;i<a.length;i++){ e=i?a[i]*k+e*(1-k):a[0]; o[i]=e; } return o; }
@@ -8048,6 +8086,8 @@ const SGROUPS=[
  ['Price action',['brt','insidebar','pinbar','engulf','wyckoff','dtop']],
  ['Famous traders',['ptj','turtle','raschke','williams','livermore','minervini','seykota','connors','soros','volman']]
 ];
+const SSHORT={smart:'Smart',scalp:'Scalp',ptj:'PTJ',turtle:'Turtle',raschke:'Raschke',williams:'Williams',livermore:'Livermore',minervini:'Minervini',seykota:'Seykota',connors:'Connors',soros:'Soros',bbsqueeze:'BB Squeeze',supertrend:'Supertrend',heikin:'Heikin',stochrev:'Range Rev',spikefade:'Spike Fade',rsidiv:'RSI Div',elder:'Elder',ichimoku:'Ichimoku',smc:'SMC',smc_ob:'SMC OB',smc_choch:'SMC CHoCH',smc_sweep:'SMC Sweep',smc_ote:'SMC OTE',smc_fvg:'FVG',ifvg:'IFVG',fvgmom:'FVG Mom',crt15:'CRT M15',crt:'CRT H1',crt4:'CRT H4',tsoup:'T-Soup',atrburst:'Vol Burst',zrev:'Z-Rev',emaribbon:'EMA 9/21',macdtrend:'MACD',fibgold:'Fib',brt:'B&R',insidebar:'Inside Bar',pinbar:'Pin Bar',engulf:'Engulf',wyckoff:'Wyckoff',dtop:'Dbl Top',volman:'Volman',nr7:'NR7'};
+const sShort=id=>SSHORT[id]||((STRATS[id]&&STRATS[id].name)||'').split(' ')[0]||'';
 function eaSel(){ return (EA.cfg.sel||[]).filter(function(id){ return STRATS[id]; }); }
 function superDir(h,l,c,p,m){ const a=atrA(h,l,c,p), n=c.length, dir=new Array(n).fill(1), fu=new Array(n), fl=new Array(n);
   for(let i=0;i<n;i++){ const mid=(h[i]+l[i])/2, bu=mid+m*a[i], bl=mid-m*a[i];
@@ -8429,7 +8469,7 @@ function eaAnalyze(sym){
   if(slpB==null&&dir<0&&res){ const s2=res.p-px+0.25*atr; if(s2>=0.8*atr&&s2<=2.5*atr) slD=Math.max(slD,s2); }
   let tpD=slD*SPb.rr;
   if(best&&best.mid){ const dm=Math.abs(best.mid-px); if(dm>=slD*0.9) tpD=Math.min(dm,slD*Math.max(SP.rr,2)); }
-  return {sym,own:(MULTI?(need>1||SPb.own):SP.own),strat:MULTI?'multi':SP.id,score:sc,dir,side:dir>0?'BUY':'SELL',setup:best?((MULTI&&best.sid&&STRATS[best.sid]?STRATS[best.sid].name+' · ':'')+best.k+(best.agree>1?' ('+best.agree+' agree)':'')):'',sig:!!best,want:!!best||Math.abs(sc)>=EA.cfg.minScore*0.7,regime:trending?'trend':(adx<18?'range':'mixed'),adx,rsi,atr,px,slD,tpD,veto,why,t:Date.now()};
+  return {sym,own:(MULTI?(need>1||SPb.own):SP.own),strat:MULTI?'multi':SP.id,sid:(MULTI&&best&&best.sid)||SP.id,score:sc,dir,side:dir>0?'BUY':'SELL',setup:best?((MULTI&&best.sid&&STRATS[best.sid]?STRATS[best.sid].name+' · ':'')+best.k+(best.agree>1?' ('+best.agree+' agree)':'')):'',sig:!!best,want:!!best||Math.abs(sc)>=EA.cfg.minScore*0.7,regime:trending?'trend':(adx<18?'range':'mixed'),adx,rsi,atr,px,slD,tpD,veto,why,t:Date.now()};
 }
 
 /* ---------- trading ---------- */
@@ -8523,7 +8563,7 @@ function eaTrade(an){
   if(!params){ blk('no tradable contract found'); return; }
   EA.last[sym]=now; EA.hist.push(now); delete EA.why[sym];
   pendingTradeSource='ea'; pendingTradeType=code;
-  const id=send({buy:1,price:stake,parameters:params,passthrough:{ea:1,sym:sym,t:now,tp:tpV,sl:slV,mult:mV,side:code}});
+  const id=send({buy:1,price:stake,parameters:params,passthrough:{ea:1,sym:sym,t:now,tp:tpV,sl:slV,mult:mV,side:code,st:sShort(an.sid||an.strat)}});
   if(id==null){ pendingTradeSource=null; pendingTradeType=null; delete EA.last[sym]; EA.hist=EA.hist.filter(x=>x!==now); blk('order not sent (connection / invalid parameters)'); eaLog('Order NOT sent for '+marketName(sym)+' \u2014 check connection / account login'); return; }
   eaLog((an.dir>0?'BUY ':'SELL ')+marketName(sym)+' '+desc+' \u00B7 '+an.setup+' \u2014 order sent');
   try{ toastM('EA '+(an.dir>0?'BUY ':'SELL ')+marketName(sym)+' \u00B7 '+an.setup); }catch(e){}
@@ -8543,14 +8583,14 @@ function eaTick(){
     if((c&&now-c.t<ttl)||(EA.req[key]&&now-EA.req[key]<(EA.cfg.strat==='scalp'?3000:8000))) continue;
     EA.ptr=(EA.ptr+k+1)%syms.length; eaReq(sym); return; }
 }
-function eaStart(){
-  if(!authorized){ try{ showLogin(); }catch(e){} return; }
+function eaStart(auto){
+  if(!authorized){ if(!auto){ try{ showLogin(); }catch(e){} } return; }
   let demo=true; try{ demo=drIsDemo(); }catch(e){}
-  if(!demo&&!confirm('EA will place REAL-money Buy/Sell trades automatically on your live account. Continue?')) return;
+  if(!auto&&!demo&&!confirm('EA will place REAL-money Buy/Sell trades automatically on your live account. Continue?')) return;
   EA.mStep={}; EA.cache={}; EA.scan={}; EA.req={}; EA.black={}; EA.mreq={}; EA.cf={}; EA.mq=[]; EA.ptr=0; EA.pause=0; EA.t0=Date.now(); EA.why={}; EA.err={}; EA.fail={}; EA.cfAsk={}; EA.lastErr='';
-  EA.noNew=0; EA.on=true; eaDay(); eaLog('EA started \u2014 '+(EA.cfg.market===CHARTM?'attached to the chart market: '+marketName(eaChartSym()):'fresh scan of '+(EA.cfg.market?marketName(EA.cfg.market):eaSyms().length+' markets'))); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,400); eaUI();
+  EA.noNew=0; EA.on=true; EA.want=true; eaPersist(); try{ if(EA.wk) EA.wk.postMessage('on'); eaWake(); }catch(e){} eaDay(); eaLog((auto?'EA resumed after reopening the site \u2014 ':'EA started \u2014 ')+(EA.cfg.market===CHARTM?'attached to the chart market: '+marketName(eaChartSym()):'fresh scan of '+(eaSyms().length===1?marketName(eaSyms()[0]):eaSyms().length+' markets'))); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,400); eaUI();
 }
-function eaStop(why){ EA.on=false; if(EA.tm){ clearInterval(EA.tm); EA.tm=null; } eaLog('EA stopped'+(why?' — '+why:'')); if(why){ try{ toastM('EA stopped — '+why); }catch(e){} } eaUI(); }
+function eaStop(why){ EA.on=false; EA.want=false; try{ eaPersist(); if(EA.wk) EA.wk.postMessage('off'); eaUnwake(); }catch(e){} if(EA.tm){ clearInterval(EA.tm); EA.tm=null; } eaLog('EA stopped'+(why?' — '+why:'')); if(why){ try{ toastM('EA stopped — '+why); }catch(e){} } eaUI(); }
 window.eaResult=function(c,profit){ const id=c.contract_id; if(!EA.pos[id]&&!EA.on) return; const p=EA.pos[id]||{}, sym=p.sym||c.underlying_symbol||c.symbol||''; delete EA.pos[id]; EA.pnl+=profit; EA.n++; if(profit>0) EA.w++; else EA.l++;
   EA.closed.unshift({t:Date.now(),sym:sym,side:p.side||c.contract_type||'',m:p.mult||0,pnl:profit}); if(EA.closed.length>100) EA.closed.length=100; eaPersist();
   eaLog((profit>=0?'WIN +':'LOSS ')+profit.toFixed(2)+' USD \u00B7 '+marketName(sym));
@@ -8593,7 +8633,7 @@ window.eaCandles=function(m){ const key=m.echo_req.passthrough.ea, sym=key.split
   eaEval(sym); };
 { const _h=handleMessage; handleMessage=function(m){ try{ _h.apply(this,arguments); }catch(e){}
   try{ if(m&&m.msg_type==='contracts_for'&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.eacf) eaParseCf(m); }catch(e){ eaLog('Contract info error: '+(e&&e.message)); }
-  try{ if(m&&m.msg_type==='buy'&&m.buy&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.ea){ const sy=m.echo_req.passthrough.sym; const pt=m.echo_req.passthrough; EA.pos[m.buy.contract_id]={sym:sy,t:Date.now(),tp:+pt.tp||0,sl:+pt.sl||0,mult:+pt.mult||0,side:pt.side||''}; EA.fail[sy]=0; delete EA.err[sy]; delete EA.why[sy]; eaLog('OPENED '+marketName(sy)+' \u00B7 contract '+m.buy.contract_id+' \u00B7 stake $'+(+m.buy.buy_price||0).toFixed(2)); eaUI(); } }catch(e){} }; }
+  try{ if(m&&m.msg_type==='buy'&&m.buy&&m.echo_req&&m.echo_req.passthrough&&m.echo_req.passthrough.ea){ const sy=m.echo_req.passthrough.sym; const pt=m.echo_req.passthrough; EA.pos[m.buy.contract_id]={sym:sy,t:Date.now(),tp:+pt.tp||0,sl:+pt.sl||0,mult:+pt.mult||0,side:pt.side||'',st:pt.st||''}; try{ eaPersist(); }catch(e){} EA.fail[sy]=0; delete EA.err[sy]; delete EA.why[sy]; eaLog('OPENED '+marketName(sy)+' \u00B7 contract '+m.buy.contract_id+' \u00B7 stake $'+(+m.buy.buy_price||0).toFixed(2)); eaUI(); } }catch(e){} }; }
 
 /* ---------- basket SL / TP for ALL open EA trades ---------- */
 function eaFloat(){ let s=0; const lt=(typeof liveTrades!=='undefined')?liveTrades:{}; Object.keys(EA.pos).forEach(id=>{ const t=lt[id]; if(t&&isFinite(t.profit)) s+=t.profit; }); return s; }
@@ -8663,7 +8703,7 @@ const LOGO=(document.querySelector('img.ea-ti')||{}).src||'';
 const vw=document.createElement('div'); vw.className='view'; vw.id='view-ea';
 vw.innerHTML='<div class="ea-hd"><img src="'+LOGO+'" alt=""><b>EA Automation</b><span class="ea-st" id="eaSt">OFF</span></div>'
  +'<div class="ea-nav" id="eaNav"><button type="button" data-p="strat" style="--c:#a78bfa">Strategies</button><button type="button" data-p="scan" style="--c:#4cc9f0">Scanner</button><button type="button" data-p="hist" style="--c:#ffb347">History <small id="eaHistN"></small></button><button type="button" data-p="mkt" style="--c:#1de9b6">Trade on</button><button type="button" data-p="risk" style="--c:#ff7ad9">Risk/Target</button><button type="button" data-p="more" style="--c:#8fb4ff">More settings</button><button type="button" data-p="log" style="--c:#d0d4f0">Log</button><button type="button" data-p="mk" style="--c:#7ee081">Markets to scan</button></div>'
- +'<div id="eaPn"><div class="ea-p" data-p="strat" style="--c:#a78bfa"><label>Strategy</label><select id="eaStrat"></select><div class="ea-sd" id="eaSd"></div></div><div class="ea-p" data-p="scan" style="--c:#4cc9f0"><div class="ea-tw"><table><thead><tr><th>Market</th><th>Signal</th><th>Multiplier</th><th>Status</th></tr></thead><tbody id="eaTb"></tbody></table></div></div><div class="ea-p" data-p="hist" style="--c:#ffb347"><div class="ea-tw"><table><tbody id="eaHist"></tbody></table></div></div><div class="ea-p" data-p="mkt" style="--c:#1de9b6"><label>Trade on</label><select id="eaMkt"></select></div><div class="ea-p" data-p="risk" style="--c:#ff7ad9"><div class="ea-g3" id="eaRisk"></div><div id="eaMulBox"></div><div class="ea-hint"><b>Per trade</b> = each trade closes by itself at exactly this amount. <b>All open</b> = the EA closes every EA trade once their combined profit / loss reaches this amount. Multiplier = the one you type or tap is used on every market that accepts it. Only where a market does not offer it does the EA switch automatically to the nearest accepted value (0 = fully automatic).</div></div><div class="ea-p" data-p="more" style="--c:#8fb4ff"><div style="margin-bottom:6px"><label>Trade frequency</label><select id="eaPre"><option value="">Custom</option><option value="safe">Safe \u2014 fewer, stronger trades</option><option value="bal">Balanced</option><option value="more">More trades</option><option value="max">Max trades</option></select></div><div class="ea-g3" id="eaMore"></div></div><div class="ea-p" data-p="log" style="--c:#d0d4f0"><div class="ea-log" id="eaLogBox"></div></div><div class="ea-p" data-p="mk" style="--c:#7ee081"><div class="ea-hint" id="eaMkSum" style="margin:0 0 6px"></div><div class="ea-mkb"><button type="button" data-all="1">Select all</button><button type="button" data-all="0">Clear</button></div><div class="ea-mk" id="eaGrp"></div></div></div>'
+ +'<div id="eaPn"><div class="ea-p" data-p="strat" style="--c:#a78bfa"><label>Strategy</label><select id="eaStrat"></select><div class="ea-sd" id="eaSd"></div></div><div class="ea-p" data-p="scan" style="--c:#4cc9f0"><div class="ea-tw"><table><thead><tr><th>Market</th><th>Signal</th><th>Multiplier</th><th>Status</th></tr></thead><tbody id="eaTb"></tbody></table></div></div><div class="ea-p" data-p="hist" style="--c:#ffb347"><div class="ea-tw"><table><tbody id="eaHist"></tbody></table></div></div><div class="ea-p" data-p="mkt" style="--c:#1de9b6"><div id="eaMkBox"></div></div><div class="ea-p" data-p="risk" style="--c:#ff7ad9"><div class="ea-g3" id="eaRisk"></div><div id="eaMulBox"></div><div class="ea-hint"><b>Per trade</b> = each trade closes by itself at exactly this amount. <b>All open</b> = the EA closes every EA trade once their combined profit / loss reaches this amount. Multiplier = the one you type or tap is used on every market that accepts it. Only where a market does not offer it does the EA switch automatically to the nearest accepted value (0 = fully automatic).</div></div><div class="ea-p" data-p="more" style="--c:#8fb4ff"><div style="margin-bottom:6px"><label>Trade frequency</label><select id="eaPre"><option value="">Custom</option><option value="safe">Safe \u2014 fewer, stronger trades</option><option value="bal">Balanced</option><option value="more">More trades</option><option value="max">Max trades</option></select></div><div class="ea-g3" id="eaMore"></div></div><div class="ea-p" data-p="log" style="--c:#d0d4f0"><div class="ea-log" id="eaLogBox"></div></div><div class="ea-p" data-p="mk" style="--c:#7ee081"><div class="ea-hint" id="eaMkSum" style="margin:0 0 6px"></div><div class="ea-mkb"><button type="button" data-all="1">Select all</button><button type="button" data-all="0">Clear</button></div><div class="ea-mk" id="eaGrp"></div></div></div>'
  +'<div class="ea-prog" id="eaProg"></div>'
  +'<div class="ea-stats"><div><b id="eaS1">0</b>Open</div><div><b id="eaS2">0/0</b>W / L</div><div><b id="eaS3">0</b>Trades</div><div class="tap" id="eaBoxPl"><b id="eaS4">0.00</b>P/L</div><div class="tap" id="eaBoxLive"><b id="eaS5">0.00</b>Live</div></div>'
  +'<div class="ea-hint" style="margin:-2px 0 6px;text-align:center">Tap <b>P/L</b> or <b>Live</b> to close all live trades instantly</div>'
@@ -8674,7 +8714,7 @@ const RISK=[['stake','Stake',0.35,0.01],['slUsd','SL per trade',0.01,0.01],['tpU
 const MORE=[['minScore','Min score (Smart)',5,1],['maxOpen','Max open trades',1,1],['cool','Cooldown / market (min)',0,1],['perHour','Max trades / hour',1,1],['lossStop','Stop EA at day loss (0 = off)',0,0.5],['profitStop','Stop EA at day profit (0 = off)',0,0.5]];
 const fh=f=>'<div><label>'+f[1]+'</label><input type="number" inputmode="decimal" data-k="'+f[0]+'" min="'+f[2]+'" step="'+f[3]+'" value="'+EA.cfg[f[0]]+'"></div>';
 $('eaRisk').innerHTML=RISK.map(fh).join(''); $('eaMore').innerHTML=MORE.map(fh).join('');
-function eaSync(){ vw.querySelectorAll('input[data-k]').forEach(i=>{ i.value=EA.cfg[i.dataset.k]; }); $('eaStrat').value=EA.cfg.strat; eaPreSync(); try{ eaMultiSync(); }catch(e){} }
+function eaSync(){ try{ if(window.eaMqSync) window.eaMqSync(); }catch(e){} vw.querySelectorAll('input[data-k]').forEach(i=>{ i.value=EA.cfg[i.dataset.k]; }); $('eaStrat').value=EA.cfg.strat; eaPreSync(); try{ eaMultiSync(); }catch(e){} }
 vw.addEventListener('change',e=>{ const k=e.target.dataset&&e.target.dataset.k; if(!k) return; const f=RISK.concat(MORE).find(x=>x[0]===k); if(!f) return;
   let v=parseFloat(e.target.value); if(isNaN(v)) v=EA.cfg[k]; v=Math.max(f[2],v); EA.cfg[k]=v;
   if(k==='slUsd'&&v>EA.cfg.stake*0.95){ EA.cfg.slUsd=r2(EA.cfg.stake*0.95); try{ toastM('SL per trade can\u2019t be bigger than the stake'); }catch(x){} }
@@ -8685,10 +8725,10 @@ vw.addEventListener('change',e=>{ const k=e.target.dataset&&e.target.dataset.k; 
   if(!STRATS[EA.cfg.strat]) EA.cfg.strat='smart'; s.value=EA.cfg.strat; }
 /* ---------- accepted multipliers: check what was typed, show what each market accepts, tap one to apply it ---------- */
 let eaMulHtml='';
-function eaMulEnsure(){ try{ if(!EA.cfg.market) return; const sy=eaSyms()[0]; if(!sy||eaList(sy)) return; if(!ws||ws.readyState!==1||Date.now()-(multReq[sy]||0)<10000) return; multReq[sy]=Date.now(); send({contracts_for:sy,currency:'USD',product_type:'basic',passthrough:{mult:1}}); }catch(e){} }
+function eaMulEnsure(){ try{ const ss=eaSyms(); if(ss.length>8) return; ss.forEach(function(sy){ if(eaList(sy)) return; if(!ws||ws.readyState!==1||Date.now()-(multReq[sy]||0)<10000) return; multReq[sy]=Date.now(); send({contracts_for:sy,currency:'USD',product_type:'basic',passthrough:{mult:1}}); }); }catch(e){} }
 function eaMulUI(ent){
   const box=$('eaMulBox'); if(!box) return; eaMulEnsure();
-  const cf=EA.cfg, v=(ent==null||isNaN(ent))?cf.mult:ent, single=!!cf.market, syms=eaSyms(), per=[], cnt={};
+  const cf=EA.cfg, v=(ent==null||isNaN(ent))?cf.mult:ent, single=eaSyms().length===1, syms=eaSyms(), per=[], cnt={};
   syms.forEach(sy=>{ const l=eaList(sy); if(l&&l.length){ per.push(l); l.forEach(m=>{ cnt[m]=(cnt[m]||0)+1; }); } });
   const vals=Object.keys(cnt).map(Number).sort((a,b)=>a-b), known=per.length, nm=(single&&syms[0])?marketName(syms[0]):'';
   let cls='', msg='';
@@ -8730,7 +8770,7 @@ function eaMultiSync(){ const on=!!EA.cfg.multi, p=vw.querySelector('.ea-p[data-
   vw.querySelectorAll('#eaMultiBox input[data-s]').forEach(function(i){ i.checked=sel.has(i.dataset.s); });
   SGROUPS.forEach(function(g,gi){ const c=g[1].filter(function(id){ return sel.has(id); }).length, el=$('eaGc'+gi); if(el) el.textContent='('+c+'/'+g[1].length+')'; });
   const cn=$('eaMsCnt'); if(cn) cn.textContent=sel.size+' selected'; const nd=$('eaNeed'); if(nd) nd.value=String(Math.min(3,Math.max(1,+EA.cfg.need||1))); }
-function eaStratUI(){ if(EA.cfg.multi){ $('eaSd').textContent=''; return; } $('eaSd').textContent=(STRATS[EA.cfg.strat]||STRATS.smart).d; }
+function eaStratUI(){ try{ if(window.eaSxSync) window.eaSxSync(); }catch(e){} if(EA.cfg.multi){ $('eaSd').textContent=''; return; } $('eaSd').textContent=(STRATS[EA.cfg.strat]||STRATS.smart).d; }
 
 function eaApplyStrat(id){ const S=STRATS[id]||STRATS.smart, cf=EA.cfg; cf.strat=S.id;
   if(S.id==='scalp'){ cf.slUsd=r2(cf.stake*0.3); cf.tpUsd=r2(cf.stake*0.2); } else cf.tpUsd=r2(cf.slUsd*S.rr);
@@ -8744,9 +8784,28 @@ function eaGrpUI(){ const all=Object.keys(MARKETS), on=all.filter(grpOn); let mk
 $('eaGrp').addEventListener('change',e=>{ const g=e.target.dataset.g; if(!g) return; EA.cfg.groups[g]=e.target.checked; eaSave(); eaGrpUI(); });
 vw.querySelector('.ea-mkb').addEventListener('click',e=>{ const a=e.target.dataset&&e.target.dataset.all; if(a==null) return; Object.keys(MARKETS).forEach(g=>{ EA.cfg.groups[g]=(a==='1'); }); eaSave(); eaGrpUI(); });
 eaGrpUI();
-{ const m=$('eaMkt'); m.innerHTML='<option value="__chart__">\u{1F4C8} Chart market</option><option value="">All markets</option>'+Object.keys(MARKETS).map(g=>'<optgroup label="'+esc(MARKETS[g].label)+'">'+MARKETS[g].items.map(i=>'<option value="'+i.sym+'">'+esc(i.name)+'</option>').join('')+'</optgroup>').join('');
-  m.value=EA.cfg.market||''; if(m.value!==(EA.cfg.market||'')) EA.cfg.market='';
-  m.addEventListener('change',()=>{ EA.cfg.market=m.value; eaSave(); EA.scan={}; EA.cache={}; EA.req={}; EA.cf={}; EA.mq=[]; EA.ptr=0; EA.why={}; EA.cfAsk={}; eaLog('Trading mode: '+(m.value===CHARTM?'attached to the chart ('+marketName(eaChartSym())+')':m.value?marketName(m.value):'all markets')); eaUI(); }); }
+{ const box=$('eaMkBox'), G=Object.keys(MARKETS);
+  box.innerHTML='<div class="ea-mqb"><button type="button" data-q="all">All markets</button><button type="button" data-q="chart">Chart market</button><span class="ea-cnt" id="eaMqCnt"></span></div>'
+   +'<div class="ea-hint" style="margin:0 0 6px">Tick as many markets as you want \u2014 one, a few or many. Nothing ticked = every market under \u201CMarkets to scan\u201D.</div>'
+   +'<input type="search" class="ea-mqs" id="eaMqSearch" placeholder="Search markets\u2026">'
+   +'<div id="eaMqList">'+G.map(function(g,gi){ return '<details class="ea-d" data-gi="'+gi+'"><summary>'+esc(MARKETS[g].label)+' <small id="eaMqc'+gi+'"></small></summary><div class="ea-mrow"><button type="button" data-gq="'+gi+'" data-v="1">All</button><button type="button" data-gq="'+gi+'" data-v="0">None</button></div><div class="ea-mqg">'
+     +MARKETS[g].items.map(function(i){ return '<label class="ea-mq1" data-n="'+esc((i.name+' '+i.sym).toLowerCase())+'"><input type="checkbox" data-m="'+i.sym+'"><span>'+esc(i.name)+'</span></label>'; }).join('')+'</div></details>'; }).join('')+'</div>';
+  function sync(){ const set=new Set(EA.cfg.markets||[]), chart=EA.cfg.market===CHARTM, n=set.size;
+    box.querySelectorAll('input[data-m]').forEach(function(i){ i.checked=set.has(i.dataset.m); });
+    G.forEach(function(g,gi){ const el=$('eaMqc'+gi); if(el) el.textContent='('+MARKETS[g].items.filter(function(i){ return set.has(i.sym); }).length+'/'+MARKETS[g].items.length+')'; });
+    $('eaMqCnt').textContent=chart?'Chart: '+marketName(eaChartSym()):(n?n+' selected':'All markets');
+    box.querySelector('[data-q=all]').classList.toggle('on',!chart&&!n); box.querySelector('[data-q=chart]').classList.toggle('on',chart); }
+  function changed(msg){ eaSave(); EA.ptr=0; EA.why={}; EA.scan={}; eaLog('Trading on: '+msg); Object.keys(EA.cache).forEach(function(k){ try{ eaEval(k.split('|')[0]); }catch(e){} }); sync(); eaUI(); }
+  box.addEventListener('change',function(e){ const t=e.target, m=t.dataset&&t.dataset.m; if(!m) return; const set=new Set(EA.cfg.markets||[]); if(t.checked) set.add(m); else set.delete(m);
+    EA.cfg.markets=Array.from(set); EA.cfg.market=''; changed(set.size?(set.size===1?marketName(m):set.size+' markets'):'all markets'); });
+  box.addEventListener('click',function(e){ const b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.q==='all'){ EA.cfg.markets=[]; EA.cfg.market=''; changed('all markets'); }
+    else if(b.dataset.q==='chart'){ EA.cfg.markets=[]; EA.cfg.market=CHARTM; changed('chart market ('+marketName(eaChartSym())+')'); }
+    else if(b.dataset.gq!=null){ const g=G[+b.dataset.gq], set=new Set(EA.cfg.markets||[]); MARKETS[g].items.forEach(function(i){ if(b.dataset.v==='1') set.add(i.sym); else set.delete(i.sym); }); EA.cfg.markets=Array.from(set); EA.cfg.market=''; changed(set.size+' markets'); } });
+  $('eaMqSearch').addEventListener('input',function(e){ const q=e.target.value.trim().toLowerCase();
+    box.querySelectorAll('.ea-mq1').forEach(function(l){ l.style.display=(!q||l.dataset.n.indexOf(q)>=0)?'':'none'; });
+    box.querySelectorAll('details.ea-d').forEach(function(d){ if(q) d.open=true; }); });
+  window.eaMqSync=sync; sync(); }
 const PRE={safe:{minScore:35,maxOpen:2,cool:20,perHour:4},bal:{minScore:25,maxOpen:3,cool:10,perHour:8},more:{minScore:18,maxOpen:5,cool:4,perHour:15},max:{minScore:10,maxOpen:8,cool:2,perHour:30}};
 function eaPreSync(){ const f=$('eaPre'); let hit=''; for(const k in PRE){ if(Object.keys(PRE[k]).every(x=>EA.cfg[x]===PRE[k][x])) hit=k; } f.value=hit; }
 $('eaPre').addEventListener('change',e=>{ const v=PRE[e.target.value]; if(!v) return; Object.assign(EA.cfg,v); eaSave(); eaSync(); eaLog('Trade frequency: '+e.target.options[e.target.selectedIndex].text); });
@@ -8756,7 +8815,7 @@ $('eaNav').addEventListener('click',e=>{ const b=e.target.closest('button[data-p
   if(!was){ b.classList.add('on'); const p=vw.querySelector('.ea-p[data-p="'+k+'"]'); if(p) p.classList.add('on'); try{ b.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'}); }catch(x){} eaUI(); } });
 ['eaBoxPl','eaBoxLive'].forEach(i=>$(i).addEventListener('click',()=>{ try{ closeAllNow(); }catch(e){} eaStatsUI(); eaLiveUI(); }));
 window.eaRefresh=function(){ try{ eaStatsUI(); eaLiveUI(); }catch(e){} };
-setInterval(function(){ const lt=(typeof liveTrades!=='undefined')?liveTrades:{}, now=Date.now(); Object.keys(EA.pos).forEach(id=>{ if(!lt[id]&&now-(EA.pos[id].t||0)>20000) delete EA.pos[id]; }); },2000);
+setInterval(function(){ const lt=(typeof liveTrades!=='undefined')?liveTrades:{}, now=Date.now(); Object.keys(EA.pos).forEach(id=>{ if(!lt[id]&&now-(EA.pos[id].t||0)>20000&&authorized&&ws&&ws.readyState===1&&now-EA.boot>45000) delete EA.pos[id]; }); },2000);
 $('eaClr').addEventListener('click',eaClear);
 function eaStatsUI(){
   const st2=$('eaSt'); if(st2){ st2.textContent=EA.on?'RUNNING':'OFF'; st2.classList.toggle('on',EA.on); }
@@ -8773,7 +8832,7 @@ function eaLiveUI(){
   $('eaLiveH').textContent='Live trades ('+ids.length+') \u00B7 '+(tot>=0?'+':'')+tot.toFixed(2)+' USD';
   syncLiveEls($('eaLiveRows'),list,'ealv_',
     t=>{ const el=document.createElement('div'); el.className='ea-lv';
-      el.innerHTML='<div class="ea-lv-t"><b></b><span class="ea-lv-p"></span><button class="ea-lv-x" title="Close this trade">\u2715</button></div><div class="ea-bar"><i></i><u></u></div><div class="ea-lv-s"><span></span><span></span></div>';
+      el.innerHTML='<div class="ea-lv-t"><b></b><span class="ea-lv-p"></span><button class="ea-lv-x" title="Close this trade">\u2715</button></div><div class="ea-bar"><i></i><u></u></div><div class="ea-lv-s"><span></span><span class="ea-lv-st"></span><span></span></div>';
       el.querySelector('.ea-lv-x').addEventListener('click',()=>{ try{ closeLiveTrade(t.id); }catch(e){} }); return el; },
     (el,t)=>{ const p=t.p, sl=p.sl||0, tp=p.tp||0, side=p.side==='MULTDOWN'?'SELL':p.side==='MULTUP'?'BUY':(p.side||'');
       el.querySelector('b').textContent=marketName(p.sym)+' \u00B7 '+side+(p.mult?' x'+p.mult:'');
@@ -8781,7 +8840,7 @@ function eaLiveUI(){
       const sum=sl+tp, zero=sum>0?sl/sum*100:50, bar=el.querySelector('.ea-bar i'); el.querySelector('.ea-bar u').style.left=zero+'%';
       if(t.pr>=0){ const w=tp>0?Math.min(1,t.pr/tp)*(100-zero):0; bar.style.left=zero+'%'; bar.style.width=w+'%'; bar.style.background='#16c784'; }
       else { const w=sl>0?Math.min(1,-t.pr/sl)*zero:0; bar.style.left=(zero-w)+'%'; bar.style.width=w+'%'; bar.style.background='#ff4d6d'; }
-      const sp=el.querySelectorAll('.ea-lv-s span'); sp[0].textContent='SL -'+sl.toFixed(2); sp[1].textContent='TP +'+tp.toFixed(2);
+      const sp=el.querySelectorAll('.ea-lv-s span'); sp[0].textContent='SL -'+sl.toFixed(2); sp[1].textContent=p.st||''; sp[2].textContent='TP +'+tp.toFixed(2);
       const x=el.querySelector('.ea-lv-x'); x.disabled=t.closing; x.textContent=t.closing?'\u2026':'\u2715'; });
 }
 function eaUI(){
@@ -8791,7 +8850,7 @@ function eaUI(){
     const md=EA.cfg.market===CHARTM?'Chart: '+marketName(eaChartSym())+' \u00B7 ':'';
     pr.textContent=!EA.on?(authorized?'Stopped \u2014 tap START EA to scan.':'Log in first, then tap START EA.'):(!ws||ws.readyState!==1?'Waiting for connection\u2026':md+got+'/'+sy.length+' markets loaded \u00B7 '+sg+' ready'+((EA.pause||0)>Date.now()?' \u00B7 slowing down (rate limit)':'')+(bt?' \u00B7 Holding: '+bt:'')+(EA.lastErr?' \u00B7 Last error: '+EA.lastErr:'')); }
   eaLiveUI(); eaStratUI(); try{ eaMulUI(); }catch(e){}
-  const sy2=eaSyms(), rows=Object.values(EA.scan).filter(a=>sy2.indexOf(a.sym)>=0).sort((a,b)=>((b.sig?1000:0)+Math.abs(b.score))-((a.sig?1000:0)+Math.abs(a.score))).slice(0,EA.cfg.market?1:14);
+  const sy2=eaSyms(), rows=Object.values(EA.scan).filter(a=>sy2.indexOf(a.sym)>=0).sort((a,b)=>((b.sig?1000:0)+Math.abs(b.score))-((a.sig?1000:0)+Math.abs(a.score))).slice(0,EA.cfg.market===CHARTM?1:((EA.cfg.markets||[]).length?Math.min(40,EA.cfg.markets.length):14));
   $('eaTb').innerHTML=rows.map(r=>{
     const openT=Object.keys(EA.pos).some(k=>EA.pos[k].sym===r.sym); let mc='\u2013';
     if(r.sig){ const ci=EA.cf[r.sym], pl=eaPlan(r.sym,r,null);
@@ -8809,7 +8868,49 @@ setInterval(function(){ if(EA.open) eaUI(); },1500);
 setInterval(function(){ if(EA.open){ eaStatsUI(); eaLiveUI(); } },1000);
 { const bd=document.createElement('div'); bd.id='eaBadge'; bd.style.cssText='position:fixed;right:8px;top:calc(60px + env(safe-area-inset-top,0px));z-index:61;display:none;background:rgba(22,199,132,.16);border:1px solid #16c784;color:#16c784;border-radius:999px;padding:3px 10px;font:700 11px var(--font);cursor:pointer;backdrop-filter:blur(2px)'; bd.onclick=function(){ eaOpen(); }; document.body.appendChild(bd);
   setInterval(function(){ try{ bd.style.display=(EA.on&&!EA.open)?'block':'none'; if(EA.on){ const fl=eaFloat(); bd.textContent='\u{1F916} EA ON \u00B7 '+Object.keys(EA.pos).length+' open \u00B7 '+(fl>=0?'+':'')+fl.toFixed(2); } }catch(e){} },1000); }
-window.EA_DEBUG=EA; EA.analyze=eaAnalyze; EA.trade=eaTrade; EA.parseCf=eaParseCf; EA.pick=eaPickDur; EA.plan=eaPlan; EA.strats=STRATS; EA.stratSigs=stratSigs; EA.basket=eaBasket;
+/* ---------- keeps running when you leave the page / lock the screen / reopen the site ---------- */
+try{ const src='var t=null;onmessage=function(e){if(e.data==="on"){if(!t)t=setInterval(function(){postMessage(1)},400);}else{clearInterval(t);t=null;}};';
+  EA.wk=new Worker(URL.createObjectURL(new Blob([src],{type:'text/javascript'}))); let wn=0;
+  EA.wk.onmessage=function(){ if(!EA.on||!document.hidden) return; wn++; try{ eaTick(); }catch(e){} if(wn%2===0){ try{ eaBasket(); }catch(e){} } if(wn%50===0){ try{ if(ws&&ws.readyState===1) send({ping:1}); }catch(e){} } };
+}catch(e){}
+async function eaWake(){ try{ if(EA.on&&navigator.wakeLock&&!document.hidden&&!EA.wl){ EA.wl=await navigator.wakeLock.request('screen'); EA.wl.addEventListener('release',function(){ EA.wl=null; }); } }catch(e){} }
+function eaUnwake(){ try{ if(EA.wl){ EA.wl.release(); EA.wl=null; } }catch(e){} }
+document.addEventListener('visibilitychange',function(){ if(document.hidden){ eaPersist(); } else { eaWake(); try{ if(EA.on) eaTick(); }catch(e){} } });
+window.addEventListener('pagehide',function(){ eaPersist(); });
+setInterval(eaPersist,5000);
+setInterval(function(){ try{ if(EA.want&&!EA.on&&authorized&&ws&&ws.readyState===1&&Date.now()-EA.boot>2500) eaStart(true); }catch(e){} },1500);
+/* ---------- compact strategy picker: one slim row; the long list opens as a dropdown over the page ---------- */
+(function(){ const p=vw.querySelector('.ea-p[data-p="strat"]'); if(!p) return; p.classList.add('cmp');
+  const GS=['Core','SMC','FVG','CRT','Volatility','Price action','Pros'];
+  const sx=document.createElement('div'); sx.className='ea-sx';
+  sx.innerHTML='<div class="ea-sxr"><button type="button" class="ea-sxb" data-x="mode"></button><button type="button" class="ea-sxb pick" data-x="pick"></button><button type="button" class="ea-sxb" data-x="need"></button></div><div class="ea-sxd"></div><div class="ea-sxp" hidden></div>';
+  p.appendChild(sx); const pop=sx.querySelector('.ea-sxp'), dsc=sx.querySelector('.ea-sxd');
+  const ev=function(el){ el.dispatchEvent(new Event('change',{bubbles:true})); };
+  function popHtml(){ const multi=!!EA.cfg.multi, sel=new Set((EA.cfg.sel||[]).filter(function(id){ return STRATS[id]; }));
+    let h='<div class="ea-sxh"><b>'+(multi?'Tick strategies':'Choose a strategy')+'</b>'+(multi?'<button type="button" data-a="all">All</button><button type="button" data-a="none">Clear</button>':'')+'<button type="button" data-a="done">Done</button></div>';
+    SGROUPS.forEach(function(g,gi){ h+='<div class="ea-sxg"><span>'+GS[gi]+'</span>'+(multi?'<button type="button" data-gs="'+gi+'" data-v="1">all</button><button type="button" data-gs="'+gi+'" data-v="0">none</button>':'')+'</div><div class="ea-sxc">'
+      +g[1].map(function(id){ const on=multi?sel.has(id):EA.cfg.strat===id; return '<button type="button" class="ea-sxo'+(on?' on':'')+'" data-id="'+id+'" title="'+esc(STRATS[id].name)+'">'+esc(sShort(id))+'</button>'; }).join('')+'</div>'; });
+    return h; }
+  function sync(){ const multi=!!EA.cfg.multi, sel=(EA.cfg.sel||[]).filter(function(id){ return STRATS[id]; });
+    const mb=sx.querySelector('[data-x=mode]'), pb=sx.querySelector('[data-x=pick]'), nb=sx.querySelector('[data-x=need]');
+    mb.textContent=multi?'Multi':'Single'; mb.classList.toggle('on',multi);
+    pb.textContent=(multi?(sel.length?(sel.length<=2?sel.map(sShort).join(' + '):sel.length+' picked'):'none picked'):sShort(EA.cfg.strat))+' \u25BE';
+    nb.style.display=multi?'':'none'; nb.textContent=({1:'Any',2:'2+ agree',3:'3+ agree'})[Math.min(3,Math.max(1,+EA.cfg.need||1))];
+    dsc.style.display=multi?'none':''; dsc.textContent=multi?'':((STRATS[EA.cfg.strat]||STRATS.smart).d||'');
+    if(!pop.hidden) pop.innerHTML=popHtml(); }
+  sx.addEventListener('click',function(e){ const b=e.target.closest('button'); if(!b) return; const x=b.dataset.x;
+    if(x==='mode'){ const c=$('eaMultiOn'); c.checked=!c.checked; ev(c); pop.hidden=true; sync(); return; }
+    if(x==='pick'){ pop.hidden=!pop.hidden; if(!pop.hidden) pop.innerHTML=popHtml(); return; }
+    if(x==='need'){ const n=$('eaNeed'); n.value=String(((+n.value||1)%3)+1); ev(n); sync(); return; }
+    if(b.dataset.a==='done'){ pop.hidden=true; return; }
+    if(b.dataset.a==='all'||b.dataset.a==='none'){ const o=vw.querySelector('#eaMultiBox button[data-ms="'+b.dataset.a+'"]'); if(o) o.click(); sync(); return; }
+    if(b.dataset.gs!=null){ const o=vw.querySelector('#eaMultiBox button[data-gs="'+b.dataset.gs+'"][data-v="'+b.dataset.v+'"]'); if(o) o.click(); sync(); return; }
+    if(b.dataset.id){ const id=b.dataset.id;
+      if(EA.cfg.multi){ const c=vw.querySelector('#eaMultiBox input[data-s="'+id+'"]'); if(c){ c.checked=!c.checked; ev(c); } }
+      else { const sl=$('eaStrat'); sl.value=id; ev(sl); pop.hidden=true; }
+      sync(); } });
+  window.eaSxSync=sync; sync(); })();
+window.EA_SSHORT=SSHORT; window.EA_DEBUG=EA; EA.analyze=eaAnalyze; EA.trade=eaTrade; EA.parseCf=eaParseCf; EA.pick=eaPickDur; EA.plan=eaPlan; EA.strats=STRATS; EA.stratSigs=stratSigs; EA.basket=eaBasket;
 })();
 
 </script>
