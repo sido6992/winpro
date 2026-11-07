@@ -8518,14 +8518,13 @@ function eaGate(an){ const g=EA.cfg.sg; if(!g.on) return {ok:true}; const sym=an
   if(!an._g){ an._g=1; an.setup=(an.setup||'')+' \u2713'+ag.map(x=>x[0].split(' ')[0]).join('+'); } return {ok:true}; }
 
 /* ---------- PHONE ALERTS: trade progress, profit-reversal and near-blow-up warnings ---------- */
-EA.cfg.nt=Object.assign({on:true,local:true,tg:false,token:'',chat:'',sms:false,smsUrl:'',phone:'0719428456',giveBack:35,lockAt:40,danger:80,every:15},EA.cfg.nt||{});
+EA.cfg.nt=Object.assign({on:true,local:true,tg:false,token:'',chat:'',giveBack:35,lockAt:40,danger:80,every:15},EA.cfg.nt||{});
 const NT={seen:{},pk:{},gap:{},sum:Date.now()};
-function ntPhone(p){ const d=String(p||'').replace(/\D/g,''); return d.indexOf('0')===0?'+254'+d.slice(1):'+'+d; }
 function ntSend(key,txt,gap){ const c=EA.cfg.nt; if(!c.on) return; const now=Date.now(); if(gap!==0&&now-(NT.gap[key]||0)<(gap||60000)) return; NT.gap[key]=now;
   try{ toastM(txt); }catch(e){} try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
   if(c.local&&window.Notification&&Notification.permission==='granted'){ try{ new Notification('EA',{body:txt,tag:key}); }catch(e){ try{ navigator.serviceWorker.getRegistration().then(r=>{ if(r) r.showNotification('EA',{body:txt,tag:key}); }); }catch(x){} } }
   if(c.tg&&c.token&&c.chat) fetch('https://api.telegram.org/bot'+encodeURIComponent(c.token)+'/sendMessage?chat_id='+encodeURIComponent(c.chat)+'&text='+encodeURIComponent('EA: '+txt)).catch(()=>{});
-  if(c.sms&&c.smsUrl) fetch(c.smsUrl,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({to:ntPhone(c.phone),message:'EA: '+txt})}).catch(()=>{}); }
+  }
 setInterval(()=>{ const c=EA.cfg.nt; if(!c.on||!EA.on) return; const lt=(typeof liveTrades!=='undefined')?liveTrades:{}, f=v=>(v>=0?'+':'')+v.toFixed(2); let tot=0,cnt=0;
   Object.keys(EA.pos).forEach(id=>{ const t=lt[id]; if(!t||!isFinite(t.profit)) return; const p=EA.pos[id], pr=t.profit, nm=marketName(p.sym), tp=p.tp||0, sl=p.sl||0, side=p.side==='MULTDOWN'?'SELL':'BUY'; tot+=pr; cnt++;
     if(!NT.seen[id]){ NT.seen[id]=1; ntSend('o'+id,'Opened '+side+' '+nm+(p.mult?' x'+p.mult:'')+' \u00B7 TP '+f(tp)+' / SL -'+sl.toFixed(2),0); }
@@ -8803,8 +8802,7 @@ $('eaRisk').innerHTML=RISK.map(fh).join(''); $('eaMore').innerHTML=MORE.map(fh).
    +row('on','Alerts on','Master switch (alerts only run while the EA is running).')
    +row('local','This phone (notification + vibrate)','Tap Enable below. Works while this page is open.')
    +row('tg','Telegram (reaches your phone in the background)','Free: make a bot with @BotFather, press Start on it, get your chat id from @userinfobot.')
-   +row('sms','SMS to your number','Needs your own SMS relay URL (Africa\u2019s Talking / Twilio). Keys must never be put in this page.')
-   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">'+inp('token','Telegram bot token','password')+inp('chat','Telegram chat id')+inp('phone','Phone number','tel')+inp('smsUrl','SMS relay URL','text','https://...')+inp('giveBack','Warn if profit falls by %','number')+inp('lockAt','...after profit reaches % of TP','number')+inp('danger','Danger at % of stop used','number')+inp('every','Progress every (min, 0 = off)','number')+'</div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">'+inp('token','Telegram bot token','password')+inp('chat','Telegram chat id')+inp('giveBack','Warn if profit falls by %','number')+inp('lockAt','...after profit reaches % of TP','number')+inp('danger','Danger at % of stop used','number')+inp('every','Progress every (min, 0 = off)','number')+'</div>'
    +'<div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="ntEn" class="ea-clr" style="flex:1">Enable on this phone</button><button type="button" id="ntTest" class="ea-clr" style="flex:1">Send test</button></div>';
   box.insertAdjacentElement('afterend',nb);
   nb.querySelectorAll('[data-n]').forEach(e=>{ const k=e.dataset.n, cb=e.type==='checkbox', num=e.type==='number'; if(cb) e.checked=!!c[k]; else e.value=c[k]; e.addEventListener('change',()=>{ c[k]=cb?e.checked:(num?(+e.value>=0?+e.value:c[k]):e.value.trim()); eaSave(); }); });
