@@ -8472,6 +8472,71 @@ function eaAnalyze(sym){
   return {sym,own:(MULTI?(need>1||SPb.own):SP.own),strat:MULTI?'multi':SP.id,sid:(MULTI&&best&&best.sid)||SP.id,score:sc,dir,side:dir>0?'BUY':'SELL',setup:best?((MULTI&&best.sid&&STRATS[best.sid]?STRATS[best.sid].name+' · ':'')+best.k+(best.agree>1?' ('+best.agree+' agree)':'')):'',sig:!!best,want:!!best||Math.abs(sc)>=EA.cfg.minScore*0.7,regime:trending?'trend':(adx<18?'range':'mixed'),adx,rsi,atr,px,slD,tpD,veto,why,t:Date.now()};
 }
 
+/* ---------- SIGNAL CONFIRMATION: chart Signal scanner + DTrader signal + pro-style technical rating + external feed ---------- */
+EA.cfg.sg=Object.assign({on:true,chart:true,dt:true,pro:true,ext:false,need:2,url:'',poll:30,ttl:300},EA.cfg.sg||{});
+EA.ext={}; EA.egc={}; EA.egT=0; EA.egE='';
+const egSma=(a,p)=>{ const n=a.length; if(n<p) return null; let s=0; for(let i=n-p;i<n;i++) s+=a[i]; return s/p; };
+function egRate(b){ /* TradingView-style technical rating: moving-average + oscillator votes, result -1..+1 */
+  if(!b||b.length<60) return null;
+  const h=b.map(x=>x.h),l=b.map(x=>x.l),c=b.map(x=>x.c),n=c.length,px=c[n-1]; let s=0,k=0; const v=x=>{ s+=x; k++; };
+  [10,20,30,50,100,200].forEach(p=>{ const m=egSma(c,p); if(m!=null) v(px>m?1:-1); if(n>=p) v(px>ema(c,p)[n-1]?1:-1); });
+  const r=rsiA(c,14)[n-1]; v(r<30?1:r>70?-1:0);
+  const st=stochA(h,l,c,14)[n-1]; v(st<20?1:st>80?-1:0);
+  const tp=c.map((x,i)=>(h[i]+l[i]+x)/3), tm=egSma(tp,20); let md=0; for(let i=n-20;i<n;i++) md+=Math.abs(tp[i]-tm); md/=20; const cci=md>0?(tp[n-1]-tm)/(0.015*md):0; v(cci<-100?1:cci>100?-1:0);
+  const ax=adxA(h,l,c,14); v(ax.adx[n-1]>20?(ax.pdi[n-1]>ax.mdi[n-1]?1:-1):0);
+  const mp=h.map((x,i)=>(x+l[i])/2); v(egSma(mp,5)-egSma(mp,34)>0?1:-1);
+  v(c[n-1]>c[n-11]?1:-1);
+  const e12=ema(c,12),e26=ema(c,26); v(e12[n-1]-e26[n-1]>0?1:-1);
+  let hh=-Infinity,ll=Infinity; for(let i=n-14;i<n;i++){ hh=Math.max(hh,h[i]); ll=Math.min(ll,l[i]); } const wr=hh>ll?(hh-c[n-1])/(hh-ll)*-100:-50; v(wr<-80?1:wr>-20?-1:0);
+  return s/k; }
+function egPro(sym){ const b=(EA.cache[sym+'|300']||{}).bars, a=egRate(b); if(a==null) return null; const t=[a,egRate(htfBars(sym,3)),egRate(htfBars(sym,12))].filter(x=>x!=null); return t.reduce((x,y)=>x+y,0)/t.length; }
+function egChart(sym){ const c=EA.egc['c'+sym]; if(c&&Date.now()-c.t<20000) return c.v; let v=null;
+  try{ const tb=tickBuffers[sym]; if(!tb||tb.length<60){ try{ ensureTickSub(sym); }catch(e){} } else { const r=sigAnalyze(sym); if(r&&!r.err&&/^(multiplier|updown|higherlower)$/.test(r.key||'')) v=r.tradeable?(r.side==='btn2'?-1:1):0; } }catch(e){}
+  EA.egc['c'+sym]={t:Date.now(),v:v}; return v; }
+function egDT(sym){ try{ if(typeof DTS!=='undefined'&&DTS.res&&DTS.res.ready&&DTS.res.sym===sym&&DTS.res.best){ const s=String(DTS.res.best.side); if(/Rise|Up|Buy|Higher|Call/i.test(s)) return 1; if(/Fall|Down|Sell|Lower|Put/i.test(s)) return -1; }
+  const s=computeSignal(sym); if(!s||!s.ready) return null; return s.confidence>=60?(s.direction==='CALL'?1:s.direction==='PUT'?-1:0):0; }catch(e){ return null; } }
+function egExt(sym){ const e=EA.ext[sym]; return (e&&Date.now()-e.t<=EA.cfg.sg.ttl*1000)?e.d:null; }
+const egKey=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+function egSym(t){ const k=egKey(t); if(!k) return ''; let f=''; for(const g in MARKETS) MARKETS[g].items.forEach(i=>{ if(!f&&(egKey(i.sym)===k||egKey(i.sym).replace(/^FRX/,'')===k||egKey(marketName(i.sym))===k)) f=i.sym; }); return f; }
+const egSide=t=>{ t=String(t||'').toUpperCase(); return /BUY|LONG|CALL|RISE|BULL/.test(t)?1:/SELL|SHORT|PUT|FALL|BEAR/.test(t)?-1:0; };
+function egIngest(txt,src){ let n=0; const put=(sy,sd)=>{ const s=egSym(sy),d=egSide(sd); if(s&&d){ EA.ext[s]={d:d,t:Date.now(),src:src}; n++; } };
+  try{ const j=JSON.parse(txt), a=Array.isArray(j)?j:(j&&Array.isArray(j.signals)?j.signals:null);
+    if(a) a.forEach(x=>put(x.symbol||x.pair||x.market||x.instrument||x.ticker,x.side||x.action||x.signal||x.direction||x.type));
+    else if(j&&typeof j==='object') for(const k in j) put(k,typeof j[k]==='object'&&j[k]?(j[k].side||j[k].action||j[k].signal):j[k]);
+  }catch(e){ String(txt).split(/\r?\n/).forEach(L=>{ const w=L.trim().split(/[\s,;:]+/); if(w.length<2) return; if(egSide(w[0])&&!egSym(w[0])) put(w[1],w[0]); else put(w[0],w[1]); }); }
+  return n; }
+function egStat(){ const e=document.getElementById('egSt'); if(e) e.textContent=EA.egE||('Feed signals held: '+Object.keys(EA.ext).filter(k=>egExt(k)!=null).length); }
+setInterval(()=>{ const g=EA.cfg.sg; egStat(); if(!EA.on||!g.ext||!g.url||Date.now()-EA.egT<Math.max(10,g.poll)*1000) return; EA.egT=Date.now();
+  fetch(g.url,{cache:'no-store'}).then(r=>r.text()).then(t=>{ EA.egE=egIngest(t,'feed')+' signal(s) from feed \u00B7 '+new Date().toLocaleTimeString(); egStat(); }).catch(()=>{ EA.egE='feed unreachable (wrong URL or no CORS)'; egStat(); }); },2000);
+function eaGate(an){ const g=EA.cfg.sg; if(!g.on) return {ok:true}; const sym=an.sym,d=an.dir,V=[];
+  if(g.chart) V.push(['Chart signal',egChart(sym)]); if(g.dt) V.push(['DTrader signal',egDT(sym)]);
+  if(g.pro){ const p=egPro(sym); V.push(['Pro consensus',p==null?null:(p>=0.15?1:p<=-0.15?-1:0)]); } if(g.ext) V.push(['Signal feed',egExt(sym)]);
+  const live=V.filter(x=>x[1]!=null); if(!live.length) return {ok:false,why:'waiting for signal data'};
+  const ag=live.filter(x=>x[1]===d), op=live.filter(x=>x[1]===-d), need=Math.min(Math.max(1,g.need|0),live.length);
+  if(op.length) return {ok:false,why:'signals disagree: '+op.map(x=>x[0]).join(', ')+' against'};
+  if(ag.length<need) return {ok:false,why:'waiting for signal confirmation ('+ag.length+'/'+need+')'};
+  if(!an._g){ an._g=1; an.setup=(an.setup||'')+' \u2713'+ag.map(x=>x[0].split(' ')[0]).join('+'); } return {ok:true}; }
+
+/* ---------- PHONE ALERTS: trade progress, profit-reversal and near-blow-up warnings ---------- */
+EA.cfg.nt=Object.assign({on:true,local:true,tg:false,token:'',chat:'',sms:false,smsUrl:'',phone:'0719428456',giveBack:35,lockAt:40,danger:80,every:15},EA.cfg.nt||{});
+const NT={seen:{},pk:{},gap:{},sum:Date.now()};
+function ntPhone(p){ const d=String(p||'').replace(/\D/g,''); return d.indexOf('0')===0?'+254'+d.slice(1):'+'+d; }
+function ntSend(key,txt,gap){ const c=EA.cfg.nt; if(!c.on) return; const now=Date.now(); if(gap!==0&&now-(NT.gap[key]||0)<(gap||60000)) return; NT.gap[key]=now;
+  try{ toastM(txt); }catch(e){} try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
+  if(c.local&&window.Notification&&Notification.permission==='granted'){ try{ new Notification('EA',{body:txt,tag:key}); }catch(e){ try{ navigator.serviceWorker.getRegistration().then(r=>{ if(r) r.showNotification('EA',{body:txt,tag:key}); }); }catch(x){} } }
+  if(c.tg&&c.token&&c.chat) fetch('https://api.telegram.org/bot'+encodeURIComponent(c.token)+'/sendMessage?chat_id='+encodeURIComponent(c.chat)+'&text='+encodeURIComponent('EA: '+txt)).catch(()=>{});
+  if(c.sms&&c.smsUrl) fetch(c.smsUrl,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({to:ntPhone(c.phone),message:'EA: '+txt})}).catch(()=>{}); }
+setInterval(()=>{ const c=EA.cfg.nt; if(!c.on||!EA.on) return; const lt=(typeof liveTrades!=='undefined')?liveTrades:{}, f=v=>(v>=0?'+':'')+v.toFixed(2); let tot=0,cnt=0;
+  Object.keys(EA.pos).forEach(id=>{ const t=lt[id]; if(!t||!isFinite(t.profit)) return; const p=EA.pos[id], pr=t.profit, nm=marketName(p.sym), tp=p.tp||0, sl=p.sl||0, side=p.side==='MULTDOWN'?'SELL':'BUY'; tot+=pr; cnt++;
+    if(!NT.seen[id]){ NT.seen[id]=1; ntSend('o'+id,'Opened '+side+' '+nm+(p.mult?' x'+p.mult:'')+' \u00B7 TP '+f(tp)+' / SL -'+sl.toFixed(2),0); }
+    const pk=NT.pk[id]=Math.max(NT.pk[id]||0,pr);
+    if(pk>0&&(tp<=0||pk>=tp*c.lockAt/100)&&pr<=pk*(1-c.giveBack/100)) ntSend('r'+id,(pr>0?'PROFIT REVERSING on ':'PROFIT GONE on ')+nm+': peaked '+f(pk)+', now '+f(pr)+'. Close it now to keep what is left.',90000);
+    else if(tp>0&&pr>=tp*0.8) ntSend('n'+id,nm+' is near take-profit ('+f(pr)+' of '+f(tp)+'). Close now to lock the profit, or let TP close it.',300000);
+    if(pr<0&&sl>0&&-pr>=sl*c.danger/100) ntSend('d'+id,'DANGER '+nm+': loss '+f(pr)+' is '+Math.round(-pr/sl*100)+'% of your stop (-'+sl.toFixed(2)+'). Close it now or it hits SL.',90000); });
+  Object.keys(NT.seen).forEach(id=>{ if(!EA.pos[id]){ delete NT.seen[id]; delete NT.pk[id]; } });
+  const L=EA.cfg.lossStop; if(L>0&&EA.pnl+tot<=-L*0.8) ntSend('day','ACCOUNT RISK: today '+f(EA.pnl)+' closed + '+f(tot)+' live is near your daily loss limit (-'+L+'). Close losing trades now.',120000);
+  if(c.every>0&&Date.now()-NT.sum>=c.every*60000){ NT.sum=Date.now(); ntSend('sum','Progress: '+cnt+' open, live '+f(tot)+' ('+(tot>=0?'in profit':'in loss')+'). Today '+f(EA.pnl)+' \u00B7 '+EA.w+'W/'+EA.l+'L',0); } },3000);
+
 /* ---------- trading ---------- */
 function eaDay(){ const d=new Date().toISOString().slice(0,10); if(EA.day!==d){ EA.day=d; EA.pnl=0; EA.n=0; EA.w=0; EA.l=0; EA.hist=[]; } }
 function eaStopCheck(){
@@ -8543,6 +8608,7 @@ function eaTrade(an){
   { const left=ef.cool*60000-(now-(EA.last[sym]||0)); if(left>0){ blk('cooldown '+(left>=60000?Math.ceil(left/60000)+' min':Math.ceil(left/1000)+' s')); return; } }
   EA.hist=EA.hist.filter(t=>now-t<3600000); if(EA.hist.length>=ef.perHour){ blk('hourly trade limit ('+ef.perHour+') reached'); return; }
   if((EA.black[sym]||0)>now){ blk(EA.err[sym]?'paused: '+EA.err[sym]:'paused after an error'); return; }
+  { const gt=eaGate(an); if(!gt.ok){ blk(gt.why); return; } }
   let info=EA.cf[sym];
   if(!info){
     const since=EA.cfAsk[sym]; if(!since) EA.cfAsk[sym]=now;
@@ -8590,9 +8656,10 @@ function eaStart(auto){
   EA.mStep={}; EA.cache={}; EA.scan={}; EA.req={}; EA.black={}; EA.mreq={}; EA.cf={}; EA.mq=[]; EA.ptr=0; EA.pause=0; EA.t0=Date.now(); EA.why={}; EA.err={}; EA.fail={}; EA.cfAsk={}; EA.lastErr='';
   EA.noNew=0; EA.on=true; EA.want=true; eaPersist(); try{ if(EA.wk) EA.wk.postMessage('on'); eaWake(); }catch(e){} eaDay(); eaLog((auto?'EA resumed after reopening the site \u2014 ':'EA started \u2014 ')+(EA.cfg.market===CHARTM?'attached to the chart market: '+marketName(eaChartSym()):'fresh scan of '+(eaSyms().length===1?marketName(eaSyms()[0]):eaSyms().length+' markets'))); if(EA.tm) clearInterval(EA.tm); EA.tm=setInterval(eaTick,400); eaUI();
 }
-function eaStop(why){ EA.on=false; EA.want=false; try{ eaPersist(); if(EA.wk) EA.wk.postMessage('off'); eaUnwake(); }catch(e){} if(EA.tm){ clearInterval(EA.tm); EA.tm=null; } eaLog('EA stopped'+(why?' — '+why:'')); if(why){ try{ toastM('EA stopped — '+why); }catch(e){} } eaUI(); }
+function eaStop(why){ if(why){ try{ ntSend('stop','EA STOPPED \u2014 '+why,0); }catch(e){} } EA.on=false; EA.want=false; try{ eaPersist(); if(EA.wk) EA.wk.postMessage('off'); eaUnwake(); }catch(e){} if(EA.tm){ clearInterval(EA.tm); EA.tm=null; } eaLog('EA stopped'+(why?' — '+why:'')); if(why){ try{ toastM('EA stopped — '+why); }catch(e){} } eaUI(); }
 window.eaResult=function(c,profit){ const id=c.contract_id; if(!EA.pos[id]&&!EA.on) return; const p=EA.pos[id]||{}, sym=p.sym||c.underlying_symbol||c.symbol||''; delete EA.pos[id]; EA.pnl+=profit; EA.n++; if(profit>0) EA.w++; else EA.l++;
   EA.closed.unshift({t:Date.now(),sym:sym,side:p.side||c.contract_type||'',m:p.mult||0,pnl:profit}); if(EA.closed.length>100) EA.closed.length=100; eaPersist();
+  try{ ntSend('c'+id,(profit>=0?'WIN +':'LOSS ')+profit.toFixed(2)+' USD on '+marketName(sym)+' \u00B7 today '+EA.pnl.toFixed(2),0); }catch(e){}
   eaLog((profit>=0?'WIN +':'LOSS ')+profit.toFixed(2)+' USD \u00B7 '+marketName(sym));
   if(EA.cfg.strat==='scalp'&&sym){ delete EA.last[sym]; const k=sym+'|300'; if(EA.cache[k]) EA.cache[k].t=0; }   // scalping: re-open straight away
   eaStopCheck(); eaUI(); };
@@ -8714,6 +8781,37 @@ const RISK=[['stake','Stake',0.35,0.01],['slUsd','SL per trade',0.01,0.01],['tpU
 const MORE=[['minScore','Min score (Smart)',5,1],['maxOpen','Max open trades',1,1],['cool','Cooldown / market (min)',0,1],['perHour','Max trades / hour',1,1],['lossStop','Stop EA at day loss (0 = off)',0,0.5],['profitStop','Stop EA at day profit (0 = off)',0,0.5]];
 const fh=f=>'<div><label>'+f[1]+'</label><input type="number" inputmode="decimal" data-k="'+f[0]+'" min="'+f[2]+'" step="'+f[3]+'" value="'+EA.cfg[f[0]]+'"></div>';
 $('eaRisk').innerHTML=RISK.map(fh).join(''); $('eaMore').innerHTML=MORE.map(fh).join('');
+{ const g=EA.cfg.sg, box=document.createElement('div'), row=(k,t,s)=>'<label class="ea-sr"><input type="checkbox" data-g="'+k+'"><span><b>'+t+'</b><small>'+s+'</small></span></label>';
+  box.style.cssText='margin-top:10px;padding-top:8px;border-top:1px solid var(--border)';
+  box.innerHTML='<b style="font-size:12px">Signal confirmation</b><div class="ea-hint" style="margin:2px 0 4px">The EA only opens a trade when its own setup is backed by these signals and none of them points the other way.</div>'
+   +row('on','Require signal confirmation','Master switch. Off = EA trades on its own setups only.')
+   +row('chart','Chart Signal scanner','The Draw \u2192 Signal analysis (needs live ticks on that market).')
+   +row('dt','DTrader signal','The SIGNAL button engine (indicator agreement + best edge).')
+   +row('pro','Pro technical consensus','TradingView-style rating: 6 MAs + RSI, Stoch, CCI, ADX, AO, MACD, Momentum, %R on M5/M15/H1.')
+   +row('ext','External signal feed','Your own JSON feed / pasted signals (see below).')
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px"><div><label>Sources that must agree</label><select data-g="need"><option>1</option><option>2</option><option>3</option><option>4</option></select></div><div><label>Signal valid for (s)</label><input type="number" data-g="ttl" min="30" step="30"></div></div>'
+   +'<label style="margin-top:6px">Feed URL (JSON, must allow CORS)</label><input type="text" data-g="url" placeholder="https://your-relay.example/signals.json"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px"><div><label>Poll every (s)</label><input type="number" data-g="poll" min="10" step="5"></div><div><label>&nbsp;</label><button type="button" id="egPaste" class="ea-clr" style="width:100%">Load pasted</button></div></div>'
+   +'<textarea id="egTa" rows="3" placeholder="Paste signals, one per line:\nBUY EURUSD\nSELL R_100\n(or JSON: [{&quot;symbol&quot;:&quot;frxEURUSD&quot;,&quot;side&quot;:&quot;BUY&quot;}])" style="width:100%;margin-top:6px"></textarea><div class="ea-hint" id="egSt" style="margin-top:2px"></div>';
+  $('eaMore').insertAdjacentElement('afterend',box);
+  box.querySelectorAll('[data-g]').forEach(e=>{ const k=e.dataset.g, cb=e.type==='checkbox'; if(cb) e.checked=!!g[k]; else e.value=g[k];
+    e.addEventListener('change',()=>{ g[k]=cb?e.checked:(e.type==='number'||k==='need'?(+e.value||g[k]):e.value.trim()); if(k==='need'||k==='ttl'||k==='poll') g[k]=+g[k]; EA.egT=0; eaSave(); }); });
+  $('egPaste').onclick=()=>{ const n=egIngest($('egTa').value,'paste'); EA.egE=n+' pasted signal(s) loaded'; egStat(); };
+  egStat();
+{ const c=EA.cfg.nt, nb=document.createElement('div'), row=(k,t,s)=>'<label class="ea-sr"><input type="checkbox" data-n="'+k+'"><span><b>'+t+'</b><small>'+s+'</small></span></label>', inp=(k,l,ty,ph)=>'<div><label>'+l+'</label><input type="'+(ty||'text')+'" data-n="'+k+'"'+(ph?' placeholder="'+ph+'"':'')+'></div>';
+  nb.style.cssText='margin-top:10px;padding-top:8px;border-top:1px solid var(--border)';
+  nb.innerHTML='<b style="font-size:12px">Phone alerts</b><div class="ea-hint" style="margin:2px 0 4px">Trade opened / closed, progress, profit-reversal and near-stop warnings.</div>'
+   +row('on','Alerts on','Master switch (alerts only run while the EA is running).')
+   +row('local','This phone (notification + vibrate)','Tap Enable below. Works while this page is open.')
+   +row('tg','Telegram (reaches your phone in the background)','Free: make a bot with @BotFather, press Start on it, get your chat id from @userinfobot.')
+   +row('sms','SMS to your number','Needs your own SMS relay URL (Africa\u2019s Talking / Twilio). Keys must never be put in this page.')
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">'+inp('token','Telegram bot token','password')+inp('chat','Telegram chat id')+inp('phone','Phone number','tel')+inp('smsUrl','SMS relay URL','text','https://...')+inp('giveBack','Warn if profit falls by %','number')+inp('lockAt','...after profit reaches % of TP','number')+inp('danger','Danger at % of stop used','number')+inp('every','Progress every (min, 0 = off)','number')+'</div>'
+   +'<div style="display:flex;gap:8px;margin-top:8px"><button type="button" id="ntEn" class="ea-clr" style="flex:1">Enable on this phone</button><button type="button" id="ntTest" class="ea-clr" style="flex:1">Send test</button></div>';
+  box.insertAdjacentElement('afterend',nb);
+  nb.querySelectorAll('[data-n]').forEach(e=>{ const k=e.dataset.n, cb=e.type==='checkbox', num=e.type==='number'; if(cb) e.checked=!!c[k]; else e.value=c[k]; e.addEventListener('change',()=>{ c[k]=cb?e.checked:(num?(+e.value>=0?+e.value:c[k]):e.value.trim()); eaSave(); }); });
+  $('ntEn').onclick=()=>{ try{ Notification.requestPermission().then(p=>{ try{ toastM(p==='granted'?'Phone alerts enabled':'Notifications blocked in browser settings'); }catch(e){} }); }catch(e){ try{ toastM('This browser has no notifications \u2014 use Telegram'); }catch(x){} } };
+  $('ntTest').onclick=()=>ntSend('test','Test alert \u2014 phone alerts are working.',0); }
+}
+
 function eaSync(){ try{ if(window.eaMqSync) window.eaMqSync(); }catch(e){} vw.querySelectorAll('input[data-k]').forEach(i=>{ i.value=EA.cfg[i.dataset.k]; }); $('eaStrat').value=EA.cfg.strat; eaPreSync(); try{ eaMultiSync(); }catch(e){} }
 vw.addEventListener('change',e=>{ const k=e.target.dataset&&e.target.dataset.k; if(!k) return; const f=RISK.concat(MORE).find(x=>x[0]===k); if(!f) return;
   let v=parseFloat(e.target.value); if(isNaN(v)) v=EA.cfg[k]; v=Math.max(f[2],v); EA.cfg[k]=v;
