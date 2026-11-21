@@ -8,9 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Russo+One&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/blockly@10.4.3/blockly_compressed.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/blockly@10.4.3/blocks_compressed.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/blockly@10.4.3/msg/en.js"></script>
 <style>
 :root{
   --bg:#07081a; --bg2:#0d0f24; --panel:#141733; --border:#282c52;
@@ -537,12 +534,6 @@ body:has(#view-contact.active) #botFab,body:has(#view-contact.active) #infoFab,b
 #view-bot .card.a-violet .trade-btns .btn{padding:8px 4px;font-size:12px}
 #view-bot .card.a-violet .dv-wide{grid-column:auto}
 #view-bot .grid{gap:8px}
-/* Block canvas: the old form stays in the DOM (the engine reads it) but only Start/Stop/Voice + entry info show */
-#view-bot .card.a-violet>*:not(.trade-btns):not(#botEntryInfo){display:none}
-#bb{margin-bottom:10px}
-#bbWs{height:60vh;min-height:360px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
-#bbWs .blocklySvg{background:#fff!important}
-#bbSt{font-size:12px;color:var(--muted);padding:6px 2px}
 
 /* ---- v3: DTrader fits the screen, history ranges, strategy picker ---- */
 #view-dtrader{overflow-x:hidden;max-width:100vw}
@@ -1401,7 +1392,6 @@ if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   </div>
 </div>
 <div class="view" id="view-bot">
-  <div id="bb"><div id="bbWs"></div><div id="bbSt">Idle</div></div>
   <div class="grid">
     <div class="card a-violet">
       <h3>Strategy</h3>
@@ -9020,71 +9010,6 @@ setInterval(function(){ try{ if(EA.want&&!EA.on&&authorized&&ws&&ws.readyState==
 window.EA_SSHORT=SSHORT; window.EA_DEBUG=EA; EA.analyze=eaAnalyze; EA.trade=eaTrade; EA.parseCf=eaParseCf; EA.pick=eaPickDur; EA.plan=eaPlan; EA.strats=STRATS; EA.stratSigs=stratSigs; EA.basket=eaBasket;
 })();
 
-</script>
-
-<script>
-/* Block canvas for Bot Builder: fixed (non-draggable, non-deletable) blocks that drive the existing form + startBot()/stopBot(). Connection code untouched. */
-(function(){
-if(!window.Blockly)return;
-const $=id=>document.getElementById(id);
-const dd=id=>new Blockly.FieldDropdown(()=>{const o=Array.from($(id).options).map(x=>[x.text,x.value]);return o.length?o:[['...','']]});
-const num=(v,mn,mx,st)=>new Blockly.FieldNumber(v,mn,mx,st);
-Blockly.Blocks.bb_trade={init(){
- this.appendDummyInput().appendField('1. Trade parameters');
- this.appendDummyInput().appendField('Market').appendField(dd('botSymbol'),'SYM');
- this.appendDummyInput().appendField('Trade type').appendField(dd('botTradeType'),'TT');
- this.appendDummyInput().appendField('Duration').appendField(num(5,1,3650,1),'DUR').appendField(dd('botDurationUnit'),'UNIT');
- this.appendDummyInput().appendField('Base stake').appendField(num(1,0.35,undefined,0.01),'STAKE').appendField('Digit').appendField(num(5,0,9,1),'DIG');
- this.appendDummyInput().appendField('Max runs').appendField(num(7,1,undefined,1),'MAX');
- this.setNextStatement(true);this.setColour(200)}};
-Blockly.Blocks.bb_buy={init(){
- this.appendDummyInput().appendField('2. Purchase conditions');
- this.appendDummyInput().appendField('Purchase').appendField(new Blockly.FieldLabelSerializable(''),'LBL');
- this.setPreviousStatement(true);this.setNextStatement(true);this.setColour(20)}};
-Blockly.Blocks.bb_restart={init(){
- this.appendDummyInput().appendField('3. Restart trading conditions');
- this.appendDummyInput().appendField('On loss multiply stake by').appendField(num(0,0,100,0.1),'MART').appendField('(0 = off)');
- this.appendDummyInput().appendField('Take profit $').appendField(num(0,0,undefined,0.01),'TP').appendField('(0 = off)');
- this.appendDummyInput().appendField('Stop loss $').appendField(num(0,0,undefined,0.01),'SL').appendField('(0 = off)');
- this.setPreviousStatement(true);this.setColour(340)}};
-// plain white canvas: no grid option; no toolbox; no trashcan
-const ws=Blockly.inject('bbWs',{renderer:'zelos',trashcan:false,move:{scrollbars:true,drag:true,wheel:false},zoom:{controls:true,startScale:.9,minScale:.5,maxScale:1.4}});
-['undoWorkspace','redoWorkspace','cleanWorkspace','collapseWorkspace','expandWorkspace','deleteWorkspace','blockDuplicate','blockComment','blockInline','blockCollapseExpand','blockDisable','blockDelete','blockHelp','blockCopy','blockPaste'].forEach(i=>{try{Blockly.ContextMenuRegistry.registry.unregister(i)}catch(e){}});
-const a=ws.newBlock('bb_trade'),b=ws.newBlock('bb_buy'),c=ws.newBlock('bb_restart');
-[a,b,c].forEach(x=>{x.initSvg();x.setMovable(false);x.setDeletable(false)});
-a.nextConnection.connect(b.previousConnection);b.nextConnection.connect(c.previousConnection);
-[c,b,a].forEach(x=>x.render());a.moveBy(12,12);
-let syncing=false;
-const setF=(id,v)=>{const el=$(id);if(!el||el.value==v)return;el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}))};
-const toForm={SYM:'botSymbol',TT:'botTradeType',DUR:'botDuration',UNIT:'botDurationUnit',STAKE:'botStake',DIG:'botDigit',MAX:'botMaxTrades'};
-const toForm2={MART:'botMartMult',TP:'botTP',SL:'botSL'};
-function push(){
- for(const k in toForm)setF(toForm[k],a.getFieldValue(k));
- for(const k in toForm2){const v=+c.getFieldValue(k);setF(toForm2[k],v>0?v:'')}
- b.setFieldValue($('botTradeType').selectedOptions[0]?$('botTradeType').selectedOptions[0].text:'','LBL');
-}
-function pull(){
- syncing=true;
- try{
-  for(const k in toForm){const el=$(toForm[k]);if(el&&el.value!==''&&String(a.getFieldValue(k))!==String(el.value))a.setFieldValue(el.value,k)}
-  for(const k in toForm2){const v=Number($(toForm2[k]).value)||0;if(+c.getFieldValue(k)!==v)c.setFieldValue(v,k)}
-  const t=$('botTradeType').selectedOptions[0];b.setFieldValue(t?t.text:'','LBL');
- }finally{syncing=false}
-}
-ws.addChangeListener(e=>{if(!syncing&&e.type===Blockly.Events.BLOCK_CHANGE&&e.element==='field')push()});
-let was=false,wasRun=null;
-setInterval(()=>{
- const on=$('view-bot').classList.contains('active');
- if(on&&!was){Blockly.svgResize(ws);pull()}
- was=on;if(!on)return;
- const busy=Blockly.WidgetDiv.isVisible()||Blockly.DropDownDiv.isVisible();
- if(!busy)pull();
- const run=!!botRunning;
- if(run!==wasRun){wasRun=run;[a,c].forEach(x=>x.inputList.forEach(i=>i.fieldRow.forEach(f=>{if(f.name)f.setEnabled(!run)})))}
- $('bbSt').textContent=$('botStatus').textContent+' · runs '+botCount+'/'+botMax+' · W '+botWins+' L '+botLosses+' · P/L $'+Number(botPnl).toFixed(2)+(run?' · blocks locked while running':'');
-},600);
-addEventListener('resize',()=>Blockly.svgResize(ws));
-})();
 </script>
 </body>
 </html>
